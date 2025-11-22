@@ -1,0 +1,16 @@
+import React from 'react';
+import { render, waitFor } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from '../utils/theme';
+import Hero from './Hero';
+
+describe('Hero component', () => {
+  it('renders correctly', async () => {
+    const { getByText } = render(
+      <ThemeProvider theme={theme}>
+        <Hero />
+      </ThemeProvider>
+    );
+    await waitFor(() => expect(getByText(/premium soy wax melts and candles/i)).toBeInTheDocument());
+  });
+});

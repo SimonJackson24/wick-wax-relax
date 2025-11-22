@@ -1,0 +1,51 @@
+{
+  "name": "wick-wax-relax-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:accessibility": "jest --testPathPattern=accessibility",
+    "lighthouse": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html",
+    "lighthouse:accessibility": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-accessibility-report.html --only-categories=accessibility",
+    "deploy:categories": "node ../scripts/deploy-hierarchical-categories.js"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.11.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/server": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
+    "@mui/x-data-grid": "^6.18.1",
+    "axios": "^1.6.2",
+    "framer-motion": "^10.16.16",
+    "next": "14.0.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "recharts": "^2.8.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/jest": "^29.5.8",
+    "@types/node": "^20.9.2",
+    "@types/react": "^18.2.38",
+    "@types/react-dom": "^18.2.17",
+    "axe-core": "^4.8.2",
+    "eslint": "^8.54.0",
+    "eslint-config-next": "14.0.3",
+    "jest": "^29.7.0",
+    "jest-axe": "^8.0.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "lighthouse": "^11.4.0",
+    "typescript": "^5.3.2"
+  }
+}
+

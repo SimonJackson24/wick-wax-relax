@@ -1,0 +1,48 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="waxBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d1b69;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#11998e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#38ef7d;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="waxGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#waxBg)"/>
+
+  <!-- Melter base -->
+  <rect x="300" y="450" width="200" height="40" rx="20" fill="#8B4513"/>
+  <rect x="320" y="430" width="160" height="20" rx="10" fill="#654321"/>
+
+  <!-- Wax melts -->
+  <rect x="350" y="400" width="30" height="20" rx="5" fill="#ff6b35"/>
+  <rect x="390" y="395" width="25" height="18" rx="4" fill="#ffd700"/>
+  <rect x="425" y="402" width="28" height="22" rx="5" fill="#ff1493"/>
+  <rect x="365" y="385" width="26" height="19" rx="4" fill="#00ff7f"/>
+  <rect x="410" y="390" width="24" height="17" rx="3" fill="#ff4500"/>
+
+  <!-- Melting wax drips -->
+  <ellipse cx="365" cy="420" rx="8" ry="12" fill="#ff6b35" opacity="0.7"/>
+  <ellipse cx="405" cy="418" rx="6" ry="10" fill="#ffd700" opacity="0.7"/>
+  <ellipse cx="440" cy="422" rx="7" ry="11" fill="#ff1493" opacity="0.7"/>
+
+  <!-- Fragrance waves -->
+  <path d="M350 380 Q340 370 350 365 Q360 370 350 380" fill="#ffffff" opacity="0.4"/>
+  <path d="M390 375 Q380 365 390 360 Q400 365 390 375" fill="#ffffff" opacity="0.4"/>
+  <path d="M430 378 Q420 368 430 363 Q440 368 430 378" fill="#ffffff" opacity="0.4"/>
+
+  <!-- Glow effect -->
+  <ellipse cx="400" cy="400" rx="80" ry="40" fill="url(#waxGlow)"/>
+
+  <!-- Text overlay -->
+  <text x="400" y="200" text-anchor="middle" font-family="serif" font-size="48" font-weight="bold" fill="#ffffff">
+    Wax Melts
+  </text>
+  <text x="400" y="240" text-anchor="middle" font-family="serif" font-size="24" fill="#ffffff" opacity="0.9">
+    Aromatic Home Fragrance
+  </text>
+</svg>
