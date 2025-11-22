@@ -7,6 +7,7 @@ import createEmotionCache from '../src/createEmotionCache';
 import Head from 'next/head';
 import { AuthProvider } from '../components/AuthContext';
 import { CartProvider } from '../components/CartContext';
+import { PWAProvider } from '../utils/pwaUtils';
 import theme from '../src/theme';
 
 // Client-side cache, shared for the whole session of the user in the browser.
@@ -32,11 +33,13 @@ function MyApp(props) {
         <CssBaseline />
         <AuthProvider>
           <CartProvider>
-            {/* Add a skip to main content link at the top of the page */}
-            <a href="#main-content" className="skip-link">
-              Skip to main content
-            </a>
-            <Component {...pageProps} />
+            <PWAProvider>
+              {/* Add a skip to main content link at the top of the page */}
+              <a href="#main-content" className="skip-link">
+                Skip to main content
+              </a>
+              <Component {...pageProps} />
+            </PWAProvider>
           </CartProvider>
         </AuthProvider>
       </ThemeProvider>
