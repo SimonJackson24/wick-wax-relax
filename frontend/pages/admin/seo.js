@@ -33,7 +33,7 @@ import {
   Download as DownloadIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-} from '@mui/icons/material';
+} from '@mui/icons-material';
 import SEOAnalyzer from '../../components/SEOAnalyzer';
 import AdminLayout from '../../components/AdminLayout';
 import AdminProtectedRoute from '../../components/AdminProtectedRoute';
@@ -612,5 +612,3 @@ const SEOReports = ({ report, loading }) => {
     </Box>
   );
 };
-
-export default AdminSEO;
