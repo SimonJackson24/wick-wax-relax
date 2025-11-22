@@ -1,0 +1,49 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bathBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="bubbleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bathBg)"/>
+
+  <!-- Bath tub -->
+  <ellipse cx="400" cy="500" rx="300" ry="80" fill="#f5f5f5" opacity="0.9"/>
+  <rect x="100" y="450" width="600" height="100" rx="50" fill="#e0e0e0" opacity="0.8"/>
+
+  <!-- Water -->
+  <ellipse cx="400" cy="480" rx="280" ry="60" fill="#87ceeb" opacity="0.7"/>
+  <ellipse cx="400" cy="485" rx="270" ry="55" fill="#4682b4" opacity="0.5"/>
+
+  <!-- Bath bombs dissolving -->
+  <circle cx="350" cy="460" r="25" fill="#ff6b35" opacity="0.8"/>
+  <circle cx="450" cy="470" r="20" fill="#ffd700" opacity="0.8"/>
+  <circle cx="380" cy="475" r="15" fill="#ff1493" opacity="0.8"/>
+
+  <!-- Bubbles -->
+  <circle cx="320" cy="440" r="8" fill="url(#bubbleGlow)"/>
+  <circle cx="480" cy="430" r="6" fill="url(#bubbleGlow)"/>
+  <circle cx="420" cy="445" r="5" fill="url(#bubbleGlow)"/>
+  <circle cx="360" cy="435" r="7" fill="url(#bubbleGlow)"/>
+  <circle cx="520" cy="450" r="4" fill="url(#bubbleGlow)"/>
+
+  <!-- Steam -->
+  <path d="M300 400 Q290 380 300 370 Q310 380 300 400" fill="#ffffff" opacity="0.3"/>
+  <path d="M500 390 Q490 370 500 360 Q510 370 500 390" fill="#ffffff" opacity="0.3"/>
+  <path d="M400 385 Q390 365 400 355 Q410 365 400 385" fill="#ffffff" opacity="0.3"/>
+
+  <!-- Text overlay -->
+  <text x="400" y="200" text-anchor="middle" font-family="serif" font-size="48" font-weight="bold" fill="#ffffff">
+    Bath Bliss
+  </text>
+  <text x="400" y="240" text-anchor="middle" font-family="serif" font-size="24" fill="#ffffff" opacity="0.9">
+    Therapeutic Bath Experience
+  </text>
+</svg>

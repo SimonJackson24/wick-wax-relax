@@ -1,2 +1,43 @@
-node_modules/ 
-.env 
+# Node.js
+node_modules/
+npm-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite
+
+# IDE specific
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build directories
+dist/
+build/
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Local development
+.DS_Store

@@ -1,0 +1,177 @@
+/* Global Accessibility Styles */
+
+/* Focus visible styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Skip link styles */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #1976d2;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Ensure proper color contrast */
+.text-high-contrast {
+  color: #000000;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .MuiButton-root {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Focus indicators for interactive elements */
+.MuiButton-root:focus-visible,
+.MuiIconButton-root:focus-visible,
+.MuiLink-root:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Ensure proper text spacing */
+.MuiTypography-root {
+  line-height: 1.5;
+}
+
+/* Improve link visibility */
+.MuiLink-root {
+  text-decoration: underline;
+}
+
+.MuiLink-root:hover {
+  text-decoration: none;
+}
+
+/* Ensure form inputs have proper labels */
+.MuiFormControl-root .MuiInputLabel-root {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.MuiFormControl-root .MuiInputLabel-root.Mui-focused {
+  color: #1976d2;
+}
+
+/* Ensure error messages are properly associated with form inputs */
+.Mui-error {
+  color: #d32f2f;
+}
+
+/* Ensure table headers are properly marked */
+.MuiTableHead-root .MuiTableCell-head {
+  font-weight: bold;
+}
+
+/* Ensure dialog titles are properly marked */
+.MuiDialogTitle-root {
+  font-weight: bold;
+}
+
+/* Ensure buttons have sufficient color contrast */
+.MuiButton-containedPrimary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.MuiButton-outlinedPrimary {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+/* Ensure cards have proper structure */
+.MuiCard-root {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Ensure images have alt text */
+img {
+  font-style: italic;
+  color: #666;
+}
+
+/* Ensure lists have proper markers */
+.MuiList-root {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.MuiListItem-root {
+  display: list-item;
+}
+
+/* Ensure navigation landmarks are properly marked */
+nav[role="navigation"] {
+  outline: none;
+}
+
+/* Ensure main landmark is properly marked */
+main[role="main"] {
+  outline: none;
+}
+
+/* Ensure footer landmark is properly marked */
+footer[role="contentinfo"] {
+  outline: none;
+}
+
+/* Ensure header landmark is properly marked */
+header[role="banner"] {
+  outline: none;
+}
+
+/* Ensure search landmark is properly marked */
+[role="search"] {
+  outline: none;
+}
+
+/* Ensure complementary landmarks are properly marked */
+[role="complementary"] {
+  outline: none;
+}
+
+/* Ensure form landmarks are properly marked */
+[role="form"] {
+  outline: none;
+}
+
+/* Ensure region landmarks are properly marked */
+[role="region"] {
+  outline: none;
+}

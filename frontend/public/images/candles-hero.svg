@@ -1,0 +1,46 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="candleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="flameGradient" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" style="stop-color:#FFF;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF4500;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1920" height="1080" fill="url(#candleGradient)"/>
+
+  <!-- Candle silhouettes -->
+  <rect x="350" y="400" width="40" height="200" fill="#2F1B14" opacity="0.8"/>
+  <rect x="550" y="380" width="35" height="220" fill="#1C0F0A" opacity="0.9"/>
+  <rect x="750" y="420" width="45" height="180" fill="#3D2917" opacity="0.7"/>
+  <rect x="950" y="360" width="38" height="240" fill="#2A1810" opacity="0.8"/>
+  <rect x="1150" y="400" width="42" height="200" fill="#1F1410" opacity="0.9"/>
+  <rect x="1350" y="380" width="36" height="220" fill="#352419" opacity="0.7"/>
+
+  <!-- Flames -->
+  <ellipse cx="370" cy="380" rx="8" ry="15" fill="url(#flameGradient)" opacity="0.9"/>
+  <ellipse cx="567" cy="360" rx="7" ry="12" fill="url(#flameGradient)" opacity="0.8"/>
+  <ellipse cx="772" cy="400" rx="9" ry="16" fill="url(#flameGradient)" opacity="0.9"/>
+  <ellipse cx="969" cy="340" rx="6" ry="11" fill="url(#flameGradient)" opacity="0.7"/>
+  <ellipse cx="1171" cy="380" rx="8" ry="14" fill="url(#flameGradient)" opacity="0.8"/>
+  <ellipse cx="1368" cy="360" rx="7" ry="13" fill="url(#flameGradient)" opacity="0.9"/>
+
+  <!-- Floating particles -->
+  <circle cx="200" cy="300" r="2" fill="#FFF" opacity="0.6"/>
+  <circle cx="400" cy="250" r="3" fill="#FFF" opacity="0.4"/>
+  <circle cx="600" cy="280" r="2" fill="#FFF" opacity="0.5"/>
+  <circle cx="800" cy="220" r="3" fill="#FFF" opacity="0.7"/>
+  <circle cx="1000" cy="260" r="2" fill="#FFF" opacity="0.4"/>
+  <circle cx="1200" cy="240" r="3" fill="#FFF" opacity="0.6"/>
+  <circle cx="1400" cy="300" r="2" fill="#FFF" opacity="0.5"/>
+  <circle cx="1600" cy="220" r="3" fill="#FFF" opacity="0.7"/>
+
+  <!-- Title overlay -->
+  <text x="960" y="540" text-anchor="middle" fill="#FFF" font-family="serif" font-size="120" font-weight="bold" opacity="0.1">CANDLES</text>
+</svg>
