@@ -612,3 +612,5 @@ const SEOReports = ({ report, loading }) => {
     </Box>
   );
 };
+
+export default AdminSEO;
