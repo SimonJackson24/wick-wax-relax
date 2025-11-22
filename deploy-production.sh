@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # Validate environment file exists
@@ -22,13 +22,24 @@ done
 echo "🚀 Deploying Wick Wax Relax to CloudPanel"
 echo "=========================================="
 
+# Verify Docker permissions
+if ! docker info >/dev/null 2>&1; then
+    echo "ERROR: Docker permissions required. Run:"
+    echo "  sudo usermod -aG docker \$USER && newgrp docker"
+    exit 1
+fi
+
 # Create CloudPanel directory structure with correct permissions
-sudo mkdir -p /srv/cloudpanel/htdocs/${DOMAIN}/public/{frontend,backend}
-sudo chown -R 1000:1000 /srv/cloudpanel/htdocs/${DOMAIN}
+mkdir -p "/srv/cloudpanel/htdocs/${DOMAIN}/public/{frontend,backend}"
+chown -R www-data:www-data "/srv/cloudpanel/htdocs/${DOMAIN}"
+chmod -R 775 "/srv/cloudpanel/htdocs/${DOMAIN}"
 
 # Build and start containers with isolated network
-docker-compose -f docker-compose.cloudpanel.yml build
-docker-compose -f docker-compose.cloudpanel.yml up -d --force-recreate
+# Build and deploy with explicit env file
+docker-compose --env-file "${ENV_FILE}" \
+  -f docker-compose.cloudpanel.yml build
+docker-compose --env-file "${ENV_FILE}" \
+  -f docker-compose.cloudpanel.yml up -d --force-recreate
 
 # Wait for backend health check with timeout
 echo "Waiting for backend initialization..."
@@ -39,10 +50,16 @@ echo "Running database migrations..."
 docker-compose -f docker-compose.cloudpanel.yml exec -T backend \
     sh -c 'cd migrations && ./migrate-database.sh --production'
 
+# Seed the database
+echo "Seeding database with admin user..."
+docker-compose -f docker-compose.cloudpanel.yml exec -T backend node setup-admin.js
+echo "Seeding database with products..."
+docker-compose -f docker-compose.cloudpanel.yml exec -T backend node seed-products.js
+
 # Zero-downtime Nginx reload
 docker-compose -f docker-compose.cloudpanel.yml exec -T nginx nginx -s reload
 
 echo "🎉 Deployment complete!"
 echo "Frontend: https://${DOMAIN}"
 echo "Backend API: https://${DOMAIN}/api"
-echo "Logs: /srv/cloudpanel/logs"
+echo "Logs: /var/log/cloudpanel/${DOMAIN}"
