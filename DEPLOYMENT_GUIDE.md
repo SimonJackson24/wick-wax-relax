@@ -1,15 +1,17 @@
 ## CloudPanel Deployment
 
-**Fully Automated Deployment** - PostgreSQL installation and configuration is now completely automated!
+**Two Deployment Options Available:**
 
-### Prerequisites
+### Option 1: Fully Automated GitHub Actions Deployment (Recommended)
+
+**Prerequisites**
 - ✅ SSH access to your Cloudpanel VPS
 - ✅ SSH user with `sudo` privileges
 - ✅ Git repository cloned on server
 - ✅ GitHub repository with Actions enabled
 - ✅ GitHub secrets configured (SSH keys, DB password, JWT secrets)
 
-### Automated Deployment Process
+**Automated Deployment Process**
 
 1. **PostgreSQL Installation** (automatic)
    - Detects if PostgreSQL is installed
@@ -28,7 +30,7 @@
    - Provides admin login credentials
    - Shows frontend and API URLs
 
-### Setup Steps
+**Setup Steps**
 
 1. **Configure GitHub Secrets:**
    ```
@@ -52,13 +54,48 @@
    # - Provides login credentials
    ```
 
+### Option 2: One-Command Server-Side Deployment (Manual)
+
+**Prerequisites**
+- ✅ SSH access to your Cloudpanel VPS
+- ✅ SSH user with `sudo` privileges (must be in sudo group)
+- ✅ Git repository cloned on server
+- ✅ Project files accessible on the server
+
+**One-Command Deployment Process**
+
+1. **Connect to your server via SSH:**
+   ```bash
+   ssh your-username@your-server-ip
+   ```
+
+2. **Navigate to your project directory:**
+   ```bash
+   cd /home/wickwaxrelax/htdocs/www.wickwaxrelax.co.uk
+   ```
+
+3. **Run the deployment script:**
+   ```bash
+   ./deploy-production.sh
+   ```
+
+**What the script does automatically:**
+- ✅ Installs PostgreSQL if not present
+- ✅ Creates secure database credentials
+- ✅ Sets up database schema and initial data
+- ✅ Installs all dependencies (frontend and backend)
+- ✅ Builds the frontend for production
+- ✅ Configures environment variables securely
+- ✅ Starts the application with PM2
+- ✅ Runs health checks and provides credentials
+
 ### What You Get
 
-**After successful deployment:**
+**After successful deployment (both methods):**
 ```
 ✅ Deployment successful!
-🌐 Frontend: https://your-domain.com
-🔗 Backend API: https://your-domain.com/api
+🌐 Frontend: https://www.wickwaxrelax.co.uk
+🔗 Backend API: https://www.wickwaxrelax.co.uk/api
 
 🔐 Admin Login Credentials:
    Email: admin@wickwaxrelax.co.uk
@@ -72,4 +109,7 @@
 - **PostgreSQL Issues**: Check if SSH user has sudo privileges
 - **Permission Errors**: Ensure SSH user can run `sudo apt install`
 - **Connection Issues**: Verify SSH key and host settings
-- **Deployment Logs**: Check GitHub Actions logs for detailed errors
+- **Deployment Logs**:
+  - GitHub Actions: Check GitHub Actions logs
+  - Manual deployment: Check terminal output and PM2 logs (`pm2 logs wick-wax-relax-api`)
+- **Script Permissions**: If you get "Permission denied" error, run `chmod +x deploy-production.sh` first
