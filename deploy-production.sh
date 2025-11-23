@@ -104,23 +104,21 @@ echo "📦 Installing frontend dependencies..."
 cd ../frontend
 npm install
 
-# Set environment variables for database initialization
-export NODE_ENV=production
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_NAME=${DB_NAME}
-export DB_USER=${DB_USER}
-export DB_PASSWORD=${DB_PASSWORD}
-
 # Initialize PostgreSQL database with complete schema
 echo "🗄️ Initializing PostgreSQL database schema..."
 cd ../backend
+DB_HOST=localhost \
+DB_PORT=5432 \
+DB_NAME=${DB_NAME} \
+DB_USER=${DB_USER} \
+DB_PASSWORD=${DB_PASSWORD} \
+NODE_ENV=production \
 npm run db:init
 
 # Build frontend for production
 echo "🔨 Building frontend..."
 cd ../frontend
-npx next build
+./node_modules/.bin/next build
 
 # Create production environment file
 echo "📝 Creating production environment file..."
