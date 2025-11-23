@@ -9,7 +9,7 @@ set -u  # Treat unset variables as errors
 # Configuration variables
 DB_NAME="wick_wax_relax"
 DB_USER="wick_wax_user"
-DB_PASSWORD="${DB_PASSWORD:-$DB_PASSWORD}"
+DB_PASSWORD="${DB_PASSWORD:-your_secure_password_here}"
 DB_HOST="localhost"
 DB_PORT="5432"
 NODE_ENV="production"
