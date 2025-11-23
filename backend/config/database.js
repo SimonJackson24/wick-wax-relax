@@ -1,37 +1,36 @@
-const sqlite3 = require('sqlite3').verbose();
-const { open } = require('sqlite');
+const { Pool } = require('pg');
 const path = require('path');
 
-// Create database connection
-let db;
+// Create PostgreSQL connection pool
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
+// Initialize connection pool
 const initializeDb = async () => {
   try {
-    // Use test database in test environment
-    const dbName = process.env.NODE_ENV === 'test' ? 'wick_wax_relax_test.db' : 'wick_wax_relax.db';
-    const dbPath = path.resolve(__dirname, `../${dbName}`);
-    db = await open({
-      filename: dbPath,
-      driver: sqlite3.Database,
-    });
-
-    console.log('Connected to SQLite database at:', dbPath);
-    return db;
+    await pool.query('SELECT NOW()');
+    console.log('Connected to PostgreSQL database');
+    return pool;
   } catch (error) {
     console.error('Failed to connect to database:', error);
     throw error;
   }
 };
 
-// Helper function to run queries with the SQLite API
+// Helper function to run queries with PostgreSQL
 const runQuery = async (sql, params = []) => {
-  if (!db) {
-    await initializeDb();
-  }
-  
   try {
-    const result = await db.all(sql, params);
-    return { rows: result };
+    const result = await pool.query(sql, params);
+    return result;
   } catch (error) {
     console.error('Database query error:', error);
     throw error;

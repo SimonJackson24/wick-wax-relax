@@ -1,0 +1,5 @@
+{"heapTotal":"35.04MB","heapUsed":"33.32MB","level":"warn","message":"High memory usage detected","service":"wick-wax-relax-backend","timestamp":"2025-09-17 02:09:01","usagePercent":"95.08%"}
+{"heapTotal":"35.04MB","heapUsed":"33.49MB","level":"warn","message":"High memory usage detected","service":"wick-wax-relax-backend","timestamp":"2025-09-17 18:23:06","usagePercent":"95.57%"}
+{"heapTotal":"35.04MB","heapUsed":"33.27MB","level":"warn","message":"High memory usage detected","service":"wick-wax-relax-backend","timestamp":"2025-09-17 18:28:06","usagePercent":"94.96%"}
+{"heapTotal":"35.04MB","heapUsed":"33.11MB","level":"warn","message":"High memory usage detected","service":"wick-wax-relax-backend","timestamp":"2025-09-17 18:33:06","usagePercent":"94.49%"}
+{"heapTotal":"35.04MB","heapUsed":"33.27MB","level":"warn","message":"High memory usage detected","service":"wick-wax-relax-backend","timestamp":"2025-09-17 21:33:17","usagePercent":"94.96%"}

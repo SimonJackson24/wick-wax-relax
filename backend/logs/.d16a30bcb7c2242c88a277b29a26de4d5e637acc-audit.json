@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\.d16a30bcb7c2242c88a277b29a26de4d5e637acc-audit.json",
+    "files": [
+        {
+            "date": 1763822801355,
+            "name": "C:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\combined-2025-11-22.log",
+            "hash": "ed051308cb8264aad7815d9d3d653a0cdfc8a033300beec13c5c0c28dd099d5c"
+        }
+    ],
+    "hashType": "sha256"
+}

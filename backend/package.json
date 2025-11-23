@@ -12,11 +12,9 @@
     "test:performance": "cross-env NODE_ENV=test jest __tests__/performance/ --config=jest.config.js --verbose",
     "test:auth": "cross-env NODE_ENV=test jest __tests__/routes/auth.test.js --config=jest.config.js --verbose",
     "test:validation": "cross-env NODE_ENV=test jest __tests__/middleware/validation.test.js --config=jest.config.js --verbose",
-    "test:clean": "rimraf wick_wax_relax_test.db coverage logs/test.log",
-    "migrate": "node migrate.js",
-    "migrate:up": "node migrate.js up",
-    "migrate:rollback": "node migrate.js rollback",
-    "migrate:status": "node migrate.js status"
+    "test:clean": "rimraf coverage logs/test.log",
+    "db:init": "node init-db.js init",
+    "db:reset": "node init-db.js reset"
   },
   "dependencies": {
     "@sentry/node": "^8.24.0",
@@ -40,10 +38,10 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
     "pdfkit": "^0.17.2",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
     "redis": "^4.6.13",
     "sharp": "^0.34.3",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.6",
     "uuid": "^9.0.1",
     "web-push": "^3.6.7",
     "winston": "^3.13.0",
@@ -59,7 +57,7 @@
   "keywords": [
     "api",
     "express",
-    "sqlite"
+    "postgresql"
   ],
   "author": "",
   "license": "ISC"
