@@ -36,7 +36,13 @@ fi
 # Check sudo access
 if ! sudo -n true 2>/dev/null; then
     print_error "This script requires sudo privileges. Please ensure your user has sudo access."
-    echo "Run 'sudo usermod -aG sudo $(whoami)' on your server if needed."
+    echo ""
+    echo "To grant sudo access to your user, log in as a user with sudo privileges and run:"
+    echo "  sudo usermod -aG sudo $(whoami)"
+    echo ""
+    echo "Then log out and log back in for the changes to take effect."
+    echo "After that, run this script as your regular user (without sudo):"
+    echo "  ./deploy-production.sh"
     exit 1
 fi
 
