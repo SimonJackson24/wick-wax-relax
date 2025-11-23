@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Debug mode - uncomment to enable debugging
-# set -x
-
 # Autonomous Docker Deployment Script for Wick Wax Relax
 # Performs complete environment assessment, service orchestration, and credential management
 
@@ -535,7 +532,7 @@ create_missing_migrations() {
     # Check if 001_initial_schema.sql exists, if not create it
     if [ ! -f "migrations/001_initial_schema.sql" ]; then
         info "Creating 001_initial_schema.sql..."
-        cat > migrations/001_initial_schema.sql << 'EOF'
+        cat > migrations/001_initial_schema.sql << EOF
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
