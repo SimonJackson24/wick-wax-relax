@@ -734,8 +734,8 @@ seed_data() {
     
     # Insert admin user
     local admin_result=$(docker-compose -f docker-compose.autonomous.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
-        INSERT INTO users (id, email, password_hash, first_name, last_name, is_admin, created_at, updated_at)
-        VALUES ('admin-user', '$ADMIN_EMAIL', '$admin_password_hash', 'Admin', 'User', true, NOW(), NOW())
+        INSERT INTO users (id, email, password_hash, first_name, last_name, is_admin, created_at, updated_at) 
+        VALUES ('admin-user', '$ADMIN_EMAIL', '$admin_password_hash', 'Admin', 'User', true, NOW(), NOW()) 
         ON CONFLICT (email) DO NOTHING;
         SELECT 'SUCCESS' as result;
     " 2>/dev/null | grep -o 'SUCCESS' || echo 'FAILED')
@@ -749,7 +749,7 @@ seed_data() {
     # Create sales channels
     info "Creating sales channels..."
     local channels_result=$(docker-compose -f docker-compose.autonomous.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
-        INSERT INTO channels (id, name, api_key) VALUES
+        INSERT INTO channels (id, name, api_key) VALUES 
         ('pwa-channel', 'PWA', 'pwa-api-key'),
         ('amazon-channel', 'AMAZON', 'amazon-api-key'),
         ('etsy-channel', 'ETSY', 'etsy-api-key')
@@ -767,8 +767,8 @@ seed_data() {
     info "Creating basic product categories..."
     local categories_result=$(docker-compose -f docker-compose.autonomous.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
         SELECT EXISTS (
-            SELECT FROM information_schema.tables
-            WHERE table_schema = 'public'
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
             AND table_name = 'categories'
         );
     " 2>/dev/null | grep -o 't' || echo 'f')
