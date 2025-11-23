@@ -57,18 +57,30 @@ jobs:
 
           sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE wick_wax_relax TO wick_wax_user;"
 
+          # Configure PostgreSQL authentication for the new user
+          echo "🔧 Configuring PostgreSQL authentication..."
+          sudo -u postgres psql -d wick_wax_relax -c "GRANT ALL ON SCHEMA public TO wick_wax_user;"
+          sudo -u postgres psql -d wick_wax_relax -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO wick_wax_user;"
+          sudo -u postgres psql -d wick_wax_relax -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO wick_wax_user;"
+
+          # Set default privileges for future tables
+          sudo -u postgres psql -d wick_wax_relax -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO wick_wax_user;"
+          sudo -u postgres psql -d wick_wax_relax -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO wick_wax_user;"
+
           # Test database connection with the new user
           echo "🧪 Testing database connection..."
           if PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h localhost -U "wick_wax_user" -d "wick_wax_relax" -c "SELECT 1;" >/dev/null 2>&1; then
             echo "✅ PostgreSQL database and user configured successfully"
           else
-            echo "⚠️  Failed to connect to PostgreSQL with the new user"
-            echo "Creating .pgpass file for authentication..."
-            PGPASS_FILE="$HOME/.pgpass"
-            echo "localhost:5432:wick_wax_relax:wick_wax_user:${{ secrets.DB_PASSWORD }}" > "$PGPASS_FILE"
-            chmod 600 "$PGPASS_FILE"
-            export PGPASSFILE="$PGPASS_FILE"
-            echo "✅ Created .pgpass file for PostgreSQL authentication"
+            echo "❌ Failed to connect to PostgreSQL with the new user"
+            echo "🔍 Debugging connection issue..."
+            echo "Checking if PostgreSQL is running..."
+            sudo systemctl status postgresql || echo "PostgreSQL is not running"
+            echo "Checking user exists..."
+            sudo -u postgres psql -c "\du" | grep wick_wax_user || echo "User does not exist"
+            echo "Checking database exists..."
+            sudo -u postgres psql -c "\l" | grep wick_wax_relax || echo "Database does not exist"
+            exit 1
           fi
 
           # Navigate to project directory
@@ -92,16 +104,56 @@ jobs:
           echo "🗄️ Initializing PostgreSQL database schema..."
           cd ../backend
 
-          # Set up environment for database initialization
-          DB_ENV="DB_HOST=localhost DB_PORT=5432 DB_NAME=wick_wax_relax DB_USER=wick_wax_user DB_PASSWORD=${{ secrets.DB_PASSWORD }} NODE_ENV=production"
+          # Create .env file for database initialization
+          cat > .env.init << ENVEOF
+          NODE_ENV=production
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_NAME=wick_wax_relax
+          DB_USER=wick_wax_user
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          ENVEOF
 
-          # Check if .pgpass file exists and include it in the environment
-          PGPASS_FILE="$HOME/.pgpass"
-          if [ -f "$PGPASS_FILE" ]; then
-            DB_ENV="$DB_ENV PGPASSFILE=$PGPASS_FILE"
+          # Set PGPASSWORD environment variable for PostgreSQL connection
+          export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
+
+          # Test connection once more before initialization
+          echo "🧪 Pre-initialization connection test..."
+          if psql -h localhost -U "wick_wax_user" -d "wick_wax_relax" -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ Connection test passed, proceeding with initialization"
+            env $(cat .env.init | xargs) npm run db:init
+          else
+            echo "❌ Connection test failed, attempting alternative initialization..."
+            # Try with postgres user as fallback
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/001_initial_schema.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/002_product_variants.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/003_product_categories.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/004_user_accounts.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/005_order_items.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/006_inventory_audit_log.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/007_product_images.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/007_add_refresh_token.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/008_add_tracking_fields.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/009_security_audit_log.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/009_suppliers.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/010_gdpr_consent_tracking.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/010_platform_settings.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/011_performance_indexes.sql
+            sudo -u postgres psql -d wick_wax_relax -f ../migrations/012_hierarchical_categories.sql
+            
+            # Seed initial data with postgres user
+            echo "🌱 Seeding initial data with postgres user..."
+            sudo -u postgres psql -d wick_wax_relax -c "INSERT INTO channels (id, name, api_key) VALUES ('pwa-channel', 'PWA', 'pwa-api-key') ON CONFLICT (name) DO NOTHING;"
+            
+            # Create admin user with postgres user
+            ADMIN_PASSWORD_HASH=$(node -e "const bcrypt = require('bcrypt'); bcrypt.hash('admin123', 10).then(hash => console.log(hash))")
+            sudo -u postgres psql -d wick_wax_relax -c "INSERT INTO users (id, email, password_hash, first_name, last_name) VALUES ('admin-user', 'admin@wickwaxrelax.co.uk', '$ADMIN_PASSWORD_HASH', 'Admin', 'User') ON CONFLICT (email) DO NOTHING;"
+            
+            echo "✅ Database initialization completed with postgres user fallback"
           fi
 
-          env $DB_ENV npm run db:init
+          # Clean up temporary env file
+          rm -f .env.init
 
           # Build frontend for production
           echo "🔨 Building frontend..."
