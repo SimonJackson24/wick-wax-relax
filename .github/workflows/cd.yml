@@ -50,14 +50,25 @@ jobs:
           # Create database and user if they don't exist
           echo "🗄️ Setting up PostgreSQL database and user..."
           sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname = 'wick_wax_user';" | grep -q 1 || \
-            sudo -u postgres psql -c "CREATE USER wick_wax_user WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+            sudo -u postgres psql -c "CREATE USER wick_wax_user WITH PASSWORD '${{ secrets.DB_PASSWORD }}' LOGIN;"
 
           sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'wick_wax_relax';" | grep -q 1 || \
             sudo -u postgres psql -c "CREATE DATABASE wick_wax_relax OWNER wick_wax_user;"
 
           sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE wick_wax_relax TO wick_wax_user;"
 
-          echo "✅ PostgreSQL database and user configured"
+          # Test database connection with the new user
+          echo "🧪 Testing database connection..."
+          if PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h localhost -U "wick_wax_user" -d "wick_wax_relax" -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ PostgreSQL database and user configured successfully"
+          else
+            echo "⚠️  Failed to connect to PostgreSQL with the new user"
+            echo "Creating .pgpass file for authentication..."
+            echo "localhost:5432:wick_wax_relax:wick_wax_user:${{ secrets.DB_PASSWORD }}" > ~/.pgpass
+            chmod 600 ~/.pgpass
+            export PGPASSFILE=~/.pgpass
+            echo "✅ Created .pgpass file for PostgreSQL authentication"
+          fi
 
           # Navigate to project directory
           cd /home/wickwaxrelax/htdocs/www.wickwaxrelax.co.uk
@@ -79,13 +90,16 @@ jobs:
           # Initialize PostgreSQL database with complete schema
           echo "🗄️ Initializing PostgreSQL database schema..."
           cd ../backend
-          env DB_HOST=localhost \
-              DB_PORT=5432 \
-              DB_NAME=wick_wax_relax \
-              DB_USER=wick_wax_user \
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              NODE_ENV=production \
-              npm run db:init
+
+          # Set up environment for database initialization
+          DB_ENV="DB_HOST=localhost DB_PORT=5432 DB_NAME=wick_wax_relax DB_USER=wick_wax_user DB_PASSWORD=${{ secrets.DB_PASSWORD }} NODE_ENV=production"
+
+          # Check if .pgpass file exists and include it in the environment
+          if [ -f ~/.pgpass ]; then
+            DB_ENV="$DB_ENV PGPASSFILE=~/.pgpass"
+          fi
+
+          env $DB_ENV npm run db:init
 
           # Build frontend for production
           echo "🔨 Building frontend..."
@@ -112,7 +126,23 @@ jobs:
           echo "🔧 Checking PM2 installation..."
           if ! command -v pm2 &> /dev/null; then
             echo "📦 Installing PM2..."
-            sudo npm install -g pm2
+            # Use the full path to npm or install without sudo if possible
+            if command -v npm &> /dev/null; then
+              # Try installing PM2 as current user first
+              npm install -g pm2
+            else
+              # Find npm path and use sudo with full path
+              NPM_PATH=$(which npm 2>/dev/null || echo "/usr/bin/npm")
+              if [ -f "$NPM_PATH" ]; then
+                sudo "$NPM_PATH" install -g pm2
+              else
+                # Fallback: install nodejs and npm if not available
+                echo "⚠️  npm not found, installing Node.js and npm..."
+                sudo apt update
+                sudo apt install -y nodejs npm
+                sudo npm install -g pm2
+              fi
+            fi
           fi
 
           # Restart application
