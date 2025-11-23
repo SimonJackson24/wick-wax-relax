@@ -34,7 +34,9 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # Check sudo access
-if ! sudo -n true 2>/dev/null; then
+# Use a simple sudo command to test access without the -n flag
+# This will prompt for password if needed, but that's expected for sudo users
+if ! sudo -v 2>/dev/null; then
     print_error "This script requires sudo privileges. Please ensure your user has sudo access."
     echo ""
     echo "To grant sudo access to your user, log in as a user with sudo privileges and run:"
