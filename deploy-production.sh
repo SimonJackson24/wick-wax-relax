@@ -108,9 +108,10 @@ else
     echo "Trying alternative approach: creating .pgpass file for authentication..."
     
     # Create .pgpass file for PostgreSQL authentication
-    echo "localhost:5432:${DB_NAME}:${DB_USER}:${DB_PASSWORD}" > ~/.pgpass
-    chmod 600 ~/.pgpass
-    export PGPASSFILE=~/.pgpass
+    PGPASS_FILE="$HOME/.pgpass"
+    echo "localhost:5432:${DB_NAME}:${DB_USER}:${DB_PASSWORD}" > "$PGPASS_FILE"
+    chmod 600 "$PGPASS_FILE"
+    export PGPASSFILE="$PGPASS_FILE"
     
     print_status "Created .pgpass file for PostgreSQL authentication"
 fi
@@ -136,8 +137,9 @@ cd ../backend
 DB_ENV="DB_HOST=localhost DB_PORT=5432 DB_NAME=${DB_NAME} DB_USER=${DB_USER} DB_PASSWORD=${DB_PASSWORD} NODE_ENV=production"
 
 # Check if .pgpass file exists and include it in the environment
-if [ -f ~/.pgpass ]; then
-    DB_ENV="$DB_ENV PGPASSFILE=~/.pgpass"
+PGPASS_FILE="$HOME/.pgpass"
+if [ -f "$PGPASS_FILE" ]; then
+    DB_ENV="$DB_ENV PGPASSFILE=$PGPASS_FILE"
 fi
 
 env $DB_ENV npm run db:init

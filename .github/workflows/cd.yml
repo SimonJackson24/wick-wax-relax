@@ -64,9 +64,10 @@ jobs:
           else
             echo "⚠️  Failed to connect to PostgreSQL with the new user"
             echo "Creating .pgpass file for authentication..."
-            echo "localhost:5432:wick_wax_relax:wick_wax_user:${{ secrets.DB_PASSWORD }}" > ~/.pgpass
-            chmod 600 ~/.pgpass
-            export PGPASSFILE=~/.pgpass
+            PGPASS_FILE="$HOME/.pgpass"
+            echo "localhost:5432:wick_wax_relax:wick_wax_user:${{ secrets.DB_PASSWORD }}" > "$PGPASS_FILE"
+            chmod 600 "$PGPASS_FILE"
+            export PGPASSFILE="$PGPASS_FILE"
             echo "✅ Created .pgpass file for PostgreSQL authentication"
           fi
 
@@ -95,8 +96,9 @@ jobs:
           DB_ENV="DB_HOST=localhost DB_PORT=5432 DB_NAME=wick_wax_relax DB_USER=wick_wax_user DB_PASSWORD=${{ secrets.DB_PASSWORD }} NODE_ENV=production"
 
           # Check if .pgpass file exists and include it in the environment
-          if [ -f ~/.pgpass ]; then
-            DB_ENV="$DB_ENV PGPASSFILE=~/.pgpass"
+          PGPASS_FILE="$HOME/.pgpass"
+          if [ -f "$PGPASS_FILE" ]; then
+            DB_ENV="$DB_ENV PGPASSFILE=$PGPASS_FILE"
           fi
 
           env $DB_ENV npm run db:init
