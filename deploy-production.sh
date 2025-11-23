@@ -75,16 +75,17 @@ JWT_SECRET=""
 JWT_REFRESH_SECRET=""
 
 # Generate secure passwords if not provided as environment variables
+# Use openssl rand -hex to avoid special characters that might cause SQL issues
 if [[ -z "${DB_PASSWORD}" ]]; then
-    DB_PASSWORD=$(openssl rand -base64 32)
+    DB_PASSWORD=$(openssl rand -hex 32)
 fi
 
 if [[ -z "${JWT_SECRET}" ]]; then
-    JWT_SECRET=$(openssl rand -base64 32)
+    JWT_SECRET=$(openssl rand -hex 32)
 fi
 
 if [[ -z "${JWT_REFRESH_SECRET}" ]]; then
-    JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+    JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 fi
 
 # Create database and user
@@ -126,6 +127,10 @@ env DB_HOST=localhost \
 # Build frontend for production
 echo "🔨 Building frontend..."
 cd ../frontend
+
+# Ensure next binary has execute permissions
+chmod +x ./node_modules/.bin/next
+
 ./node_modules/.bin/next build
 
 # Create production environment file

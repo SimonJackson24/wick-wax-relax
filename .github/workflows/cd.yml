@@ -90,6 +90,8 @@ jobs:
           # Build frontend for production
           echo "🔨 Building frontend..."
           cd ../frontend
+          # Ensure next binary has execute permissions
+          chmod +x ./node_modules/.bin/next
           ./node_modules/.bin/next build
 
           # Create production environment file
