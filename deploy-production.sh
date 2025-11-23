@@ -97,12 +97,12 @@ cd "$SCRIPT_DIR"
 # Install/update backend dependencies
 echo "📦 Installing backend dependencies..."
 cd backend
-npm ci --production=false
+npm install
 
 # Install/update frontend dependencies
 echo "📦 Installing frontend dependencies..."
 cd ../frontend
-npm ci --production=false
+npm install
 
 # Initialize PostgreSQL database with complete schema
 echo "🗄️ Initializing PostgreSQL database schema..."
