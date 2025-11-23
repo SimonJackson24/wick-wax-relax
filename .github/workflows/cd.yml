@@ -79,13 +79,13 @@ jobs:
           # Initialize PostgreSQL database with complete schema
           echo "🗄️ Initializing PostgreSQL database schema..."
           cd ../backend
-          DB_HOST=localhost \
-          DB_PORT=5432 \
-          DB_NAME=wick_wax_relax \
-          DB_USER=wick_wax_user \
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          NODE_ENV=production \
-          npm run db:init
+          env DB_HOST=localhost \
+              DB_PORT=5432 \
+              DB_NAME=wick_wax_relax \
+              DB_USER=wick_wax_user \
+              DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              NODE_ENV=production \
+              npm run db:init
 
           # Build frontend for production
           echo "🔨 Building frontend..."
