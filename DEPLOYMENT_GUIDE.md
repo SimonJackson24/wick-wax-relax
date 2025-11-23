@@ -169,9 +169,32 @@ After deploying the application, you'll need to perform these initial setup task
    - Update site information
    - Configure payment and shipping options
 
+## CloudPanel Deployment
+
+Use `deploy-production.sh` to perform an end-to-end CloudPanel deployment with Docker Compose. The script now generates the CloudPanel environment file if it does not exist and blocks deployment until you set a real domain.
+
+```bash
+# 1) Run the deployment script (first run will create /etc/wick-wax-relax/cloudpanel.env)
+./deploy-production.sh
+
+# 2) Edit the generated env file to set your real DOMAIN, DB credentials, and secrets
+sudo nano /etc/wick-wax-relax/cloudpanel.env
+
+# 3) Re-run deployment after updating the env file
+./deploy-production.sh
+```
+
+What the script does:
+
+1. Generates `/etc/wick-wax-relax/cloudpanel.env` from `cloudpanel.env.example` with secure random secrets when the file is missing.
+2. Validates that required variables are present and that `DOMAIN` is not the placeholder value before continuing.
+3. Builds and starts the Docker Compose stack defined in `docker-compose.cloudpanel.yml` using the env file.
+4. Waits for the backend health check to pass, runs migrations, seeds the admin user and products, and reloads Nginx.
+5. Prints URLs and log locations at the end of the run.
+
 ## Automated Deployment
 
-For automated deployment pipelines, you can include the migration steps in your deployment script:
+For automated deployment pipelines (outside CloudPanel), you can include the migration steps in your deployment script:
 
 ```bash
 #!/bin/bash
@@ -193,10 +216,6 @@ cd frontend && npm run build
 # Restart application
 pm2 restart wick-wax-relax-api
 ```
-
-## Docker Deployment
-
-If you're using Docker, you can include the migration in your Dockerfile:
 
 ```dockerfile
 # Backend Dockerfile example
