@@ -29,15 +29,18 @@ class DatabaseInitializer {
       // Read and execute schema files in order
       const schemaFiles = [
         '001_initial_schema.sql',
-        '002_product_categories.sql',
-        '003_user_accounts.sql',
-        '004_orders_and_payments.sql',
-        '005_inventory_tracking.sql',
-        '006_product_variants.sql',
+        '002_product_variants.sql',
+        '003_product_categories.sql',
+        '004_user_accounts.sql',
+        '005_order_items.sql',
+        '006_inventory_audit_log.sql',
         '007_product_images.sql',
-        '008_user_addresses.sql',
-        '009_audit_and_security.sql',
-        '010_gdpr_compliance.sql',
+        '007_add_refresh_token.sql',
+        '008_add_tracking_fields.sql',
+        '009_security_audit_log.sql',
+        '009_suppliers.sql',
+        '010_gdpr_consent_tracking.sql',
+        '010_platform_settings.sql',
         '011_performance_indexes.sql',
         '012_hierarchical_categories.sql'
       ];
