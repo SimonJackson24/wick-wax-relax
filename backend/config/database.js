@@ -22,6 +22,25 @@ const initializeDb = async () => {
     return pool;
   } catch (error) {
     console.error('Failed to connect to database:', error);
+    
+    // Provide detailed connection error information
+    if (error.code === '28P01') {
+      console.error('🔐 Authentication failed. Please check:');
+      console.error('   - Database user exists');
+      console.error('   - Password is correct');
+      console.error('   - User has privileges for the database');
+      console.error('   - pg_hba.conf allows password authentication');
+    } else if (error.code === 'ECONNREFUSED') {
+      console.error('🔌 Connection refused. Please check:');
+      console.error('   - PostgreSQL server is running');
+      console.error('   - Host and port are correct');
+      console.error('   - Firewall is not blocking the connection');
+    } else if (error.code === '3D000') {
+      console.error('🗄️ Database does not exist. Please check:');
+      console.error('   - Database name is correct');
+      console.error('   - Database has been created');
+    }
+    
     throw error;
   }
 };

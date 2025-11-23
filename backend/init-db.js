@@ -26,6 +26,9 @@ class DatabaseInitializer {
     try {
       console.log('Initializing PostgreSQL database...');
 
+      // Test database connection first
+      await this.testConnection();
+
       // Read and execute schema files in order
       const schemaFiles = [
         '001_initial_schema.sql',
@@ -57,6 +60,31 @@ class DatabaseInitializer {
 
     } catch (error) {
       console.error('❌ Database initialization failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test database connection before proceeding
+   */
+  async testConnection() {
+    const { initializeDb } = require('./config/database');
+    
+    try {
+      console.log('🧪 Testing database connection...');
+      await initializeDb();
+      console.log('✅ Database connection successful');
+    } catch (error) {
+      console.error('❌ Database connection failed:', error.message);
+      
+      // Provide helpful debugging information
+      console.log('🔍 Connection details:');
+      console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
+      console.log(`   Port: ${process.env.DB_PORT || '5432'}`);
+      console.log(`   Database: ${process.env.DB_NAME || 'wick_wax_relax'}`);
+      console.log(`   User: ${process.env.DB_USER || 'wick_wax_user'}`);
+      console.log(`   Password: ${process.env.DB_PASSWORD ? '[SET]' : '[NOT SET]'}`);
+      
       throw error;
     }
   }
