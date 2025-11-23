@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Debug mode - uncomment to enable debugging
+# set -x
+
 # Autonomous Docker Deployment Script for Wick Wax Relax
 # Performs complete environment assessment, service orchestration, and credential management
 
