@@ -1,4 +1,3 @@
-<<<<<<< ours
 # Environment files
 .cloudpanel.env
 cloudpanel.env
@@ -11,7 +10,7 @@ deploy-production.sh
 
 # CloudPanel specific
 cloudpanel/
-=======
+
 # Node.js
 node_modules/
 npm-debug.log
@@ -58,4 +57,3 @@ jspm_packages/
 
 # Generated Nginx config for CloudPanel deployments
 cloudpanel/nginx/wick-wax.conf
->>>>>>> theirs
