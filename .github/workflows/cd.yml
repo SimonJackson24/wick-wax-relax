@@ -1,0 +1,153 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to Cloudpanel VPS
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          set -e
+
+          echo "🚀 Starting fully automated deployment of Wick Wax Relax"
+
+          # Check if PostgreSQL is installed, install if not
+          echo "🔍 Checking PostgreSQL installation..."
+          if ! command -v psql &> /dev/null; then
+            echo "📦 Installing PostgreSQL..."
+            sudo apt update
+            sudo apt install -y postgresql postgresql-contrib
+
+            # Start and enable PostgreSQL
+            sudo systemctl start postgresql
+            sudo systemctl enable postgresql
+
+            echo "✅ PostgreSQL installed and started"
+          else
+            echo "✅ PostgreSQL already installed"
+          fi
+
+          # Create database and user if they don't exist
+          echo "🗄️ Setting up PostgreSQL database and user..."
+          sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname = 'wick_wax_user';" | grep -q 1 || \
+            sudo -u postgres psql -c "CREATE USER wick_wax_user WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+
+          sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = 'wick_wax_relax';" | grep -q 1 || \
+            sudo -u postgres psql -c "CREATE DATABASE wick_wax_relax OWNER wick_wax_user;"
+
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE wick_wax_relax TO wick_wax_user;"
+
+          echo "✅ PostgreSQL database and user configured"
+
+          # Navigate to project directory
+          cd /home/wickwaxrelax/htdocs/www.wickwaxrelax.co.uk
+
+          # Pull latest changes
+          echo "📥 Pulling latest code..."
+          git pull origin main
+
+          # Install/update backend dependencies
+          echo "📦 Installing backend dependencies..."
+          cd backend
+          npm ci --production=false
+
+          # Install/update frontend dependencies
+          echo "📦 Installing frontend dependencies..."
+          cd ../frontend
+          npm ci --production=false
+
+          # Initialize PostgreSQL database with complete schema
+          echo "🗄️ Initializing PostgreSQL database schema..."
+          cd ../backend
+          npm run db:init
+
+          # Build frontend for production
+          echo "🔨 Building frontend..."
+          cd ../frontend
+          npm run build
+
+          # Create production environment file
+          echo "📝 Creating production environment file..."
+          cat > ../backend/.env << ENVEOF
+          NODE_ENV=production
+          PORT=3001
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_NAME=wick_wax_relax
+          DB_USER=wick_wax_user
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          ENVEOF
+
+          # Install PM2 if not installed
+          echo "🔧 Checking PM2 installation..."
+          if ! command -v pm2 &> /dev/null; then
+            echo "📦 Installing PM2..."
+            sudo npm install -g pm2
+          fi
+
+          # Restart application
+          echo "🔄 Restarting application..."
+          pm2 stop wick-wax-relax-api 2>/dev/null || true
+          pm2 delete wick-wax-relax-api 2>/dev/null || true
+          pm2 start server.js --name wick-wax-relax-api
+
+          # Wait for application to start
+          echo "⏳ Waiting for application to start..."
+          sleep 15
+
+          # Health check with retry
+          echo "🏥 Running health check..."
+          for i in {1..5}; do
+            if curl -f http://localhost:3001/api/health >/dev/null 2>&1; then
+              echo "✅ Deployment successful!"
+              echo "🌐 Frontend: https://www.wickwaxrelax.co.uk"
+              echo "🔗 Backend API: https://www.wickwaxrelax.co.uk/api"
+              echo ""
+              echo "🔐 Admin Login Credentials:"
+              echo "   Email: admin@wickwaxrelax.co.uk"
+              echo "   Password: admin123"
+              echo ""
+              echo "⚠️  IMPORTANT: Change the default admin password immediately!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 5 seconds..."
+            sleep 5
+          done
+
+          echo "❌ Health check failed after 5 attempts"
+          pm2 stop wick-wax-relax-api
+          exit 1
+        EOF
+
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "✅ Deployment completed successfully"
+        echo "🔐 Admin credentials provided in deployment output"
+
+    - name: Notify deployment failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed"

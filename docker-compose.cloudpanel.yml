@@ -17,7 +17,7 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - REDIS_URL=redis://redis:6379
     volumes:
-      - cloudpanel_public:/srv/cloudpanel/htdocs/${DOMAIN}/public
+      - ${CLOUDPANEL_PUBLIC_PATH}:${CLOUDPANEL_PUBLIC_PATH}
       - backend_node_modules:/app/node_modules
     networks:
       - app_network
@@ -32,7 +32,7 @@ services:
     environment:
       - NODE_ENV=production
     volumes:
-      - cloudpanel_public:/srv/cloudpanel/htdocs/${DOMAIN}/public
+      - ${CLOUDPANEL_PUBLIC_PATH}:${CLOUDPANEL_PUBLIC_PATH}
       - frontend_node_modules:/app/node_modules
     networks:
       - app_network
@@ -58,8 +58,8 @@ services:
   nginx:
     image: nginx:1.21-alpine
     volumes:
-      - ./cloudpanel/nginx:/etc/nginx/conf.d
-      - cloudpanel_public:/srv/cloudpanel/htdocs/${DOMAIN}/public
+      - ./cloudpanel/nginx/wick-wax.conf:/etc/nginx/conf.d/wick-wax.conf
+      - ${CLOUDPANEL_PUBLIC_PATH}:${CLOUDPANEL_PUBLIC_PATH}
       - /srv/cloudpanel/logs:/var/log/nginx
       - /etc/letsencrypt:/etc/letsencrypt
     ports:
@@ -69,7 +69,6 @@ services:
       - app_network
 
 volumes:
-  cloudpanel_public:
   backend_node_modules:
   frontend_node_modules:
   postgres_data:

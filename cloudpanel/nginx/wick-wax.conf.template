@@ -14,9 +14,9 @@ server {
     error_log /srv/cloudpanel/logs/wick-wax-error.log;
 
     location / {
-        root /srv/cloudpanel/htdocs/${DOMAIN}/public/frontend;
+        root ${CLOUDPANEL_PUBLIC_PATH}/frontend;
         try_files $uri $uri/ /_next/static/$uri;
-        
+
         # Security headers
         add_header X-Frame-Options "SAMEORIGIN";
         add_header X-Content-Type-Options "nosniff";
@@ -38,6 +38,6 @@ server {
     }
 
     location /.well-known/acme-challenge/ {
-        root /srv/cloudpanel/htdocs/${DOMAIN}/public;
+        root ${CLOUDPANEL_PUBLIC_PATH};
     }
 }

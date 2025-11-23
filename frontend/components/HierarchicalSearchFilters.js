@@ -21,7 +21,7 @@ import {
   useMediaQuery,
   TreeView,
   TreeItem,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   ExpandMore as ExpandMoreIcon,
   FilterList as FilterIcon,

@@ -1,0 +1,65 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\.fdd78adb5ca954b0857c5aa9f53866b88d871b9b-audit.json",
+    "files": [
+        {
+            "date": 1757848858063,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-14.log",
+            "hash": "ad14e5923c759633c62d4eada888fbc89d6867bbcdf9c3474a0e0a3364f33542"
+        },
+        {
+            "date": 1757950933901,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-15.log",
+            "hash": "5cc83fe3a308f48f13e02a00819ea4472805630cbb12116c350b62dd91e705fb"
+        },
+        {
+            "date": 1758059031582,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-16.log",
+            "hash": "3477b8ceb3322114fb383a2338e961e3efabd889519a79ddf89f7adc87eea638"
+        },
+        {
+            "date": 1758071341829,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-17.log",
+            "hash": "60628a08ea3834c4bb30cff09681cb296b899be3b51f3ae59d34b97f3cf7dbff"
+        },
+        {
+            "date": 1758220010920,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-18.log",
+            "hash": "cc9b2c67f54c2866667eaae2177b2e80d16f8994dff46974fe09621c5b07daf4"
+        },
+        {
+            "date": 1758402136919,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-20.log",
+            "hash": "a486c2edb2b4c75ab38032b8b4b1004a5a2223cb918e9913f29884c14302d058"
+        },
+        {
+            "date": 1758444738017,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-21.log",
+            "hash": "778f52fe98cf9bef0d73d4f273c9a63c2f3775f06d71d5be24d48d01cc7f4ed3"
+        },
+        {
+            "date": 1758495812062,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-22.log",
+            "hash": "e80fe0ef5f6002ffcc027ec0e2ffee578dfbd4f27a33dfa7c0f318ceb21ef936"
+        },
+        {
+            "date": 1758582090340,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-23.log",
+            "hash": "6a2aa1704ed66bf23457efe7d8e0cb74d4db0b41efb719160cfbf5ed9286ed6a"
+        },
+        {
+            "date": 1758910862689,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-26.log",
+            "hash": "465d004731628b01a1642cde580aec861a807d8e1590ab508bfcfe711e91f677"
+        },
+        {
+            "date": 1758960655991,
+            "name": "c:\\Users\\Simon\\CascadeProjects\\Wick Wax Relax\\backend\\logs\\http-2025-09-27.log",
+            "hash": "67dcdd8c7dbff26fa66e8a2290e2efac312ba8c4b6b85aae73fee08dfc27be0c"
+        }
+    ],
+    "hashType": "sha256"
+}
