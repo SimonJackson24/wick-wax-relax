@@ -91,14 +91,29 @@ fi
 # Create database and user
 echo "🗄️ Setting up PostgreSQL database and user..."
 sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname = '${DB_USER}';" | grep -q 1 || \
-    sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
+    sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}' LOGIN;"
 
 sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}';" | grep -q 1 || \
     sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};"
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
 
-print_status "PostgreSQL database and user configured"
+# Test database connection with the new user
+echo "🧪 Testing database connection..."
+if PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U "${DB_USER}" -d "${DB_NAME}" -c "SELECT 1;" >/dev/null 2>&1; then
+    print_status "PostgreSQL database and user configured successfully"
+else
+    print_error "Failed to connect to PostgreSQL with the new user"
+    echo "This is likely due to PostgreSQL authentication configuration."
+    echo "Trying alternative approach: creating .pgpass file for authentication..."
+    
+    # Create .pgpass file for PostgreSQL authentication
+    echo "localhost:5432:${DB_NAME}:${DB_USER}:${DB_PASSWORD}" > ~/.pgpass
+    chmod 600 ~/.pgpass
+    export PGPASSFILE=~/.pgpass
+    
+    print_status "Created .pgpass file for PostgreSQL authentication"
+fi
 
 # Navigate to project directory (assume we're in the project root)
 cd "$SCRIPT_DIR"
@@ -116,13 +131,16 @@ npm install
 # Initialize PostgreSQL database with complete schema
 echo "🗄️ Initializing PostgreSQL database schema..."
 cd ../backend
-env DB_HOST=localhost \
-    DB_PORT=5432 \
-    DB_NAME=${DB_NAME} \
-    DB_USER=${DB_USER} \
-    DB_PASSWORD=${DB_PASSWORD} \
-    NODE_ENV=production \
-    npm run db:init
+
+# Set up environment for database initialization
+DB_ENV="DB_HOST=localhost DB_PORT=5432 DB_NAME=${DB_NAME} DB_USER=${DB_USER} DB_PASSWORD=${DB_PASSWORD} NODE_ENV=production"
+
+# Check if .pgpass file exists and include it in the environment
+if [ -f ~/.pgpass ]; then
+    DB_ENV="$DB_ENV PGPASSFILE=~/.pgpass"
+fi
+
+env $DB_ENV npm run db:init
 
 # Build frontend for production
 echo "🔨 Building frontend..."
@@ -154,7 +172,23 @@ print_status "Production environment file created"
 echo "🔧 Checking PM2 installation..."
 if ! command -v pm2 &> /dev/null; then
     echo "📦 Installing PM2..."
-    sudo npm install -g pm2
+    # Use the full path to npm or install without sudo if possible
+    if command -v npm &> /dev/null; then
+        # Try installing PM2 as current user first
+        npm install -g pm2
+    else
+        # Find npm path and use sudo with full path
+        NPM_PATH=$(which npm 2>/dev/null || echo "/usr/bin/npm")
+        if [ -f "$NPM_PATH" ]; then
+            sudo "$NPM_PATH" install -g pm2
+        else
+            # Fallback: install nodejs and npm if not available
+            echo "⚠️  npm not found, installing Node.js and npm..."
+            sudo apt update
+            sudo apt install -y nodejs npm
+            sudo npm install -g pm2
+        fi
+    fi
 fi
 
 # Restart application
