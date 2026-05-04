@@ -42,8 +42,8 @@ function MyApp({ Component, pageProps }) {
 
                   {/* Performance optimization meta tags */}
                   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
-                  <meta name="theme-color" content="#1976d2" />
-                  <meta name="msapplication-TileColor" content="#1976d2" />
+        <meta name="theme-color" content="#C8B6DB" />
+        <meta name="msapplication-TileColor" content="#C8B6DB" />
 
                   {/* Preload critical resources */}
                   <link rel="preload" href="/images/hero-image.webp" as="image" />

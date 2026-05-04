@@ -9,17 +9,14 @@ import {
   Drawer,
   List,
   ListItem,
-  ListItemText,
   useTheme,
   useMediaQuery,
   Container,
   Badge,
-  Fab,
   useScrollTrigger,
-  Slide,
-  Fade
+  Slide
 } from '@mui/material';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
@@ -29,7 +26,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import SkipLink from './SkipLink';
 
-// Throttle function for performance
 const throttle = (func, limit) => {
   let inThrottle;
   return function(...args) {
@@ -54,19 +50,17 @@ const Navigation = () => {
   const firstFocusableRef = useRef(null);
   const lastFocusableRef = useRef(null);
 
-  // Use MUI's scroll trigger for better performance
   const trigger = useScrollTrigger({
     disableHysteresis: true,
     threshold: 50,
   });
 
-  // Navigation links with better organization
   const navLinks = [
-    { name: 'Home', href: '#home', icon: null },
-    { name: 'Products', href: '#products', icon: null },
-    { name: 'Categories', href: '#categories', icon: null },
-    { name: 'About', href: '#about', icon: null },
-    { name: 'Contact', href: '#contact', icon: null },
+    { name: 'Home', href: '/', icon: null },
+    { name: 'Products', href: '/products', icon: null },
+    { name: 'Categories', href: '/category/wax-melts', icon: null },
+    { name: 'About', href: '/#about', icon: null },
+    { name: 'Contact', href: '/#contact', icon: null },
   ];
 
   const userLinks = [
@@ -74,15 +68,12 @@ const Navigation = () => {
     { name: 'Orders', href: '/account/orders', icon: null },
   ];
 
-  // Set client-side flag
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Handle focus trap in mobile drawer
   useEffect(() => {
     if (mobileOpen && drawerRef.current) {
-      // Get all focusable elements
       const focusableElements = drawerRef.current.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
@@ -90,47 +81,38 @@ const Navigation = () => {
       if (focusableElements.length > 0) {
         firstFocusableRef.current = focusableElements[0];
         lastFocusableRef.current = focusableElements[focusableElements.length - 1];
-        // Focus first element
         firstFocusableRef.current.focus();
       }
     }
   }, [mobileOpen]);
 
-  // Handle keyboard navigation in drawer
   const handleDrawerKeyDown = useCallback((e) => {
     if (e.key === 'Tab') {
-      // Tab key pressed
       if (e.shiftKey) {
-        // Shift + Tab
         if (document.activeElement === firstFocusableRef.current) {
           e.preventDefault();
           lastFocusableRef.current?.focus();
         }
       } else {
-        // Tab
         if (document.activeElement === lastFocusableRef.current) {
           e.preventDefault();
           firstFocusableRef.current?.focus();
         }
       }
     } else if (e.key === 'Escape') {
-      // Escape key pressed
       setMobileOpen(false);
     }
   }, []);
 
-  // Optimized scroll handler with throttling
   const handleScroll = useCallback(
     throttle(() => {
       if (!isClient) return;
 
       try {
-        // Update active section based on scroll position
         const sections = navLinks
           .filter(link => link.href.startsWith('#'))
           .map(link => link.href.substring(1));
 
-        // Check current page first
         if (router.pathname === '/account/orders') {
           setActiveSection('orders');
           return;
@@ -140,13 +122,12 @@ const Navigation = () => {
           return;
         }
 
-        // Find active section based on scroll position
         let currentSection = 'home';
         for (const section of sections) {
           const element = document.getElementById(section);
           if (element) {
             const rect = element.getBoundingClientRect();
-            const navHeight = 80; // Approximate nav height
+            const navHeight = 80;
             if (rect.top <= navHeight + 50 && rect.bottom >= navHeight) {
               currentSection = section;
               break;
@@ -161,24 +142,21 @@ const Navigation = () => {
     [isClient, router.pathname, navLinks]
   );
 
-  // Set up scroll listener
   useEffect(() => {
     if (!isClient) return;
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [handleScroll, isClient]);
 
-  // Handle mobile menu toggle
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Handle smooth scrolling to sections
   const scrollToSection = useCallback((href) => {
     if (!isClient) return;
 
@@ -200,13 +178,11 @@ const Navigation = () => {
       }
     }
 
-    // Close mobile menu
     if (mobileOpen) {
       setMobileOpen(false);
     }
   }, [isClient, isMobile, mobileOpen]);
 
-  // Check if link is active
   const isLinkActive = useCallback((link) => {
     if (!isClient) return false;
 
@@ -225,25 +201,16 @@ const Navigation = () => {
     return false;
   }, [activeSection, router.pathname, isClient]);
 
-  // Animation variants
   const logoVariants = {
     initial: { opacity: 0, x: -20 },
     animate: { opacity: 1, x: 0 },
     transition: { duration: 0.5 }
   };
 
-  const navItemVariants = {
-    initial: { opacity: 0, y: -10 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.3 }
-  };
-
   return (
     <>
-      {/* Skip to main content link */}
       <SkipLink href="#main-content">Skip to main content</SkipLink>
 
-      {/* Hide/show animation for the entire nav bar */}
       <Slide appear={false} direction="down" in={!trigger}>
         <AppBar
           ref={navRef}
@@ -252,8 +219,8 @@ const Navigation = () => {
           elevation={trigger ? 4 : 0}
           sx={{
             backgroundColor: trigger
-              ? 'rgba(255, 255, 255, 0.95)'
-              : 'rgba(26, 26, 46, 0.9)',
+              ? 'rgba(250, 248, 243, 0.97)'
+              : 'rgba(62, 44, 31, 0.97)',
             backdropFilter: 'blur(20px)',
             borderBottom: trigger ? '1px solid rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -269,7 +236,6 @@ const Navigation = () => {
                 py: 1,
               }}
             >
-              {/* Logo Section */}
               <Box
                 component={motion.div}
                 {...logoVariants}
@@ -312,8 +278,8 @@ const Navigation = () => {
                         fontWeight: 700,
                         fontSize: { xs: '1.1rem', md: '1.4rem' },
                         background: trigger
-                          ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-                          : 'linear-gradient(135deg, #ffd700 0%, #ffb347 100%)',
+                          ? 'linear-gradient(135deg, #3E2C1F 0%, #5C4033 100%)'
+                          : 'linear-gradient(135deg, #E6C88A 0%, #D4A853 100%)',
                         backgroundClip: 'text',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
@@ -326,7 +292,6 @@ const Navigation = () => {
                 </Link>
               </Box>
 
-              {/* Desktop Navigation */}
               <Box
                 component={motion.div}
                 initial={{ opacity: 0, y: -10 }}
@@ -350,7 +315,7 @@ const Navigation = () => {
                           aria-current={isLinkActive(link) ? 'page' : undefined}
                           sx={{
                             color: isLinkActive(link)
-                              ? (trigger ? theme.palette.primary.main : '#ffd700')
+                              ? (trigger ? '#E6C88A' : '#E6C88A')
                               : (trigger ? theme.palette.text.primary : theme.palette.common.white),
                             fontWeight: isLinkActive(link) ? 600 : 500,
                             fontSize: '0.95rem',
@@ -362,12 +327,12 @@ const Navigation = () => {
                             transition: 'all 0.3s ease',
                             '&:hover': {
                               backgroundColor: trigger
-                                ? 'rgba(25, 118, 210, 0.08)'
-                                : 'rgba(255, 215, 0, 0.1)',
+                                ? 'rgba(200, 182, 219, 0.15)'
+                                : 'rgba(230, 200, 138, 0.12)',
                               transform: 'translateY(-1px)',
                               color: isLinkActive(link)
-                                ? (trigger ? theme.palette.primary.main : '#ffd700')
-                                : (trigger ? theme.palette.primary.main : '#ffd700'),
+                                ? (trigger ? '#E6C88A' : '#E6C88A')
+                                : (trigger ? theme.palette.text.primary : '#E6C88A'),
                             },
                             '&::after': isLinkActive(link) ? {
                               content: '""',
@@ -377,7 +342,7 @@ const Navigation = () => {
                               transform: 'translateX(-50%)',
                               width: '40%',
                               height: '3px',
-                              backgroundColor: trigger ? theme.palette.primary.main : '#ffd700',
+                              backgroundColor: trigger ? '#C8B6DB' : '#E6C88A',
                               borderRadius: '2px',
                             } : {},
                           }}
@@ -390,7 +355,6 @@ const Navigation = () => {
                 </nav>
               </Box>
 
-              {/* User Actions */}
               <Box
                 component={motion.div}
                 initial={{ opacity: 0, x: 20 }}
@@ -402,7 +366,6 @@ const Navigation = () => {
                   gap: 1
                 }}
               >
-                {/* Account Links - Desktop */}
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
                   {userLinks.map((link) => (
                     <Button
@@ -420,8 +383,8 @@ const Navigation = () => {
                         borderRadius: '12px',
                         '&:hover': {
                           backgroundColor: trigger
-                            ? 'rgba(25, 118, 210, 0.08)'
-                            : 'rgba(255, 215, 0, 0.1)',
+                            ? 'rgba(200, 182, 219, 0.12)'
+                            : 'rgba(230, 200, 138, 0.12)',
                         }
                       }}
                     >
@@ -430,7 +393,6 @@ const Navigation = () => {
                   ))}
                 </Box>
 
-                {/* Cart Button */}
                 <IconButton
                   component={Link}
                   href="/checkout"
@@ -438,15 +400,15 @@ const Navigation = () => {
                   sx={{
                     color: trigger ? theme.palette.text.primary : theme.palette.common.white,
                     backgroundColor: trigger
-                      ? 'rgba(25, 118, 210, 0.1)'
-                      : 'rgba(255, 215, 0, 0.2)',
+                      ? 'rgba(200, 182, 219, 0.18)'
+                      : 'rgba(230, 200, 138, 0.2)',
                     p: { xs: 1.5, md: 2 },
                     borderRadius: '16px',
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       backgroundColor: trigger
-                        ? 'rgba(25, 118, 210, 0.2)'
-                        : 'rgba(255, 215, 0, 0.3)',
+                        ? 'rgba(200, 182, 219, 0.28)'
+                        : 'rgba(230, 200, 138, 0.3)',
                       transform: 'scale(1.05)',
                     }
                   }}
@@ -466,7 +428,6 @@ const Navigation = () => {
                   </Badge>
                 </IconButton>
 
-                {/* Mobile Menu Button */}
                 <IconButton
                   color="inherit"
                   aria-label="open navigation menu"
@@ -481,8 +442,8 @@ const Navigation = () => {
                     borderRadius: '12px',
                     '&:hover': {
                       backgroundColor: trigger
-                        ? 'rgba(25, 118, 210, 0.08)'
-                        : 'rgba(255, 215, 0, 0.1)',
+                        ? 'rgba(200, 182, 219, 0.12)'
+                        : 'rgba(230, 200, 138, 0.12)',
                     }
                   }}
                 >
@@ -494,7 +455,6 @@ const Navigation = () => {
         </AppBar>
       </Slide>
 
-      {/* Mobile Navigation Drawer */}
       <Drawer
         anchor="right"
         open={mobileOpen}
@@ -509,9 +469,9 @@ const Navigation = () => {
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: '280px',
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            background: 'linear-gradient(135deg, #3E2C1F 0%, #5C4033 100%)',
             backdropFilter: 'blur(20px)',
-            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            borderLeft: '1px solid rgba(230, 200, 138, 0.15)',
           },
         }}
       >
@@ -524,14 +484,13 @@ const Navigation = () => {
           role="navigation"
           aria-label="Mobile navigation menu"
         >
-          {/* Header */}
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               p: 3,
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              borderBottom: '1px solid rgba(230, 200, 138, 0.15)',
             }}
           >
             <Typography
@@ -539,7 +498,7 @@ const Navigation = () => {
               sx={{
                 fontFamily: '"Playfair Display", serif',
                 fontWeight: 700,
-                color: '#ffd700',
+                color: '#E6C88A',
                 fontSize: '1.3rem',
               }}
             >
@@ -550,7 +509,7 @@ const Navigation = () => {
               sx={{
                 color: theme.palette.common.white,
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                  backgroundColor: 'rgba(230, 200, 138, 0.1)',
                 }
               }}
               aria-label="close navigation menu"
@@ -559,10 +518,8 @@ const Navigation = () => {
             </IconButton>
           </Box>
 
-          {/* Navigation Links */}
           <Box sx={{ flexGrow: 1, p: 2 }}>
             <List sx={{ pt: 2 }} component="ul">
-              {/* Main Navigation */}
               {navLinks.map((link, index) => (
                 <ListItem key={link.name} disablePadding sx={{ mb: 1 }} component="li">
                   <Button
@@ -573,7 +530,7 @@ const Navigation = () => {
                     aria-current={isLinkActive(link) ? 'page' : undefined}
                     sx={{
                       justifyContent: 'flex-start',
-                      color: isLinkActive(link) ? '#ffd700' : theme.palette.common.white,
+                      color: isLinkActive(link) ? '#E6C88A' : theme.palette.common.white,
                       fontWeight: isLinkActive(link) ? 600 : 400,
                       fontSize: '1.1rem',
                       py: 2,
@@ -583,8 +540,8 @@ const Navigation = () => {
                       borderRadius: '12px',
                       transition: 'all 0.3s ease',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        color: '#ffd700',
+                        backgroundColor: 'rgba(230, 200, 138, 0.1)',
+                        color: '#E6C88A',
                         transform: 'translateX(4px)',
                       },
                       '&::before': isLinkActive(link) ? {
@@ -595,7 +552,7 @@ const Navigation = () => {
                         transform: 'translateY(-50%)',
                         width: '4px',
                         height: '60%',
-                        backgroundColor: '#ffd700',
+                        backgroundColor: '#E6C88A',
                         borderRadius: '2px',
                       } : {},
                     }}
@@ -605,10 +562,8 @@ const Navigation = () => {
                 </ListItem>
               ))}
 
-              {/* Divider */}
-              <Box sx={{ my: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }} />
+              <Box sx={{ my: 3, borderTop: '1px solid rgba(230, 200, 138, 0.15)' }} />
 
-              {/* User Links */}
               {userLinks.map((link) => (
                 <ListItem key={link.name} disablePadding sx={{ mb: 1 }} component="li">
                   <Button
@@ -627,8 +582,8 @@ const Navigation = () => {
                       textTransform: 'none',
                       borderRadius: '12px',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        color: '#ffd700',
+                        backgroundColor: 'rgba(230, 200, 138, 0.1)',
+                        color: '#E6C88A',
                       },
                     }}
                   >
@@ -639,11 +594,10 @@ const Navigation = () => {
             </List>
           </Box>
 
-          {/* Footer */}
           <Box
             sx={{
               p: 3,
-              borderTop: '1px solid rgba(255,255,255,0.1)',
+              borderTop: '1px solid rgba(230, 200, 138, 0.15)',
               textAlign: 'center',
             }}
           >
@@ -660,7 +614,6 @@ const Navigation = () => {
         </Box>
       </Drawer>
 
-      {/* Spacer to prevent content from being hidden under fixed header */}
       <Box sx={{
         height: { xs: 64, md: 80 }
       }} />

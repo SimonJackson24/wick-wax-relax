@@ -19,9 +19,8 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  TreeView,
-  TreeItem,
-} from '@mui/lab';
+} from '@mui/material';
+import { TreeView, TreeItem } from '@mui/lab';
 import {
   ExpandMore as ExpandMoreIcon,
   FilterList as FilterIcon,
