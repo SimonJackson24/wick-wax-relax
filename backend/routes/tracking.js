@@ -20,7 +20,13 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', (err, user) => {
+  // SECURITY: Fail if JWT_SECRET is not configured
+  if (!process.env.JWT_SECRET) {
+    console.error('SECURITY ERROR: JWT_SECRET environment variable is not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
@@ -180,7 +186,8 @@ router.post('/webhook/royal-mail', async (req, res) => {
     //   return res.status(401).json({ error: 'Invalid webhook signature' });
     // }
 
-    console.log('Royal Mail webhook received:', { trackingNumber, status, location, timestamp, orderId });
+    // Log webhook receipt with sanitized info
+    console.log('Royal Mail webhook received for tracking:', trackingNumber ? 'yes' : 'no', ', orderId:', orderId ? 'yes' : 'no');
 
     // Find order by tracking number if orderId not provided
     let targetOrderId = orderId;

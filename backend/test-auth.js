@@ -8,7 +8,13 @@ async function testAuth() {
 
     // Test JWT secret consistency
     const testPayload = { userId: 1, email: 'test@example.com' };
-    const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production';
+    // SECURITY: Fail if JWT_SECRET is not configured (required for production)
+    if (!process.env.JWT_SECRET) {
+      console.error('SECURITY ERROR: JWT_SECRET environment variable is not configured');
+      console.error('Please set JWT_SECRET before running tests.');
+      process.exit(1);
+    }
+    const secret = process.env.JWT_SECRET;
 
     console.log('JWT_SECRET from env:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
     console.log('Using secret:', secret);
