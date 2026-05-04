@@ -7,7 +7,6 @@ import {
   Paper,
   TextField,
   Button,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
@@ -18,90 +17,55 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
-  Star as StarIcon,
-  LocalOffer as LocalOfferIcon,
-  Cake as CakeIcon
+  CardGiftcard as GiftIcon,
+  Email as EmailIcon,
+  LocalOffer as OfferIcon,
+  Spa as SpaIcon
 } from '@mui/icons-material';
 
-const NewCustomerCTA = () => {
+const benefits = [
+  { id: 'discount', icon: OfferIcon, text: '10% off your first order' },
+  { id: 'early-access', icon: GiftIcon, text: 'Early access to new scents' },
+  { id: 'exclusive', icon: SpaIcon, text: 'Exclusive subscriber-only offers' }
+];
+
+const NewsletterSignup = () => {
   const theme = useTheme();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const validateForm = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const newErrors = {};
-    
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Please enter a valid email';
     }
-    
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      // Handle registration logic
-      console.log('Register with:', email, password);
-      setSuccessMessage('Account created successfully! Welcome to Wick Wax Relax.');
-      setShowSuccess(true);
-      
-      // Reset form
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setErrors({});
+    if (Object.keys(newErrors).length === 0) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setSuccessMessage('Welcome! Check your inbox for your 10% discount code.');
+        setShowSuccess(true);
+        setEmail('');
+        setErrors({});
+        setIsLoading(false);
+      }, 1000);
     }
-  };
-
-  const handleSocialLogin = (provider) => {
-    console.log(`Login with ${provider}`);
-    // Implement social login logic
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
   };
 
   const itemVariants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6
-      }
-    }
-  };
-
-  const handleCloseSuccess = () => {
-    setShowSuccess(false);
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
   };
 
   return (
@@ -113,46 +77,88 @@ const NewCustomerCTA = () => {
             xs={12}
             md={6}
             component={motion.div}
-            variants={itemVariants}
+            variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <Typography
-              variant="h3"
-              component="h2"
-              gutterBottom
-              sx={{
-                fontFamily: '"Playfair Display", serif',
-                fontWeight: 400,
-                color: theme.palette.text.primary
-              }}
-            >
-              Join the Wick Wax Relax Family
-            </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Create an account to enjoy exclusive benefits and be the first to know about new products and special offers.
-            </Typography>
+            <motion.div variants={itemVariants}>
+              <Box
+                sx={{
+                  display: 'inline-block',
+                  backgroundColor: `${theme.palette.secondary.main}20`,
+                  borderRadius: 2,
+                  px: 2,
+                  py: 0.5,
+                  mb: 2
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.secondary.dark,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em'
+                  }}
+                >
+                  Join the Family
+                </Typography>
+              </Box>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Typography
+                variant="h3"
+                component="h2"
+                gutterBottom
+                sx={{
+                  fontFamily: '"Playfair Display", serif',
+                  fontWeight: 400,
+                  color: theme.palette.text.primary,
+                  fontSize: { xs: '1.75rem', md: '2.25rem' }
+                }}
+              >
+                Get 10% Off Your First Order
+              </Typography>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 3 }}>
+                Subscribe to our newsletter and be the first to know about new scents, 
+                exclusive offers, and relaxation tips delivered straight to your inbox.
+              </Typography>
+            </motion.div>
 
             <List>
-              <ListItem>
-                <ListItemIcon>
-                  <StarIcon sx={{ color: theme.palette.secondary.main }} />
-                </ListItemIcon>
-                <ListItemText primary="Earn points with every purchase" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <LocalOfferIcon sx={{ color: theme.palette.secondary.main }} />
-                </ListItemIcon>
-                <ListItemText primary="Receive exclusive member discounts" />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <CakeIcon sx={{ color: theme.palette.secondary.main }} />
-                </ListItemIcon>
-                <ListItemText primary="Special birthday gift" />
-              </ListItem>
+              {benefits.map((benefit) => {
+                const IconComponent = benefit.icon;
+                return (
+                  <motion.div key={benefit.id} variants={itemVariants}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            backgroundColor: `${theme.palette.primary.main}20`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <IconComponent sx={{ fontSize: 18, color: theme.palette.primary.main }} />
+                        </Box>
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={benefit.text}
+                        primaryTypographyProps={{ variant: 'body1', fontWeight: 500 }}
+                      />
+                    </ListItem>
+                  </motion.div>
+                );
+              })}
             </List>
           </Grid>
 
@@ -170,11 +176,19 @@ const NewCustomerCTA = () => {
               sx={{
                 p: 4,
                 borderRadius: 3,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                backgroundColor: 'white'
               }}
             >
-              <Typography variant="h5" gutterBottom>
-                Create Your Account
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <EmailIcon sx={{ color: theme.palette.primary.main }} />
+                <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
+                  Get Your 10% Off
+                </Typography>
+              </Box>
+
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Enter your email below and we'll send your exclusive discount code right away.
               </Typography>
 
               <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
@@ -188,28 +202,7 @@ const NewCustomerCTA = () => {
                   required
                   error={!!errors.email}
                   helperText={errors.email}
-                />
-                <TextField
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  margin="normal"
-                  required
-                  error={!!errors.password}
-                  helperText={errors.password}
-                />
-                <TextField
-                  fullWidth
-                  label="Confirm Password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  margin="normal"
-                  required
-                  error={!!errors.confirmPassword}
-                  helperText={errors.confirmPassword}
+                  disabled={isLoading}
                 />
 
                 <Button
@@ -219,52 +212,25 @@ const NewCustomerCTA = () => {
                   component={motion.button}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  disabled={isLoading}
                   sx={{
                     mt: 3,
                     mb: 2,
                     py: 1.5,
                     backgroundColor: theme.palette.primary.main,
                     color: theme.palette.text.primary,
-                    '&:hover': {
-                      backgroundColor: theme.palette.primary.dark
-                    }
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    '&:hover': { backgroundColor: theme.palette.primary.dark },
+                    '&:disabled': { backgroundColor: theme.palette.grey[300] }
                   }}
                 >
-                  Create Account
+                  {isLoading ? 'Sending...' : 'Get My 10% Off'}
                 </Button>
 
-                <Divider sx={{ my: 2 }}>OR</Divider>
-
-                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    component={motion.button}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSocialLogin('Google')}
-                    sx={{ 
-                      borderColor: theme.palette.primary.main, 
-                      color: theme.palette.primary.main 
-                    }}
-                  >
-                    Google
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    component={motion.button}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSocialLogin('Facebook')}
-                    sx={{ 
-                      borderColor: theme.palette.primary.main, 
-                      color: theme.palette.primary.main 
-                    }}
-                  >
-                    Facebook
-                  </Button>
-                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
+                  No spam, ever. Unsubscribe anytime.
+                </Typography>
               </Box>
             </Paper>
           </Grid>
@@ -274,10 +240,10 @@ const NewCustomerCTA = () => {
       <Snackbar
         open={showSuccess}
         autoHideDuration={6000}
-        onClose={handleCloseSuccess}
+        onClose={() => setShowSuccess(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSuccess} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={() => setShowSuccess(false)} severity="success" sx={{ width: '100%' }}>
           {successMessage}
         </Alert>
       </Snackbar>
@@ -285,4 +251,4 @@ const NewCustomerCTA = () => {
   );
 };
 
-export default NewCustomerCTA;
+export default NewsletterSignup;

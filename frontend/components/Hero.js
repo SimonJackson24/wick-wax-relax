@@ -1,128 +1,90 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, useTheme } from '@mui/material';
-import { motion, useAnimation, AnimatePresence } from 'framer-motion';
+import { Box, Button } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
-// Category slide data structure
+// Benefit-first approach for slides
 const categorySlides = [
   {
-    id: 'wax-melts',
-    name: 'Wax Melts',
-    description: 'Hand-poured soy wax melts for electric warmers. Experience our premium collection of floral, citrus, and seasonal scents.',
-    customerBenefit: 'Create your perfect ambiance with long-lasting fragrances',
-    backgroundImage: '/images/wax-melts-hero.svg',
-    ctaText: 'Shop Wax Melts',
-    ctaLink: '/products?category=wax-melts',
-    colorScheme: {
-      primary: '#C8B6DB', // Muted lavender
-      secondary: '#E6C88A', // Warm gold
-      accent: '#B2C8BA' // Gentle sage
-    }
-  },
-  {
     id: 'candles',
+    tagline: 'Transform Your Evening Routine',
     name: 'Candles',
-    description: 'Premium soy wax candles with wooden wicks. Long-burning, clean-burning, and beautifully fragranced.',
-    customerBenefit: 'Elevate your space with warm, inviting light and captivating scents',
+    description: 'Premium beeswax & soy candles with wooden wicks. Handcrafted in the UK with ethically sourced wax and lasting, clean-burning fragrances.',
+    customerBenefit: 'Longer burn time, cleaner air, better wellbeing',
     backgroundImage: '/images/candles-hero.svg',
     ctaText: 'Shop Candles',
     ctaLink: '/products?category=candles',
-    colorScheme: {
-      primary: '#E6C88A', // Warm gold
-      secondary: '#C8B6DB', // Muted lavender
-      accent: '#B2C8BA' // Gentle sage
-    }
+    colorScheme: { primary: '#E6C88A', secondary: '#C8B6DB', accent: '#B2C8BA' }
+  },
+  {
+    id: 'wax-melts',
+    tagline: 'Scents That Last 50+ Hours',
+    name: 'Wax Melts',
+    description: 'Hand-poured premium wax melts in biodegradable glassine bags. Eco-friendly labels, unlimited scent combinations for your electric warmer.',
+    customerBenefit: 'Snappable cubes, endless variety, plastic-free packaging',
+    backgroundImage: '/images/wax-melts-hero.svg',
+    ctaText: 'Shop Wax Melts',
+    ctaLink: '/products?category=wax-melts',
+    colorScheme: { primary: '#C8B6DB', secondary: '#E6C88A', accent: '#B2C8BA' }
   },
   {
     id: 'bath-bombs',
+    tagline: 'Spa Day, Every Day',
     name: 'Bath Bombs',
-    description: 'Fizzy bath bombs with therapeutic essential oils. Transform your bath into a luxurious spa experience.',
-    customerBenefit: 'Indulge in a spa-like experience with nourishing ingredients',
+    description: 'Fizzy, 100% vegan bath bombs with therapeutic essential oils. Handmade in the UK with nourishing, skin-loving ingredients.',
+    customerBenefit: 'Skin-softening, aromatic, Instagram-worthy',
     backgroundImage: '/images/bath-bombs-hero.svg',
     ctaText: 'Shop Bath Bombs',
     ctaLink: '/products?category=bath-bombs',
-    colorScheme: {
-      primary: '#B2C8BA', // Gentle sage
-      secondary: '#C8B6DB', // Muted lavender
-      accent: '#E6C88A' // Warm gold
-    }
+    colorScheme: { primary: '#B2C8BA', secondary: '#C8B6DB', accent: '#E6C88A' }
   },
   {
     id: 'diffusers',
+    tagline: 'Continuous Fragrance, Zero Effort',
     name: 'Diffusers',
-    description: 'Reed diffusers for continuous fragrance. Elegant home decor that fills your space with lasting scents.',
-    customerBenefit: 'Enjoy consistent fragrance that enhances your home environment',
+    description: 'Elegant reed diffusers with sustainably sourced rattan. Fills your home with subtle, constant fragrance for months.',
+    customerBenefit: 'Set it, forget it, enjoy it',
     backgroundImage: '/images/diffusers-hero.svg',
     ctaText: 'Shop Diffusers',
     ctaLink: '/products?category=diffusers',
-    colorScheme: {
-      primary: '#C8B6DB', // Muted lavender
-      secondary: '#B2C8BA', // Gentle sage
-      accent: '#E6C88A' // Warm gold
-    }
+    colorScheme: { primary: '#C8B6DB', secondary: '#B2C8BA', accent: '#E6C88A' }
   }
 ];
 
 const Hero = () => {
-  const theme = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const autoPlayRef = useRef(null);
-  const controls = useAnimation();
   const prevButtonRef = useRef(null);
   const nextButtonRef = useRef(null);
   const playButtonRef = useRef(null);
 
-  // Auto-play functionality
   useEffect(() => {
     if (isAutoPlaying && !isHovered) {
       autoPlayRef.current = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % categorySlides.length);
-      }, 4500); // 4.5 seconds
+      }, 4500);
     } else {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current);
-      }
+      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
     }
-
-    return () => {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current);
-      }
-    };
+    return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
   }, [isAutoPlaying, isHovered]);
 
-  // Navigation functions
-  const goToSlide = (index) => {
-    setCurrentSlide(index);
-  };
+  const goToSlide = (index) => setCurrentSlide(index);
+  const goToNextSlide = () => setCurrentSlide((prev) => (prev + 1) % categorySlides.length);
+  const goToPrevSlide = () => setCurrentSlide((prev) => (prev - 1 + categorySlides.length) % categorySlides.length);
 
-  const goToNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % categorySlides.length);
-  };
-
-  const goToPrevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + categorySlides.length) % categorySlides.length);
-  };
-
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (event) => {
-      if (event.key === 'ArrowLeft') {
-        goToPrevSlide();
-        prevButtonRef.current?.focus();
-      } else if (event.key === 'ArrowRight') {
-        goToNextSlide();
-        nextButtonRef.current?.focus();
-      } else if (event.key === ' ') {
-        // Space bar toggles play/pause
+      if (event.key === 'ArrowLeft') { goToPrevSlide(); prevButtonRef.current?.focus(); }
+      else if (event.key === 'ArrowRight') { goToNextSlide(); nextButtonRef.current?.focus(); }
+      else if (event.key === ' ') {
         event.preventDefault();
         setIsAutoPlaying(!isAutoPlaying);
         playButtonRef.current?.focus();
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isAutoPlaying]);
@@ -142,30 +104,14 @@ const Hero = () => {
         right: '50%',
         marginLeft: '-50vw',
         marginRight: '-50vw',
-        minHeight: {
-          xs: '90vh',
-          sm: '85vh',
-          md: '90vh',
-          lg: '95vh',
-          xl: '100vh'
-        },
+        minHeight: { xs: '90vh', sm: '85vh', md: '90vh', lg: '95vh', xl: '100vh' },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
         mt: 0,
-        height: {
-          xs: '90vh',
-          sm: '85vh',
-          md: '90vh',
-          lg: '95vh',
-          xl: '100vh'
-        },
-        paddingTop: {
-          xs: '15vh',
-          md: '10vh',
-          lg: '8vh'
-        }
+        height: { xs: '90vh', sm: '85vh', md: '90vh', lg: '95vh', xl: '100vh' },
+        paddingTop: { xs: '15vh', md: '10vh', lg: '8vh' }
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -174,7 +120,6 @@ const Hero = () => {
       aria-label="Product category showcase"
       id="main-content"
     >
-      {/* Background Slides */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -183,56 +128,36 @@ const Hero = () => {
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             backgroundImage: `url(${currentSlideData.backgroundImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            zIndex: 1,
+            backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 1
           }}
           aria-hidden="true"
         />
       </AnimatePresence>
 
-      {/* Gradient Overlay */}
       <Box
         component={motion.div}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2, ease: 'easeInOut' }}
         sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           background: `linear-gradient(135deg,
             rgba(0,0,0,0.6) 0%,
             rgba(0,0,0,0.4) 30%,
             rgba(0,0,0,0.3) 60%,
             rgba(0,0,0,0.5) 100%)`,
-          zIndex: 2,
+          zIndex: 2
         }}
         aria-hidden="true"
       />
 
-      {/* Live region for screen reader announcements */}
       <Box
         component="div"
         sx={{
-          position: 'absolute',
-          width: '1px',
-          height: '1px',
-          padding: 0,
-          margin: '-1px',
-          overflow: 'hidden',
-          clip: 'rect(0, 0, 0, 0)',
-          whiteSpace: 'nowrap',
-          border: 0,
+          position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px',
+          overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0
         }}
         role="status"
         aria-live="polite"
@@ -241,33 +166,18 @@ const Hero = () => {
         {currentSlideData.name}, {currentSlideData.description}
       </Box>
 
-      {/* Main Content */}
       <Box
         component={motion.div}
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1.2, delay: 0.3, ease: 'easeOut' }}
         sx={{
-          position: 'relative',
-          zIndex: 5,
-          textAlign: 'center',
-          width: '100vw',
-          height: {
-          xs: '90vh',
-          sm: '85vh',
-          md: '90vh',
-          lg: '95vh',
-          xl: '100vh'
-        },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 0,
-          margin: 0,
+          position: 'relative', zIndex: 5, textAlign: 'center', width: '100vw',
+          height: { xs: '90vh', sm: '85vh', md: '90vh', lg: '95vh', xl: '100vh' },
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: 0, margin: 0
         }}
       >
-        {/* Category Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -276,85 +186,72 @@ const Hero = () => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             style={{
-              width: '100%',
-              maxWidth: '1200px',
-              padding: '0 2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2rem'
+              width: '100%', maxWidth: '1200px', padding: '0 2rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem'
             }}
           >
-            {/* Category Name */}
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              style={{
+                fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)',
+                fontWeight: '600', lineHeight: '1.4',
+                color: currentSlideData.colorScheme.secondary,
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+                textTransform: 'uppercase', letterSpacing: '0.15em',
+                textAlign: 'center', margin: 0
+              }}
+            >
+              {currentSlideData.tagline}
+            </motion.p>
+
             <motion.h1
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               style={{
                 fontFamily: '"Playfair Display", "Dancing Script", "Great Vibes", "Allura", "Satisfy", serif',
-                fontSize: 'clamp(3rem, 12vw, 8rem)',
-                fontWeight: '400',
-                lineHeight: '1.1',
-                color: '#ffffff',
-                textShadow: '3px 3px 6px rgba(0,0,0,0.7)',
-                marginBottom: '1rem',
-                textAlign: 'center',
-                margin: 0
+                fontSize: 'clamp(3rem, 12vw, 8rem)', fontWeight: '400', lineHeight: '1.1',
+                color: '#ffffff', textShadow: '3px 3px 6px rgba(0,0,0,0.7)',
+                marginBottom: '1rem', textAlign: 'center', margin: 0
               }}
             >
               {currentSlideData.name}
             </motion.h1>
 
-            {/* Category Description */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.5rem)',
-                fontWeight: '300',
-                lineHeight: '1.6',
-                color: '#ffffff',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                maxWidth: '600px',
-                textAlign: 'center',
-                marginBottom: '1rem',
-                margin: 0
+                fontSize: 'clamp(0.9rem, 1.8vw, 1.15rem)', fontWeight: '400', lineHeight: '1.6',
+                color: '#ffffff', textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                maxWidth: '650px', textAlign: 'center', marginBottom: '1rem', margin: 0
               }}
             >
               {currentSlideData.description}
             </motion.p>
 
-            {/* Customer Benefit Statement */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
               style={{
-                fontSize: 'clamp(1rem, 2vw, 1.2rem)',
-                fontWeight: '400',
-                lineHeight: '1.6',
-                color: '#ffffff',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                maxWidth: '600px',
-                textAlign: 'center',
-                marginBottom: '2rem',
-                margin: 0,
+                fontSize: 'clamp(1rem, 2vw, 1.2rem)', fontWeight: '400', lineHeight: '1.6',
+                color: '#ffffff', textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                maxWidth: '600px', textAlign: 'center', marginBottom: '2rem', margin: 0,
                 fontStyle: 'italic'
               }}
             >
               {currentSlideData.customerBenefit}
             </motion.p>
 
-            {/* CTA Button */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.6 }}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: `0 12px 35px ${currentSlideData.colorScheme.primary}80`
-              }}
+              whileHover={{ scale: 1.05, boxShadow: `0 12px 35px ${currentSlideData.colorScheme.primary}80` }}
               whileTap={{ scale: 0.95 }}
               style={{ display: 'inline-block' }}
             >
@@ -390,18 +287,14 @@ const Hero = () => {
                     background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
                     transition: 'left 0.6s',
                   },
-                  '&:hover::before': {
-                    left: '100%',
-                  },
+                  '&:hover::before': { left: '100%' },
                   '&:hover': {
                     background: `linear-gradient(45deg, ${currentSlideData.colorScheme.secondary} 30%, ${currentSlideData.colorScheme.primary} 90%)`,
                     borderColor: currentSlideData.colorScheme.secondary,
                     boxShadow: `0 12px 35px ${currentSlideData.colorScheme.primary}100`,
                     transform: 'translateY(-3px)',
                   },
-                  '&:active': {
-                    transform: 'translateY(0px)',
-                  }
+                  '&:active': { transform: 'translateY(0px)' }
                 }}
                 aria-label={`Shop ${currentSlideData.name}`}
               >
@@ -412,7 +305,6 @@ const Hero = () => {
         </AnimatePresence>
       </Box>
 
-      {/* Navigation Controls */}
       <Box
         sx={{
           position: 'absolute',
@@ -432,23 +324,14 @@ const Hero = () => {
         role="group"
         aria-label="Carousel controls"
       >
-        {/* Previous Button */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={goToPrevSlide}
           ref={prevButtonRef}
           style={{
-            background: 'none',
-            border: 'none',
-            color: '#ffffff',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            background: 'none', border: 'none', color: '#ffffff', fontSize: '1.5rem', cursor: 'pointer',
+            padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background-color 0.3s ease'
           }}
           onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
@@ -458,7 +341,6 @@ const Hero = () => {
           ‹
         </motion.button>
 
-        {/* Dot Indicators */}
         <Box sx={{ display: 'flex', gap: 1 }} role="tablist">
           {categorySlides.map((_, index) => (
             <motion.button
@@ -469,11 +351,9 @@ const Hero = () => {
               style={{
                 width: currentSlide === index ? '12px' : '8px',
                 height: currentSlide === index ? '12px' : '8px',
-                borderRadius: '50%',
-                border: 'none',
+                borderRadius: '50%', border: 'none',
                 backgroundColor: currentSlide === index ? '#ffffff' : 'rgba(255,255,255,0.5)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                cursor: 'pointer', transition: 'all 0.3s ease'
               }}
               aria-label={`Go to slide ${index + 1}`}
               aria-selected={currentSlide === index}
@@ -482,23 +362,14 @@ const Hero = () => {
           ))}
         </Box>
 
-        {/* Next Button */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={goToNextSlide}
           ref={nextButtonRef}
           style={{
-            background: 'none',
-            border: 'none',
-            color: '#ffffff',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            background: 'none', border: 'none', color: '#ffffff', fontSize: '1.5rem', cursor: 'pointer',
+            padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background-color 0.3s ease'
           }}
           onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
@@ -509,7 +380,6 @@ const Hero = () => {
         </motion.button>
       </Box>
 
-      {/* Auto-play Indicator */}
       <Box
         sx={{
           position: 'absolute',
@@ -532,14 +402,8 @@ const Hero = () => {
           onClick={() => setIsAutoPlaying(!isAutoPlaying)}
           ref={playButtonRef}
           style={{
-            background: 'none',
-            border: 'none',
-            color: '#ffffff',
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            background: 'none', border: 'none', color: '#ffffff', fontSize: '0.9rem', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '0.5rem'
           }}
           aria-label={isAutoPlaying ? 'Pause auto-play' : 'Resume auto-play'}
         >

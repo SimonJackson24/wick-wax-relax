@@ -2,6 +2,8 @@ import React from 'react';
 import { Box, Container, Typography } from '@mui/material';
 import NavigationWithCategories from '../components/NavigationWithCategories';
 import Hero from '../components/Hero';
+import FreeShippingBanner from '../components/FreeShippingBanner';
+import TrustBadges from '../components/TrustBadges';
 import FeaturedProducts from '../components/FeaturedProducts';
 import CategoryShowcase from '../components/CategoryShowcase';
 import SeasonalPromo from '../components/SeasonalPromo';
@@ -13,6 +15,8 @@ const HomePage = () => {
     <>
       <NavigationWithCategories />
       <Hero />
+      <FreeShippingBanner />
+      <TrustBadges />
       <FeaturedProducts />
       <CategoryShowcase />
       <SeasonalPromo />
