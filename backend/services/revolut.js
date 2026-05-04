@@ -17,13 +17,45 @@ class RevolutService {
       .digest('hex');
   }
 
-  // Verify webhook signature
+  // Verify webhook signature with proper validation
   verifyWebhookSignature(signature, payload, timestamp) {
-    const expectedSignature = this.generateSignature(payload, timestamp);
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
-    );
+    // SECURITY: Validate inputs before comparison
+    if (!signature || typeof signature !== 'string') {
+      console.error('Webhook signature verification failed: invalid signature type');
+      return false;
+    }
+
+    if (!timestamp || typeof timestamp !== 'string') {
+      console.error('Webhook signature verification failed: invalid timestamp');
+      return false;
+    }
+
+    // SECURITY: Verify timestamp is within acceptable window (5 minutes)
+    const webhookTime = parseInt(timestamp, 10);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const fiveMinutes = 5 * 60;
+
+    if (isNaN(webhookTime) || Math.abs(currentTime - webhookTime) > fiveMinutes) {
+      console.error('Webhook signature verification failed: timestamp expired or invalid');
+      return false;
+    }
+
+    try {
+      const expectedSignature = this.generateSignature(payload, timestamp);
+      const sigBuffer = Buffer.from(signature, 'hex');
+      const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+
+      // SECURITY: Ensure buffers have same length before timing-safe comparison
+      if (sigBuffer.length !== expectedBuffer.length) {
+        console.error('Webhook signature verification failed: length mismatch');
+        return false;
+      }
+
+      return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+    } catch (error) {
+      console.error('Webhook signature verification error:', error.message);
+      return false;
+    }
   }
 
   // Create payment intent

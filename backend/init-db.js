@@ -142,15 +142,27 @@ class DatabaseInitializer {
         ON CONFLICT (name) DO NOTHING
       `, ['pwa-channel', 'PWA', 'pwa-api-key']);
 
-      // Seed admin user (you should change this password)
+      // Seed admin user
+      // If ADMIN_INITIAL_PASSWORD env var is set, use it; otherwise generate a random one.
+      // The password_change_required flag ensures the user must change it on first login.
       const bcrypt = require('bcrypt');
-      const adminPassword = await bcrypt.hash('admin123', 10);
+      const adminPlainPassword = process.env.ADMIN_INITIAL_PASSWORD || (
+        require('crypto').randomBytes(16).toString('base64').slice(0, 16) +
+        Math.random().toString(36).slice(2, 6).toUpperCase() + '!'
+      );
+      const adminPassword = await bcrypt.hash(adminPlainPassword, 10);
 
       await query(`
-        INSERT INTO users (id, email, password_hash, first_name, last_name)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (id, email, password_hash, first_name, last_name, password_change_required)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (email) DO NOTHING
-      `, ['admin-user', 'admin@wickwaxrelax.co.uk', adminPassword, 'Admin', 'User']);
+      `, ['admin-user', 'admin@wickwaxrelax.co.uk', adminPassword, 'Admin', 'User', true]);
+
+      if (!process.env.ADMIN_INITIAL_PASSWORD) {
+        console.log('  Admin account created. Initial password (change on first login):', adminPlainPassword);
+      } else {
+        console.log('  Admin account created with ADMIN_INITIAL_PASSWORD.');
+      }
 
       console.log('✅ Initial data seeded');
 

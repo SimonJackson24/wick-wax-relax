@@ -299,24 +299,25 @@ router.post('/webhook', express.raw({ type: 'application/json' }), (req, res) =>
       return res.status(400).json({ error: 'Invalid webhook signature' });
     }
 
-    console.log('Etsy webhook received:', payload);
+    // SECURITY: Log only notification type to avoid exposing sensitive data
+    console.log('Etsy webhook received, type:', payload.type || 'unknown');
 
     // Process different notification types
     switch (payload.type) {
       case 'order':
         // Handle order notifications
-        console.log('Order notification:', payload.data.receipt_id);
+        console.log('Etsy order notification received');
         break;
       case 'listing':
         // Handle listing notifications
-        console.log('Listing notification:', payload.data.listing_id);
+        console.log('Etsy listing notification received');
         break;
       case 'review':
         // Handle review notifications
-        console.log('Review notification:', payload.data.review_id);
+        console.log('Etsy review notification received');
         break;
       default:
-        console.log('Unknown notification type:', payload.type);
+        console.log('Unknown Etsy notification type:', payload.type || 'none');
     }
 
     res.json({ success: true, message: 'Webhook processed' });

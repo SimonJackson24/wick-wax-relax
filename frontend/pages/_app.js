@@ -10,6 +10,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import PerformanceOptimizer from '../components/PerformanceOptimizer';
 import { AuthProvider } from '../components/AuthContext';
 import { CartProvider } from '../components/CartContext';
+import { WishlistProvider } from '../components/WishlistContext';
 import DynamicPWAProvider from '../components/DynamicPWAProvider';
 import { ToastProvider } from '../components/ToastContext';
 
@@ -43,11 +44,13 @@ function MyApp(props) {
           <DynamicPWAProvider>
             <AuthProvider>
               <CartProvider>
-                <ToastProvider>
-                  <PerformanceOptimizer>
-                    <Component {...pageProps} />
-                  </PerformanceOptimizer>
-                </ToastProvider>
+                <WishlistProvider>
+                  <ToastProvider>
+                    <PerformanceOptimizer>
+                      <Component {...pageProps} />
+                    </PerformanceOptimizer>
+                  </ToastProvider>
+                </WishlistProvider>
               </CartProvider>
             </AuthProvider>
           </DynamicPWAProvider>

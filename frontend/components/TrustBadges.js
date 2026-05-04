@@ -6,7 +6,7 @@ import {
   useTheme
 } from '@mui/material';
 import {
-  Eco as EcoIcon,
+  EnergySavingsLeaf as EcoIcon,
   Public as UkIcon,
   Pets as PetsIcon,
   Recycling as RecyclingIcon,
@@ -25,16 +25,22 @@ const trustBadges = [
 
 const TrustBadge = ({ badge, index }) => {
   const theme = useTheme();
+  const IconComponent = badge.icon;
   return (
-    <Box component={motion.div} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: index * 0.1 }}
-      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', p: 2 }}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      whileInView={{ opacity: 1, y: 0 }} 
+      viewport={{ once: true }} 
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 16 }}
+    >
       <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: `${theme.palette.primary.main}15`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5, border: `2px solid ${theme.palette.primary.main}30` }}>
-        <badge.icon sx={{ fontSize: 28, color: theme.palette.primary.main }} />
+        <IconComponent sx={{ fontSize: 28, color: theme.palette.primary.main }} />
       </Box>
       <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>{badge.title}</Typography>
       <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>{badge.description}</Typography>
-    </Box>
+    </motion.div>
   );
 };
 

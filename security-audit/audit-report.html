@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wick Wax & Relax — Security & GDPR Audit Report</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #1c2128;
+    --bg-code: #0d1117;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #f0b429;
+    --accent-dim: #f0b42922;
+    --red: #f85149;
+    --red-bg: #f8514922;
+    --orange: #f0883e;
+    --orange-bg: #f0883e22;
+    --yellow: #d29922;
+    --yellow-bg: #d2992222;
+    --green: #3fb950;
+    --green-bg: #3fb95022;
+    --blue: #58a6ff;
+    --blue-bg: #58a6ff22;
+    --purple: #bc8cff;
+    --pink: #ff7eb6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner { max-width: 1200px; margin: 0 auto; }
+  .header pre {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
+    font-family: 'Courier New', monospace;
+  }
+  .header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+  .header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  .header .meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .header .meta span { display: flex; align-items: center; gap: 0.4rem; }
+  .header .meta strong { color: var(--text-secondary); }
+
+  /* SUMMARY CARDS */
+  .summary-section {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+  }
+  .summary-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .summary-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .summary-card .count {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .summary-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+  .summary-card.critical .count { color: var(--red); }
+  .summary-card.high .count { color: var(--orange); }
+  .summary-card.medium .count { color: var(--yellow); }
+  .summary-card.low .count { color: var(--green); }
+  .summary-card.total .count { color: var(--accent); }
+  .summary-card .bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 0.75rem;
+  }
+  .summary-card.critical .bar { background: var(--red); }
+  .summary-card.high .bar { background: var(--orange); }
+  .summary-card.medium .bar { background: var(--yellow); }
+  .summary-card.low .bar { background: var(--green); }
+
+  /* EXECUTIVE */
+  .exec-alert {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 3rem;
+  }
+  .exec-alert-box {
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .exec-alert-box h3 { color: var(--red); margin-bottom: 0.75rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; }
+  .exec-alert-box p { color: var(--text-secondary); font-size: 0.875rem; line-height: 1.8; }
+  .exec-alert-box .priority { color: var(--text-primary); font-weight: 600; }
+
+  /* MAIN CONTENT */
+  .content { max-width: 1200px; margin: 0 auto; padding: 2rem 3rem 4rem; }
+
+  /* SECTION HEADERS */
+  .severity-section { margin-bottom: 3rem; }
+  .severity-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .severity-badge {
+    padding: 0.2rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .severity-badge.critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .severity-badge.high { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange); }
+  .severity-badge.medium { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
+  .severity-badge.low { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .severity-title { font-size: 1.1rem; font-weight: 600; }
+  .severity-count { margin-left: auto; font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ISSUE CARDS */
+  .issue-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .issue-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
+  .issue-header:hover { background: var(--bg-tertiary); }
+  .issue-num {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .issue-title-block { flex: 1; }
+  .issue-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .issue-meta { font-size: 0.75rem; color: var(--text-muted); }
+  .issue-meta .sep { margin: 0 0.4rem; }
+  .severity-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+  }
+  .severity-dot.critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .severity-dot.high { background: var(--orange); }
+  .severity-dot.medium { background: var(--yellow); }
+  .severity-dot.low { background: var(--green); }
+  .cvss-badge {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .cvss-badge.critical { color: var(--red); border-color: var(--red); }
+  .cvss-badge.high { color: var(--orange); border-color: var(--orange); }
+  .cvss-badge.medium { color: var(--yellow); border-color: var(--yellow); }
+
+  .issue-body { padding: 0; }
+  .issue-body-inner { padding: 1.25rem; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.8rem;
+    color: #e6e6e6;
+    line-height: 1.6;
+    margin: 0.75rem 0;
+  }
+  .code-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  code {
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.82rem;
+    background: var(--bg-primary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    color: var(--pink);
+  }
+
+  /* ISSUE SECTIONS */
+  .issue-section { margin-bottom: 1rem; }
+  .issue-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+  .issue-section p { color: var(--text-secondary); font-size: 0.875rem; line-height: 1.7; }
+  .issue-section ul { list-style: none; margin-top: 0.5rem; }
+  .issue-section ul li {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 0.15rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+  }
+  .issue-section ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin: 0.75rem 0;
+  }
+  th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  tr:hover td { background: var(--bg-tertiary); }
+  td code { font-size: 0.75rem; background: var(--bg-primary); padding: 0.1rem 0.3rem; }
+
+  /* SUMMARY TABLE */
+  .summary-table-wrap { overflow-x: auto; margin-top: 1rem; }
+  .summary-table-wrap td:nth-child(1) code { color: var(--text-muted); }
+  .summary-table-wrap td:nth-child(3) code { color: var(--pink); }
+
+  /* RECOMMENDATIONS */
+  .recs-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+  .recs-section h2 { margin-bottom: 1rem; font-size: 1rem; }
+  .rec-item {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+  }
+  .rec-num {
+    background: var(--accent);
+    color: var(--bg-primary);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rec-text { color: var(--text-secondary); }
+  .rec-text code { background: var(--bg-primary); color: var(--accent); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.78rem; }
+
+  /* POSITIVE */
+  .positives {
+    background: var(--green-bg);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 2rem;
+  }
+  .positives h3 { color: var(--green); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
+  .positives ul { list-style: none; }
+  .positives ul li {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+  }
+  .positives ul li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 2rem 3rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .header, .summary-section, .content { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .header h1 { font-size: 1.25rem; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* COLLAPSE TOGGLE */
+  .toggle-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+    margin-top: 0.1rem;
+  }
+  .toggle-icon.open { transform: rotate(45deg); }
+  .issue-body { display: none; }
+  .issue-body.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+<div class="header-inner">
+<pre>HERMES AGENT — CLAUDE CODE AUDIT</pre>
+<h1>Wick Wax &amp; Relax E-Commerce Platform</h1>
+<div class="subtitle">Full Security &amp; GDPR Compliance Audit Report</div>
+<div class="meta">
+  <span><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm.5 3.5a.5.5 0 0 1 .5.5v3h2a.5.5 0 0 1 0 1H9v2a.5.5 0 0 1-1 0v-2H6a.5.5 0 0 1 0-1h2v-3a.5.5 0 0 1 .5-.5z"/></svg> <strong>Project:</strong> wick-wax-relax</span>
+  <span><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg> <strong>Date:</strong> 2026-04-24</span>
+  <span><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm4.5 0a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zM2 10h2v3H2z"/><path d="M4 14h8v1H4z"/></svg> <strong>Scope:</strong> backend/ + frontend/</span>
+  <span><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> <strong>Standard:</strong> PCI-DSS v4.0, GDPR, OWASP Top 10</span>
+</div>
+</div>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary-section">
+<div class="summary-grid">
+  <div class="summary-card critical">
+    <div class="count">2</div>
+    <div class="label">Critical</div>
+    <div class="bar"></div>
+  </div>
+  <div class="summary-card high">
+    <div class="count">6</div>
+    <div class="label">High</div>
+    <div class="bar"></div>
+  </div>
+  <div class="summary-card medium">
+    <div class="count">6</div>
+    <div class="label">Medium</div>
+    <div class="bar"></div>
+  </div>
+  <div class="summary-card low">
+    <div class="count">5</div>
+    <div class="label">Low</div>
+    <div class="bar"></div>
+  </div>
+  <div class="summary-card total">
+    <div class="count">19</div>
+    <div class="label">Total Issues</div>
+    <div class="bar"></div>
+  </div>
+</div>
+</div>
+
+<!-- EXECUTIVE ALERT -->
+<div class="exec-alert">
+<div class="exec-alert-box">
+  <h3>Executive Alert — Immediate Action Required</h3>
+  <p>
+    This codebase contains <strong class="priority">2 CRITICAL vulnerabilities</strong> that must be patched before any deployment.
+    <strong>C1 (admin backdoor)</strong> allows anyone to log in as the admin using the magic credentials
+    <code>admin@wickwaxrelax.co.uk</code> / <code>admin123</code>. This grants full access to all customer data, order history,
+    and admin controls. Combined with <strong>C2</strong> (hardcoded fallback JWT secrets), an attacker can forge admin sessions
+    in seconds.
+  </p>
+  <p style="margin-top:0.75rem;">
+    The GDPR deletion endpoint (Article 17 Right to Erasure) does <strong>NOT cascade</strong> to 9+ tables containing personal data —
+    wishlists, addresses, order items, payment records, and audit logs remain linked to user identities after deletion requests.
+    This is a regulatory violation with fines up to £17.5M.
+  </p>
+</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="content">
+
+<!-- CRITICAL SECTION -->
+<div class="severity-section">
+<div class="severity-header">
+  <span class="severity-badge critical">Critical</span>
+  <span class="severity-title">Critical Vulnerabilities</span>
+  <span class="severity-count">2 issues</span>
+</div>
+
+<!-- C1 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot critical"></span>
+    <span class="issue-num">C1</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Hardcoded Admin Backdoor in Login — Full Account Takeover</div>
+      <div class="issue-meta">
+        <code>backend/routes/auth.js</code>
+        <span class="sep">·</span>
+        Line 212–213
+        <span class="sep">·</span>
+        CWE-798 (Use of Hard-coded Credentials)
+        <span class="sep">·</span>
+        CVSS 9.8
+      </div>
+    </div>
+    <span class="cvss-badge critical">CVSS 9.8</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Code</div>
+        <pre>// auth.js:212–213
+const passwordChangeRequired = user.password_change_required === 1 ||
+  (user.email === 'admin@wickwaxrelax.co.uk' && password === 'admin123');</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">What It Does</div>
+        <p>Any request with email <code>admin@wickwaxrelax.co.uk</code> and password <code>admin123</code> bypasses password hash verification entirely. The code falls through to a normal successful login, returning a valid JWT with <code>isAdmin: true</code>.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Impact</div>
+        <ul>
+          <li>Full admin account takeover — no technical skill required</li>
+          <li>Access all customer orders, addresses, and personal data</li>
+          <li>Elevate any user account to admin via <code>PATCH /api/admin/users/:id</code></li>
+          <li>Process fake orders and refunds via the Revolut integration</li>
+          <li>Exfiltrate the entire customer and order database</li>
+          <li>Modify product prices and inventory</li>
+        </ul>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <p>Remove lines 212–213 entirely. The first line (<code>passwordChangeRequired = user.password_change_required === 1</code>) is the only correct logic needed. Never add backdoor credentials to authentication code.</p>
+        <pre>// CORRECT — remove the entire backdoor condition:
+const passwordChangeRequired = user.password_change_required === 1;
+
+// WRONG — never do this:
+const passwordChangeRequired = user.password_change_required === 1 ||
+  (user.email === 'admin@wickwaxrelax.co.uk' && password === 'admin123'); // ← REMOVE</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- C2 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot critical"></span>
+    <span class="issue-num">C2</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Hardcoded Fallback JWT Secrets — Token Forgery</div>
+      <div class="issue-meta">
+        <code>backend/routes/upload.js</code>, <code>inventory.js</code>, <code>tracking.js</code>
+        <span class="sep">·</span>
+        Lines 61, 17, 23
+        <span class="sep">·</span>
+        CWE-345
+      </div>
+    </div>
+    <span class="cvss-badge critical">CVSS 9.1</span>
+    <div class class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Code</div>
+        <pre>// upload.js:61
+jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', ...)
+
+// inventory.js:17
+jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', ...)
+
+// tracking.js:23
+jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', ...)</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">What It Does</div>
+        <p>Three files fall back to well-known placeholder secrets if <code>JWT_SECRET</code> is not set. An attacker can forge arbitrary JWT tokens (including admin sessions) using these known strings. Additionally, <code>backend/.env</code> is committed to the repository with real Redis hostnames and connection strings.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Impact</div>
+        <ul>
+          <li>If <code>JWT_SECRET</code> is ever unset or misconfigured, all authentication is bypassable</li>
+          <li>Forge tokens with any <code>userId</code> and <code>isAdmin: true</code></li>
+          <li>Commit history contains infrastructure topology (Redis hostname, Cloud region)</li>
+          <li>Real secrets potentially exposed via screen shares, logs, or CI artifacts</li>
+        </ul>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <pre>// WRONG — never use fallback secrets:
+jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', ...)
+
+// CORRECT — fail hard if JWT_SECRET is missing:
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET must be set');
+jwt.verify(token, process.env.JWT_SECRET, ...)</pre>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- HIGH SECTION -->
+<div class="severity-section">
+<div class="severity-header">
+  <span class="severity-badge high">High</span>
+  <span class="severity-title">High Severity Issues</span>
+  <span class="severity-count">6 issues</span>
+</div>
+
+<!-- H1 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H1</span>
+    <div class="issue-title-block">
+      <div class="issue-title">GDPR Right to Erasure Does NOT Cascade — 9+ Tables Retain Personal Data</div>
+      <div class="issue-meta">
+        <code>backend/routes/gdpr.js</code>
+        <span class="sep">·</span>
+        Lines 128–155
+        <span class="sep">·</span>
+        GDPR Article 17
+      </div>
+    </div>
+    <span class="cvss-badge high">GDPR</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">What Is Missing</div>
+        <div class="summary-table-wrap">
+          <table>
+            <thead><tr><th>Table</th><th>Data at Risk</th><th>GDPR Violation</th></tr></thead>
+            <tbody>
+              <tr><td><code>wishlists</code></td><td>Product preferences, browsing history</td><td>Article 5(1)(c) — data minimisation</td></tr>
+              <tr><td><code>user_addresses</code></td><td>Full addresses, phone numbers</td><td>Article 17 — erasure</td></tr>
+              <tr><td><code>order_items</code></td><td>Products purchased, quantities, prices</td><td>Article 17 — erasure</td></tr>
+              <tr><td><code>payments</code></td><td>Payment card references, Revolut IDs</td><td>PCI-DSS + GDPR Article 17</td></tr>
+              <tr><td><code>audit_log</code></td><td>User IDs tied to all actions</td><td>Article 17 — erasure</td></tr>
+              <tr><td><code>order_status_history</code></td><td>User IDs linked to order changes</td><td>Article 17</td></tr>
+              <tr><td><code>tracking_history</code></td><td>Shipping locations tied to user</td><td>Article 17</td></tr>
+              <tr><td><code>user_consents</code></td><td>Consent records</td><td>Article 7</td></tr>
+              <tr><td><code>reviews</code></td><td>Customer reviews linked to users</td><td>Article 17</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <p>Before anonymising the user, explicitly delete or anonymise all dependent records:</p>
+        <pre>// Delete or anonymise all dependent records first:
+await db.query('DELETE FROM wishlists WHERE user_id = ?', [id]);
+await db.query('DELETE FROM user_addresses WHERE user_id = ?', [id]);
+await db.query('DELETE FROM user_consents WHERE user_id = ?', [id]);
+await db.query('DELETE FROM reviews WHERE user_id = ?', [id]);
+await db.query('DELETE FROM audit_log WHERE user_id = ?', [id]);
+await db.query('UPDATE orders SET gdpr_anonymized = 1, user_id = NULL WHERE user_id = ?', [id]);
+// THEN anonymise the user record</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H2 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H2</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Unauthenticated Amazon Integration Endpoints — Full Channel Compromise</div>
+      <div class="issue-meta">
+        <code>backend/routes/amazon.js</code>
+        <span class="sep">·</span>
+        All routes (no middleware)
+        <span class="sep">·</span>
+        Broken Authentication
+      </div>
+    </div>
+    <span class="cvss-badge high">CVSS 8.6</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Routes</div>
+        <p>All Amazon SP-API routes lack <code>authenticateToken</code> and <code>requireAdmin</code> middleware:</p>
+        <div class="summary-table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Route</th><th>Risk</th></tr></thead>
+            <tbody>
+              <tr><td>POST</td><td><code>/api/amazon/sync-inventory</code></td><td>Overwrite local stock from fake Amazon data</td></tr>
+              <tr><td>GET</td><td><code>/api/amazon/inventory</code></td><td>Exfiltrate all SKU and stock data</td></tr>
+              <tr><td>GET</td><td><code>/api/amazon/orders</code></td><td>Extract all Amazon order data</td></tr>
+              <tr><td>POST</td><td><code>/api/amazon/pricing</code></td><td>Set all product prices to any value</td></tr>
+              <tr><td>POST</td><td><code>/api/amazon/sync-catalog</code></td><td>Overwrite entire product catalog</td></tr>
+              <tr><td>GET</td><td><code>/api/amazon/reports/sales</code></td><td>Extract revenue and sales reports</td></tr>
+              <tr><td>POST</td><td><code>/api/amazon/webhook</code></td><td>Inject fake Amazon notifications</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <pre>// Add authentication to ALL Amazon routes:
+router.post('/sync-inventory', authenticateToken, requireAdmin, async (req, res) => { ... });
+router.get('/inventory', authenticateToken, requireAdmin, async (req, res) => { ... });
+// etc. for every route</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H3 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H3</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Royal Mail Webhook — Signature Verification Commented Out</div>
+      <div class="issue-meta">
+        <code>backend/routes/tracking.js</code>
+        <span class="sep">·</span>
+        Lines 177–181
+        <span class="sep">·</span>
+        CWE-345 (Insufficient Verification)
+      </div>
+    </div>
+    <span class="cvss-badge high">CVSS 8.1</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Code</div>
+        <pre>// tracking.js:177–181 — COMPLETELY DISABLED
+// Verify webhook signature if implemented
+// const signature = req.headers['x-royal-mail-signature'];
+// if (!royalMailService.verifyWebhookSignature(signature, req.body)) {
+//   return res.status(401).json({ error: 'Invalid webhook signature' });
+// }</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">What It Does</div>
+        <p>The Royal Mail webhook at <code>POST /api/tracking/webhook/royal-mail</code> accepts any request body without signature verification. Any internet user can submit fake tracking updates, modify order statuses, and inject false delivery confirmations. The Revolut webhook is better defended (timing-safe comparison, 5-minute timestamp window).</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <pre>// Implement and uncomment signature verification:
+// const signature = req.headers['x-royal-mail-signature'];
+// if (!royalMailService.verifyWebhookSignature(signature, req.body)) {
+//   return res.status(401).json({ error: 'Invalid webhook signature' });
+// }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H4 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H4</span>
+    <div class="issue-title-block">
+      <div class="issue-title">PCI-DSS Payment Data Flow — Requires Formal Scope Assessment</div>
+      <div class="issue-meta">
+        <code>backend/.env</code>, <code>backend/services/revolut.js</code>
+        <span class="sep">·</span>
+        Redis TLS, Revolut tokenization
+        <span class="sep">·</span>
+        PCI-DSS v4.0
+      </div>
+    </div>
+    <span class="cvss-badge high">PCI-DSS</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Findings</div>
+        <ul>
+          <li>Revolut integration uses tokenized payment intents — raw card data does not touch the application (SAQ-A eligible pattern)</li>
+          <li>Redis URL in <code>.env</code> with real hostname: <code>redis-10066.c17.us-east-1-4.ec2.redns.redis-cloud.com:10066</code></li>
+          <li>If Redis SSL/TLS is not enforced, payment session metadata traverses the network in plaintext</li>
+          <li>The <code>payments</code> table stores <code>revolut_payment_id</code> and <code>amount</code> — correlation data exposed if DB is breached</li>
+          <li>No formal PCI-DSS scope assessment documented</li>
+        </ul>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Required Actions</div>
+        <ul>
+          <li>Enforce TLS for Redis Cloud connection</li>
+          <li>Conduct formal PCI-DSS SAQ-A scope assessment with Revolut</li>
+          <li>Verify Revolut's PCI-DSS compliance certificate is on file</li>
+          <li>Review all logs for inadvertent payment card data</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H5 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H5</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Inventory Race Condition — Stock Over-Selling</div>
+      <div class="issue-meta">
+        <code>backend/services/inventory.js</code>
+        <span class="sep">·</span>
+        Lines 121–141
+        <span class="sep">·</span>
+        CWE-362 (Race Condition)
+      </div>
+    </div>
+    <span class="cvss-badge high">CVSS 7.4</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Pattern — SELECT then UPDATE</div>
+        <pre>// inventory.js:122–141 — no row-level lock between SELECT and UPDATE
+const inventoryResult = await client.query(
+  'SELECT inventory_quantity FROM product_variants WHERE id = ?',
+  [item.variantId]
+);
+const currentQuantity = inventoryResult.rows[0].inventory_quantity;
+// ↑ Between this SELECT...
+if (currentQuantity < item.quantity) { throw new Error('Insufficient inventory'); }
+await client.query(
+  'UPDATE product_variants SET inventory_quantity = inventory_quantity - ? WHERE id = ?',
+  [item.quantity, item.variantId]
+);
+// ↑ ...and this UPDATE, another concurrent request can read the same stale value</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Impact</div>
+        <p>Under high concurrency (flash sale, high-traffic event), two simultaneous requests can both pass the stock check before either deducts inventory. Both orders are accepted, but only one has stock. The store oversells items it cannot fulfil, leading to mandatory refunds, customer complaints, and reputational damage.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <pre>// Use atomic UPDATE with check — zero round-trip, no race window:
+const result = await client.query(`
+  UPDATE product_variants
+  SET inventory_quantity = inventory_quantity - ?
+  WHERE id = ? AND inventory_quantity >= ?
+  RETURNING inventory_quantity
+`, [item.quantity, item.variantId, item.quantity]);
+
+if (result.rowCount === 0) {
+  throw new Error('Insufficient inventory');
+}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H6 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot high"></span>
+    <span class="issue-num">H6</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Inconsistent JWT Secret Validation — Three Routes Bypass Auth</div>
+      <div class="issue-meta">
+        <code>upload.js</code>, <code>inventory.js</code>, <code>tracking.js</code>
+        <span class="sep">·</span>
+        Lines 61, 17, 23
+        <span class="sep">·</span>
+        (See C2 — additional route exposure)
+      </div>
+    </div>
+    <span class="cvss-badge high">CVSS 9.1</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Description</div>
+        <p>Identical vulnerability to C2. Three routes fall back to hardcoded placeholder secrets if <code>JWT_SECRET</code> is unset. This means even if auth.js enforces the secret, the upload, inventory, and tracking routes can still be accessed with tokens signed with the well-known placeholder string.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <p>Same as C2. Replace all fallback patterns with a hard failure:</p>
+        <pre>// WRONG — all three files:
+jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', ...)
+jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', ...)
+
+// CORRECT — add explicit failure check before jwt.verify:
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET must be set');
+jwt.verify(token, process.env.JWT_SECRET, ...)</pre>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MEDIUM SECTION -->
+<div class="severity-section">
+<div class="severity-header">
+  <span class="severity-badge medium">Medium</span>
+  <span class="severity-title">Medium Severity Issues</span>
+  <span class="severity-count">6 issues</span>
+</div>
+
+<!-- M1 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M1</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Real Infrastructure Hostname Exposed in .env — Committed to Repository</div>
+      <div class="issue-meta">
+        <code>backend/.env</code>
+        <span class="sep">·</span>
+        Line 21
+        <span class="sep">·</span>
+        CWE-200 (Exposure of Sensitive Information)
+      </div>
+    </div>
+    <span class="cvss-badge medium">CVSS 5.3</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Exposed Data</div>
+        <pre>REDIS_URL=redis://default:***@redis-10066.c17.us-east-1-4.ec2.redns.redis-cloud.com:10066
+DB_PASSWORD=your_p...here
+JWT_SECRET=your_s...tion
+JWT_REFRESH_SECRET=your_s...tion</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Impact</div>
+        <p>The <code>.env</code> file is committed to the repository. While passwords appear redacted, the Redis hostname, Cloud region, and connection string structure are fully visible. If the Redis instance has no password enforcement or the password is guessable, cache poisoning or data exfiltration is possible. All historical commits must be treated as potentially compromised.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <ul>
+          <li>Add <code>.env</code> to <code>.gitignore</code> immediately</li>
+          <li>Use <code>git filter-branch</code> or BFG Repo-Cleaner to purge the file from git history</li>
+          <li>Rotate all secrets that may have been exposed in the commit</li>
+          <li>Use a secrets manager (AWS Secrets Manager, HashiCorp Vault) for production</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M2 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M2</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Broken Access Control — Admin Can Promote Any User to Admin</div>
+      <div class="issue-meta">
+        <code>backend/routes/admin.js</code>
+        <span class="sep">·</span>
+        Line 261
+        <span class="sep">·</span>
+        CWE-639 (Authorization Bypass Through User-Controlled Key)
+      </div>
+    </div>
+    <span class="cvss-badge medium">CVSS 6.8</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Vulnerable Code</div>
+        <pre>// admin.js:260–268
+const { name, isAdmin } = req.body;  // ← isAdmin from client request body
+await query(`
+  UPDATE users SET first_name = ?, last_name = ?, is_admin = ?, ...
+  WHERE id = ?
+`, [name.split(' ')[0], name.split(' ')[1] || '', isAdmin, id]);
+// ↑ Any authenticated admin can set isAdmin on any user account</pre>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Impact</div>
+        <p>Any logged-in admin can set <code>isAdmin: true</code> on any user, including themselves, permanently. Combined with the auth backdoor (C1), a normal user can log in as admin, promote their own account, and maintain admin access even after the backdoor is patched.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <p>Remove <code>isAdmin</code> from this endpoint entirely. The admin flag must only be changed through a separate, audited, role-change workflow with approval chains — not a single API call controllable by the requesting admin.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M3 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M3</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Password Reset Token — Not HMAC-Protected, Replay Window Exists</div>
+      <div class="issue-meta">
+        <code>backend/routes/auth.js</code>
+        <span class="sep">·</span>
+        Lines 430–438
+        <span class="sep">·</span>
+        CWE-640 (Weak Password Recovery)
+      </div>
+    </div>
+    <span class="cvss-badge medium">CVSS 5.3</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Finding</div>
+        <p>Reset tokens are generated using <code>crypto.randomBytes(32)</code> stored in plaintext in the database. If the database is read (SQL injection, backup compromise), all active reset tokens can be used immediately. There is no <code>token_version</code> to detect reuse across password changes.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <ul>
+          <li>HMAC the reset token server-side so only the HMAC output is stored</li>
+          <li>Add a <code>token_version</code> column incremented on each password change — invalidates all outstanding reset tokens</li>
+          <li>Log all reset token usage for anomaly detection</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M4 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M4</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Marketing Emails — Consent Not Checked Before Sending</div>
+      <div class="issue-meta">
+        <code>backend/services/order.js</code>
+        <span class="sep">·</span>
+        Lines 510–546
+        <span class="sep">·</span>
+        GDPR Articles 6 & 7
+      </div>
+    </div>
+    <span class="cvss-badge medium">GDPR</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Finding</div>
+        <p>Transactional emails (<code>sendOrderConfirmationEmail</code>, <code>sendOrderStatusEmail</code>, <code>sendShippingNotificationEmail</code>) are sent automatically on order lifecycle events. Marketing and promotional emails are also sent without checking consent flags. While transactional emails may be permissible under GDPR legitimate interest, promotional emails require explicit consent under Article 6(1)(a).</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <ul>
+          <li>Separate transactional and marketing email sending paths</li>
+          <li>Check <code>marketing_consent</code> before sending promotional content</li>
+          <li>Add double opt-in for marketing consent</li>
+          <li>Review with a DPO (Data Protection Officer)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M5 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M5</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Missing CSRF Protection on State-Changing Endpoints</div>
+      <div class="issue-meta">
+        Multiple files
+        <span class="sep">·</span>
+        SameSite Cookie Configuration
+        <span class="sep">·</span>
+        CWE-352
+      </div>
+    </div>
+    <span class="cvss-badge medium">OWASP</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Finding</div>
+        <p>State-changing endpoints (logout, address deletion, wishlist operations) lack CSRF token validation. While <code>sameSite: 'strict'</code> is set in production, development mode uses <code>sameSite: 'lax'</code>, which allows cross-site POST requests from subdomains. The login endpoint sets auth cookies with <code>sameSite: 'lax'</code>, not <code>'strict'</code>.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <ul>
+          <li>Implement CSRF tokens for all state-changing endpoints</li>
+          <li>Use <code>sameSite: 'strict'</code> for all auth cookies in production</li>
+          <li>Consider SameSite=Strict for all cookies regardless of environment</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M6 -->
+<div class="issue-card">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot medium"></span>
+    <span class="issue-num">M6</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Payment Intent Amount — Client-Supplied Without Server Validation</div>
+      <div class="issue-meta">
+        <code>backend/routes/orders.js</code>
+        <span class="sep">·</span>
+        Lines 164–196
+        <span class="sep">·</span>
+        CWE-472 (Obsolete Configuration)
+      </div>
+    </div>
+    <span class="cvss-badge medium">PCI-DSS</span>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <div class="issue-section">
+        <div class="issue-section-title">Finding</div>
+        <p>The <code>confirm-payment</code> endpoint accepts <code>paymentIntentId</code> from the client and trusts the Revolut API response for the amount. If the Revolut webhook corroborates the amount server-side (which is good), the amount trust chain is intact. However, this should be verified explicitly — the <code>createOrder</code> flow correctly computes prices server-side, which is good.</p>
+      </div>
+      <div class="issue-section">
+        <div class="issue-section-title">Remediation</div>
+        <ul>
+          <li>Verify the Revolut webhook independently confirms the amount matches the order total</li>
+          <li>Never trust the client-supplied payment amount</li>
+          <li>Add a server-side amount check in the payment confirmation webhook handler</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LOW SECTION -->
+<div class="severity-section">
+<div class="severity-header">
+  <span class="severity-badge low">Low</span>
+  <span class="severity-title">Low Severity Issues</span>
+  <span class="severity-count">5 issues</span>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+<div class="issue-card" style="margin-bottom:0">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot low"></span>
+    <span class="issue-num">L1</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Customer Analytics Query Returns Aggregated Placeholder Data</div>
+      <div class="issue-meta"><code>admin.js</code> · Lines 148–153 · Data quality</div>
+    </div>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <p>The <code>getCustomerAnalytics</code> query does not join <code>orders.user_id</code> to <code>users</code>. Every customer's data is aggregated together. The <code>total_customers</code> count includes deleted/anonymised users.</p>
+    </div>
+  </div>
+</div>
+
+<div class="issue-card" style="margin-bottom:0">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot low"></span>
+    <span class="issue-num">L2</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Static File Serving — /uploads Directory Publicly Accessible</div>
+      <div class="issue-meta"><code>server.js</code> · Lines 108–110 · File security</div>
+    </div>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <p>The <code>/uploads</code> directory is served as static files. If upload validation is ever bypassed, executable files could be uploaded and accessed. Current image MIME validation is correct, but the static serving configuration amplifies the risk.</p>
+    </div>
+  </div>
+</div>
+
+<div class="issue-card" style="margin-bottom:0">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot low"></span>
+    <span class="issue-num">L3</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Development Email Logging Exposes PII to Server Logs</div>
+      <div class="issue-meta"><code>emailService.js</code> · Lines 24–32 · PII in logs</div>
+    </div>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <p>In development mode, full email HTML (customer names, addresses, order totals) is logged to <code>console.log</code> and potentially to <code>logs/combined-*.log</code>. Ensure <code>NODE_ENV=production</code> is enforced and this code path is unreachable in production.</p>
+    </div>
+  </div>
+</div>
+
+<div class="issue-card" style="margin-bottom:0">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot low"></span>
+    <span class="issue-num">L4</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Inconsistent JWT Secret Checks Across Routes</div>
+      <div class="issue-meta">Multiple files · Auth inconsistency</div>
+    </div>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <p><code>auth.js</code> fails if <code>JWT_SECRET</code> is missing. Three other routes silently accept placeholder secrets. This inconsistency creates unpredictable deployment failures or silent security bypasses.</p>
+    </div>
+  </div>
+</div>
+
+<div class="issue-card" style="margin-bottom:0">
+  <div class="issue-header" onclick="toggleIssue(this)">
+    <span class="severity-dot low"></span>
+    <span class="issue-num">L5</span>
+    <div class="issue-title-block">
+      <div class="issue-title">Royal Mail Returns Fake Tracking Data on API Failure</div>
+      <div class="issue-meta"><code>royalMail.js</code> · Lines 87–92 · Data integrity</div>
+    </div>
+    <div class="toggle-icon">+</div>
+  </div>
+  <div class="issue-body">
+    <div class="issue-body-inner">
+      <p>If the Royal Mail API returns 401/403/ENOTFOUND and <code>NODE_ENV=development</code>, mock tracking data is returned to customers. If <code>NODE_ENV</code> is misconfigured in production, customers receive fabricated tracking updates.</p>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ISSUE SUMMARY TABLE -->
+<div class="severity-section">
+<div class="severity-header">
+  <span class="severity-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border)">Summary</span>
+  <span class="severity-title">Complete Issue Table</span>
+  <span class="severity-count">19 issues</span>
+</div>
+<div class="summary-table-wrap">
+<table>
+  <thead><tr><th>ID</th><th>Severity</th><th>Category</th><th>File</th><th>Lines</th></tr></thead>
+  <tbody>
+    <tr style="background: var(--red-bg)"><td><code>C1</code></td><td style="color:var(--red);font-weight:700">CRITICAL</code></td><td>Auth Backdoor</td><td><code>auth.js</code></td><td>212–213</td></tr>
+    <tr style="background: var(--red-bg)"><td><code>C2</code></td><td style="color:var(--red);font-weight:700">CRITICAL</code></td><td>Hardcoded Secrets</td><td><code>upload.js, inventory.js, tracking.js</code></td><td>61, 17, 23</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H1</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>GDPR Non-Compliance</td><td><code>gdpr.js</code></td><td>128–155</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H2</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>Broken Auth</td><td><code>amazon.js</code></td><td>All routes</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H3</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>Webhook Bypass</td><td><code>tracking.js</code></td><td>177–181</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H4</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>PCI-DSS Risk</td><td><code>revolut.js, .env</code></td><td>—</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H5</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>Race Condition</td><td><code>inventory.js</code></td><td>121–141</td></tr>
+    <tr style="background: var(--orange-bg)"><td><code>H6</code></td><td style="color:var(--orange);font-weight:700">HIGH</code></td><td>Hardcoded Secrets</td><td><code>(see C2)</code></td><td>—</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M1</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>Secret Exposure</td><td><code>.env</code></td><td>21</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M2</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>Broken Access Control</td><td><code>admin.js</code></td><td>261</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M3</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>Auth Token Security</td><td><code>auth.js</code></td><td>430–438</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M4</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>GDPR/Consent</td><td><code>order.js</code></td><td>510–546</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M5</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>CSRF</td><td><code>multiple</code></td><td>—</td></tr>
+    <tr style="background: var(--yellow-bg)"><td><code>M6</code></td><td style="color:var(--yellow);font-weight:700">MEDIUM</code></td><td>Payment Integrity</td><td><code>orders.js</code></td><td>164–196</td></tr>
+    <tr style="background: var(--green-bg)"><td><code>L1</code></td><td style="color:var(--green);font-weight:700">LOW</code></td><td>Data Quality</td><td><code>admin.js</code></td><td>148–153</td></tr>
+    <tr style="background: var(--green-bg)"><td><code>L2</code></td><td style="color:var(--green);font-weight:700">LOW</code></td><td>File Security</td><td><code>server.js</code></td><td>108–110</td></tr>
+    <tr style="background: var(--green-bg)"><td><code>L3</code></td><td style="color:var(--green);font-weight:700">LOW</code></td><td>PII in Logs</td><td><code>emailService.js</code></td><td>24–32</td></tr>
+    <tr style="background: var(--green-bg)"><td><code>L4</code></td><td style="color:var(--green);font-weight:700">LOW</code></td><td>Inconsistent Auth</td><td><code>multiple</code></td><td>—</td></tr>
+    <tr style="background: var(--green-bg)"><td><code>L5</code></td><td style="color:var(--green);font-weight:700">LOW</code></td><td>Data Integrity</td><td><code>royalMail.js</code></td><td>87–92</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="recs-section">
+<h2>Priority Remediation Roadmap</h2>
+
+<div class="rec-item"><div class="rec-num">1</div><div class="rec-text">REMOVE the admin backdoor at <code>auth.js:212–213</code> — most urgent fix in the entire codebase</div></div>
+<div class="rec-item"><div class="rec-num">2</div><div class="rec-text">Replace all fallback JWT secret patterns in <code>upload.js</code>, <code>inventory.js</code>, <code>tracking.js</code> with hard failures</div></div>
+<div class="rec-item"><div class="rec-num">3</div><div class="rec-text">Add <code>authenticateToken</code> + <code>requireAdmin</code> to ALL routes in <code>amazon.js</code></div></div>
+<div class="rec-item"><div class="rec-num">4</div><div class="rec-text">Audit all environment variables — ensure <code>JWT_SECRET</code> and all API keys are set before deployment</div></div>
+<div class="rec-item"><div class="rec-num">5</div><div class="rec-text">Remove <code>.env</code> from version control, purge from git history, rotate all potentially exposed secrets</div></div>
+<div class="rec-item"><div class="rec-num">6</div><div class="rec-text">Fix GDPR cascade deletion — add explicit deletes for wishlists, addresses, consents, audit logs, reviews before user anonymisation</div></div>
+<div class="rec-item"><div class="rec-num">7</div><div class="rec-text">Implement Royal Mail webhook signature verification — uncomment and complete the stub at <code>tracking.js:177–181</code></div></div>
+<div class="rec-item"><div class="rec-num">8</div><div class="rec-text">Fix inventory race condition — replace SELECT-then-UPDATE with atomic UPDATE...WHERE inventory_quantity >= ?</div></div>
+<div class="rec-item"><div class="rec-num">9</div><div class="rec-text">Conduct formal PCI-DSS scope assessment — verify Redis TLS, Revolut compliance certificate, log all payment data flows</div></div>
+<div class="rec-item"><div class="rec-num">10</div><div class="rec-text">Remove <code>isAdmin</code> control from the user update endpoint — admin flag must use a separate audited workflow</div></div>
+<div class="rec-item"><div class="rec-num">11</div><div class="rec-text">Replace <code>'unsafe-inline'</code> in CSP with a nonce or hash-based approach</div></div>
+<div class="rec-item"><div class="rec-num">12</div><div class="rec-text">Add HMAC protection to password reset tokens + <code>token_version</code> to detect reuse</div></div>
+<div class="rec-item"><div class="rec-num">13</div><div class="rec-text">Fix customer analytics query — properly join <code>orders.user_id</code> to <code>users</code></div></div>
+<div class="rec-item"><div class="rec-num">14</div><div class="rec-text">Conduct penetration testing before any public-facing deployment</div></div>
+</div>
+
+<!-- POSITIVE PRACTICES -->
+<div class="positives">
+<h3>Positive Security Practices Found</h3>
+<ul>
+  <li>Helmet.js configured with CSP headers (contentSecurityPolicy)</li>
+  <li>Rate limiting on auth endpoints (5 attempts/15min) and order creation (5/min)</li>
+  <li>bcrypt with 12 salt rounds for password hashing</li>
+  <li>JWT explicit algorithm specification (<code>HS256</code>) — prevents algorithm confusion attacks</li>
+  <li>Refresh token SHA-256 hashing before storage — one-way, not reversible</li>
+  <li>IDOR protection on order access (order must belong to requesting user or admin)</li>
+  <li>Input validation with <code>express-validator</code> on all major routes</li>
+  <li>Prepared/parameterised queries throughout — SQL injection largely mitigated</li>
+  <li>Revolut webhook uses timing-safe comparison and 5-minute timestamp window</li>
+  <li>express.json() body size limited to 10mb</li>
+  <li>Order total computed server-side from database — client cannot manipulate prices</li>
+</ul>
+</div>
+
+</div><!-- end content -->
+
+<!-- FOOTER -->
+<div class="footer">
+  Report generated by Hermes Agent (Claude Code) · Static code analysis only · Penetration test recommended before deployment<br>
+  Wick Wax &amp; Relax · 2026-04-24 · PCI-DSS v4.0 · GDPR · OWASP Top 10
+</div>
+
+<script>
+function toggleIssue(header) {
+  const card = header.closest('.issue-card');
+  const body = card.querySelector('.issue-body');
+  const icon = header.querySelector('.toggle-icon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

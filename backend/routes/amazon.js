@@ -181,20 +181,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), (req, res) =>
 
     const payload = JSON.parse(req.body);
 
-    console.log('Amazon webhook received:', payload);
+    // SECURITY: Log only notification type, not full payload to avoid exposing sensitive data
+    console.log('Amazon webhook received, type:', payload.notificationType || 'unknown');
 
     // Process different notification types
     switch (payload.notificationType) {
       case 'ORDER_CHANGE':
-        // Handle order changes
-        console.log('Order change notification:', payload.orderId);
+        // Handle order changes - log sanitized info only
+        console.log('Amazon order change notification received');
         break;
       case 'INVENTORY_CHANGE':
-        // Handle inventory changes
-        console.log('Inventory change notification:', payload.sku);
+        // Handle inventory changes - log sanitized info only
+        console.log('Amazon inventory change notification received');
         break;
       default:
-        console.log('Unknown notification type:', payload.notificationType);
+        console.log('Unknown Amazon notification type:', payload.notificationType || 'none');
     }
 
     res.json({ success: true, message: 'Webhook processed' });

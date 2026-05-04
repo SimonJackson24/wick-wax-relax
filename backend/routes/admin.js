@@ -10,20 +10,23 @@ const router = express.Router();
 
 // Middleware to authenticate JWT token from cookies
 function authenticateToken(req, res, next) {
-  console.log('Incoming cookies:', req.cookies);
   const token = req.cookies.accessToken;
-  console.log('Access token present:', !!token);
 
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', (err, user) => {
+  // SECURITY: Fail if JWT_SECRET not configured
+  if (!process.env.JWT_SECRET) {
+    console.error('SECURITY ERROR: JWT_SECRET not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  // SECURITY: Explicit algorithm specification
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
-      console.log('Token verification error:', err);
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
-    console.log('Token verification successful, user:', user);
     req.user = user;
     next();
   });

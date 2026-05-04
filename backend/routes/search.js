@@ -422,7 +422,7 @@ router.get('/health', (req, res) => {
 router.post('/admin/clear-cache', async (req, res) => {
   try {
     // In a real implementation, this would clear any cached search results
-    console.log('Search cache cleared');
+    console.log('Admin action: Search cache cleared');
     res.json({ success: true, message: 'Search cache cleared successfully' });
   } catch (error) {
     console.error('Clear cache error:', error);
@@ -434,10 +434,10 @@ router.post('/admin/clear-cache', async (req, res) => {
 router.post('/admin/reindex', async (req, res) => {
   try {
     // In a real implementation, this would rebuild search indexes
-    console.log('Search reindexing started');
+    console.log('Admin action: Search reindexing started');
     // Simulate reindexing process
     setTimeout(() => {
-      console.log('Search reindexing completed');
+      console.log('Admin action: Search reindexing completed');
     }, 1000);
 
     res.json({

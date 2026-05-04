@@ -2,10 +2,20 @@ const express = require('express');
 const { query } = require('../config/database');
 const { body, param, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const orderService = require('../services/order');
 const revolutService = require('../services/revolut');
 
 const router = express.Router();
+
+// Rate limiter for order creation to prevent payment fraud
+const orderCreationLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 orders per minute per user
+  message: { error: 'Too many orders, please try again later' },
+  keyGenerator: (req) => req.user?.userId || req.ip,
+  skip: (req) => !req.user // Skip if not authenticated (will fail anyway)
+});
 
 // Middleware to authenticate JWT token (supports both header and cookie)
 function authenticateToken(req, res, next) {
@@ -22,7 +32,14 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', (err, user) => {
+  // SECURITY: Fail if JWT_SECRET not configured
+  if (!process.env.JWT_SECRET) {
+    console.error('SECURITY ERROR: JWT_SECRET not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  // SECURITY: Explicit algorithm specification
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
@@ -40,7 +57,7 @@ function requireAdmin(req, res, next) {
 }
 
 // Create new order
-router.post('/', authenticateToken, [
+router.post('/', authenticateToken, orderCreationLimiter, [
   body('items').isArray({ min: 1 }),
   body('items.*.variantId').isUUID(),
   body('items.*.quantity').isInt({ min: 1 }),
@@ -89,7 +106,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get single order by ID
+// Get single order by ID with IDOR protection
 router.get('/:id', authenticateToken, [
   param('id').isUUID()
 ], async (req, res) => {
@@ -104,6 +121,11 @@ router.get('/:id', authenticateToken, [
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // SECURITY: IDOR Protection - Verify order belongs to authenticated user or user is admin
+    if (order.user_id !== req.user.userId && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied to this order' });
     }
 
     res.json(order);

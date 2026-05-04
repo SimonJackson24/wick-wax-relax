@@ -14,7 +14,13 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+  // SECURITY: Require JWT_SECRET to be configured - fail if not set
+  if (!process.env.JWT_SECRET) {
+    console.error('SECURITY ERROR: JWT_SECRET environment variable is not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
@@ -143,21 +149,35 @@ router.put('/addresses/:id', authenticateToken, [
       );
     }
 
-    // Build dynamic update query
+    // Build dynamic update query with WHITELISTED column names only
+    // SECURITY: Column names must be whitelisted to prevent SQL injection
+    const allowedFields = ['addressType', 'fullName', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'isDefault'];
+    const fieldMapping = {
+      'addressType': 'address_type',
+      'fullName': 'full_name',
+      'addressLine1': 'address_line1',
+      'addressLine2': 'address_line2',
+      'city': 'city',
+      'state': 'state',
+      'postalCode': 'postal_code',
+      'country': 'country',
+      'phone': 'phone',
+      'isDefault': 'is_default'
+    };
+
     const fields = [];
     const values = [];
-    let paramCount = 1;
 
     Object.keys(updates).forEach(key => {
-      if (updates[key] !== undefined) {
-        fields.push(`${key} = $${paramCount}`);
+      // Only allow whitelisted fields to prevent SQL injection
+      if (allowedFields.includes(key) && updates[key] !== undefined) {
+        fields.push(`${fieldMapping[key]} = ?`);
         values.push(updates[key]);
-        paramCount++;
       }
     });
 
     if (fields.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+      return res.status(400).json({ error: 'No valid fields to update' });
     }
 
     values.push(id);

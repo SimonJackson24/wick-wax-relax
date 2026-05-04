@@ -57,10 +57,10 @@ class OrderService {
         });
       }
 
-      // Create order
+      // Create order with user association for fraud prevention and order history
       const orderResult = await client.query(
-        'INSERT INTO orders (channel_id, external_id, status, total) VALUES (?, ?, ?, ?) RETURNING id',
-        [channelId, `PWA-${Date.now()}`, 'PENDING', total]
+        'INSERT INTO orders (channel_id, user_id, external_id, status, total) VALUES (?, ?, ?, ?, ?) RETURNING id',
+        [channelId, userId, `PWA-${Date.now()}`, 'PENDING', total]
       );
 
       const orderId = orderResult.rows[0].id;
@@ -239,6 +239,7 @@ class OrderService {
     const result = await query(`
       SELECT
         o.id,
+        o.user_id,
         o.external_id,
         o.status,
         o.total,
@@ -276,7 +277,7 @@ class OrderService {
       LEFT JOIN products p ON pv.product_id = p.id
       LEFT JOIN channels c ON o.channel_id = c.id
       WHERE o.id = ?
-      GROUP BY o.id, o.external_id, o.status, o.total, o.order_date, o.channel_id, c.name
+      GROUP BY o.id, o.user_id, o.external_id, o.status, o.total, o.order_date, o.channel_id, c.name
     `, [orderId]);
 
     if (result.rows.length === 0) {

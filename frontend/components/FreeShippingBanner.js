@@ -16,15 +16,14 @@ const FreeShippingBanner = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Box
-          component={motion.div}
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          sx={{
+          style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 1,
+            gap: 8,
             flexWrap: 'wrap'
           }}
         >
@@ -67,7 +66,7 @@ const FreeShippingBanner = () => {
               Shop Now
             </Typography>
           </Link>
-        </Box>
+        </motion.div>
       </Container>
     </Box>
   );

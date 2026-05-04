@@ -28,23 +28,40 @@ app.use(helmet({
     },
   },
 }));
+
+// Build allowed origins list dynamically
+const getAllowedOrigins = () => {
+  const origins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+  ];
+
+  // Add localhost ports for development
+  if (process.env.NODE_ENV !== 'production') {
+    origins.push('http://localhost:3001');
+    origins.push('http://localhost:3002');
+    origins.push('http://localhost:3003');
+  }
+
+  // SECURITY: Validate FRONTEND_URL is properly configured (not placeholder)
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl && (frontendUrl.includes('yourdomain.com') || frontendUrl.includes('localhost') === false && !frontendUrl.startsWith('https://'))) {
+    console.error('SECURITY ERROR: FRONTEND_URL appears to be misconfigured:', frontendUrl);
+  }
+
+  return origins;
+};
+
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      'http://localhost:3001', // Add frontend port 3001
-      'http://localhost:3002', // Add frontend port 3002
-      'http://localhost:3003', // Add frontend port 3003
-      'https://yourdomain.com', // Add your production domain
-    ];
-    // Allow requests with no origin (mobile apps, etc.)
-    console.log('CORS check - Origin:', origin, 'Allowed:', allowedOrigins);
+    const allowedOrigins = getAllowedOrigins();
+
+    // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) return callback(null, true);
+
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('CORS allowed for origin:', origin);
       callback(null, true);
     } else {
-      console.log('CORS blocked for origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -103,6 +120,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/admin', require('./routes/admin'));

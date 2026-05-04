@@ -74,9 +74,11 @@ function getSecureCookieOptions(maxAge) {
 // Register new user
 router.post('/register', authRateLimit, [
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }),
-  body('firstName').trim().isLength({ min: 1 }),
-  body('lastName').trim().isLength({ min: 1 })
+  body('password').isLength({ min: 8 })
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .withMessage('Password must be at least 8 characters with uppercase, lowercase, number and special character'),
+  body('firstName').trim().isLength({ min: 1, max: 50 }),
+  body('lastName').trim().isLength({ min: 1, max: 50 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -85,6 +87,12 @@ router.post('/register', authRateLimit, [
     }
 
     const { email, password, firstName, lastName } = req.body;
+
+    // SECURITY: Fail if JWT_SECRET is not configured
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      console.error('SECURITY ERROR: JWT secrets not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
 
     // Check if user already exists
     const existingUser = await query('SELECT id FROM users WHERE email = ?', [email]);
@@ -106,22 +114,23 @@ router.post('/register', authRateLimit, [
     const userResult = await query('SELECT id, email, first_name, last_name FROM users WHERE email = ?', [email]);
     const user = userResult.rows[0];
 
-    // Generate access token
+    // Generate access token with explicit algorithm
     const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production',
-      { expiresIn: '15m' } // Short-lived access token
+      process.env.JWT_SECRET,
+      { expiresIn: '15m', algorithm: 'HS256' } // Explicit algorithm
     );
 
-    // Generate refresh token
+    // Generate refresh token with explicit algorithm
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_REFRESH_SECRET || 'your_super_secret_refresh_key_change_this_in_production',
-      { expiresIn: '7d' }
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d', algorithm: 'HS256' }
     );
 
-    // Store refresh token in database (you might want to hash it)
-    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshToken, user.id]);
+    // SECURITY: Hash refresh token before storing (one-way hash)
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     // Set httpOnly cookies
     res.cookie('accessToken', accessToken, getSecureCookieOptions(15 * 60 * 1000));
@@ -154,6 +163,12 @@ router.post('/login', authRateLimit, [
 
     const { email, password } = req.body;
 
+    // SECURITY: Fail if JWT secrets not configured
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      console.error('SECURITY ERROR: JWT secrets not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
     // Find user
     const result = await query('SELECT * FROM users WHERE email = ?', [email]);
     if (result.rows.length === 0) {
@@ -161,7 +176,6 @@ router.post('/login', authRateLimit, [
     }
 
     const user = result.rows[0];
-    console.log('Backend Debug: User from database:', user);
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
@@ -172,26 +186,30 @@ router.post('/login', authRateLimit, [
     // Update last login
     await query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
-    // Generate access token
+    // Generate access token with explicit algorithm
     const accessToken = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin === 1 },
-      process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production',
-      { expiresIn: '15m' } // Short-lived access token
+      process.env.JWT_SECRET,
+      { expiresIn: '15m', algorithm: 'HS256' } // Explicit algorithm
     );
 
-    // Generate refresh token
+    // Generate refresh token with explicit algorithm
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_REFRESH_SECRET || 'your_super_secret_refresh_key_change_this_in_production',
-      { expiresIn: '7d' }
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d', algorithm: 'HS256' }
     );
 
-    // Store refresh token in database
-    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshToken, user.id]);
+    // SECURITY: Hash refresh token before storing (one-way hash)
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     // Set httpOnly cookies
     res.cookie('accessToken', accessToken, getSecureCookieOptions(15 * 60 * 1000));
     res.cookie('refreshToken', refreshToken, getSecureCookieOptions(7 * 24 * 60 * 60 * 1000));
+
+    // SECURITY: Check if password change is required (enforced on first login)
+    const passwordChangeRequired = user.password_change_required === 1;
 
     const userResponse = {
       id: user.id,
@@ -199,10 +217,9 @@ router.post('/login', authRateLimit, [
       name: `${user.first_name} ${user.last_name}`,
       firstName: user.first_name,
       lastName: user.last_name,
-      isAdmin: user.is_admin === 1
+      isAdmin: user.is_admin === 1,
+      passwordChangeRequired: passwordChangeRequired
     };
-    
-    console.log('Backend Debug: User response object:', userResponse);
 
     res.json({
       user: userResponse
@@ -236,9 +253,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
       createdAt: user.created_at,
       lastLogin: user.last_login
     };
-    
-    console.log('Backend Debug: Verify endpoint user response:', userResponse);
-    
+
     res.json({
       user: userResponse
     });
@@ -279,21 +294,23 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
 // Middleware to authenticate JWT token from cookies
 function authenticateToken(req, res, next) {
-  console.log('Auth Debug - authenticateToken: Incoming cookies:', req.cookies);
   const token = req.cookies.accessToken;
-  console.log('Auth Debug - authenticateToken: accessToken present:', !!token);
 
   if (!token) {
-    console.log('Auth Debug - authenticateToken: No access token found');
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production', (err, user) => {
+  // SECURITY: Fail if JWT_SECRET is not configured
+  if (!process.env.JWT_SECRET) {
+    console.error('SECURITY ERROR: JWT_SECRET environment variable is not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  // SECURITY: Explicit algorithm specification to prevent algorithm confusion attacks
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
-      console.log('Auth Debug - authenticateToken: Token verification failed:', err.message);
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
-    console.log('Auth Debug - authenticateToken: Token verified for user:', user.email);
     req.user = user;
     next();
   });
@@ -302,48 +319,50 @@ function authenticateToken(req, res, next) {
 // Refresh token endpoint
 router.post('/refresh', async (req, res) => {
   try {
-    console.log('Auth Debug - refresh: Incoming cookies:', req.cookies);
     const refreshToken = req.cookies.refreshToken;
-    console.log('Auth Debug - refresh: refreshToken present:', !!refreshToken);
 
     if (!refreshToken) {
-      console.log('Auth Debug - refresh: No refresh token found');
       return res.status(401).json({ error: 'Refresh token required' });
     }
 
-    // Verify refresh token
-    console.log('Auth Debug - refresh: Verifying refresh token');
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'your_super_secret_refresh_key_change_this_in_production');
-    console.log('Auth Debug - refresh: Decoded token:', { userId: decoded.userId, email: decoded.email });
+    // SECURITY: Fail if JWT secrets not configured
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      console.error('SECURITY ERROR: JWT secrets not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
 
-    // Check if refresh token exists in database
-    console.log('Auth Debug - refresh: Checking database for refresh token');
-    const result = await query('SELECT id, email, first_name, last_name, is_admin FROM users WHERE id = ? AND refresh_token = ?', [decoded.userId, refreshToken]);
-    console.log('Auth Debug - refresh: Database result length:', result.rows.length);
+    // Verify refresh token with explicit algorithm
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] });
+
+    // SECURITY: Hash the incoming refresh token and compare with stored hash
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // Check if refresh token hash exists in database
+    const result = await query('SELECT id, email, first_name, last_name, is_admin FROM users WHERE id = ? AND refresh_token = ?', [decoded.userId, refreshTokenHash]);
 
     if (result.rows.length === 0) {
-      console.log('Auth Debug - refresh: Refresh token not found in database');
       return res.status(403).json({ error: 'Invalid refresh token' });
     }
 
     const user = result.rows[0];
 
-    // Generate new access token
+    // Generate new access token with explicit algorithm
     const newAccessToken = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin === 1 },
-      process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production',
-      { expiresIn: '15m' }
+      process.env.JWT_SECRET,
+      { expiresIn: '15m', algorithm: 'HS256' }
     );
 
-    // Generate new refresh token
+    // Generate new refresh token with explicit algorithm
     const newRefreshToken = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_REFRESH_SECRET || 'your_super_secret_refresh_key_change_this_in_production',
-      { expiresIn: '7d' }
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d', algorithm: 'HS256' }
     );
 
-    // Update refresh token in database
-    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [newRefreshToken, user.id]);
+    // SECURITY: Hash new refresh token before storing
+    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    await query('UPDATE users SET refresh_token = ? WHERE id = ?', [newRefreshTokenHash, user.id]);
 
     // Set new cookies
     res.cookie('accessToken', newAccessToken, getSecureCookieOptions(15 * 60 * 1000));
@@ -363,11 +382,15 @@ router.post('/logout', async (req, res) => {
     const token = req.cookies.accessToken;
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_change_this_in_production');
+        // SECURITY: Fail if JWT_SECRET not configured
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET not configured');
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+        // SECURITY: Clear refresh token hash
         await query('UPDATE users SET refresh_token = NULL WHERE id = ?', [decoded.userId]);
       } catch (tokenError) {
         // Token is invalid/expired, just clear cookies
-        console.log('Logout: Token invalid/expired, clearing cookies only');
       }
     }
 

@@ -23,6 +23,7 @@ import {
   Inventory as InventoryIcon,
   Star as StarIcon
 } from '@mui/icons-material';
+import { useWishlist } from './WishlistContext';
 
 const ProductCard = ({
   product,
@@ -36,8 +37,11 @@ const ProductCard = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isHovered, setIsHovered] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  // Check if product is in wishlist
+  const isFavorite = isInWishlist(product.id);
 
   // Get the first variant for pricing
   const firstVariant = product.variants?.[0];
@@ -78,10 +82,10 @@ const ProductCard = ({
     }
   };
 
-  const handleToggleFavorite = (e) => {
+  const handleToggleFavorite = async (e) => {
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // Here you would typically call an API to save the favorite status
+    // Use the WishlistContext to toggle
+    await toggleWishlist(product.id, firstVariant?.id);
   };
 
   const handleProductClick = () => {
