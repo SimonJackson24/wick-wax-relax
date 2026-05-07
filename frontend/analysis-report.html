@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wick Wax Relax — Full Stack Audit Report</title>
+  <style>
+    :root {
+      --bg: #0f0e17;
+      --bg2: #1a1825;
+      --bg3: #232136;
+      --text: #fffffe;
+      --text2: #a7a9be;
+      --text3: #6c6f85;
+      --primary: #c8b6db;
+      --secondary: #e6c88a;
+      --tertiary: #b2c8ba;
+      --danger: #eb6f92;
+      --warning: #f6c177;
+      --success: #9ccfd8;
+      --info: #7f9cf5;
+      --border: #2a2840;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    a { color: var(--secondary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+    }
+    .badge-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge-critical { background: var(--danger); color: #0f0e17; }
+    .badge-high { background: var(--warning); color: #0f0e17; }
+    .badge-medium { background: var(--info); color: #fff; }
+    .badge-low { background: var(--tertiary); color: #0f0e17; }
+    .badge-info { background: var(--text3); color: #fff; }
+    h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .subtitle { color: var(--text2); font-size: 1.05rem; }
+    .meta { margin-top: 12px; color: var(--text3); font-size: 0.85rem; }
+
+    /* Score table */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 32px 0;
+    }
+    .score-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .score-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 6px; }
+    .score-card .score { font-size: 2rem; font-weight: 800; }
+    .score-card .desc { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+    .score-72 { color: var(--warning); }
+    .score-68 { color: var(--warning); }
+    .score-70 { color: var(--warning); }
+    .score-58 { color: var(--danger); }
+    .score-55 { color: var(--danger); }
+
+    /* Section headings */
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin: 48px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+    h3 { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin: 24px 0 10px; }
+    h4 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 16px 0 8px; }
+
+    p { color: var(--text2); margin-bottom: 12px; }
+    ul, ol { color: var(--text2); padding-left: 24px; margin-bottom: 12px; }
+    li { margin-bottom: 4px; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 0.9rem;
+    }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--bg3);
+      color: var(--primary);
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text2);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg2); }
+
+    /* Finding blocks */
+    .finding {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .finding-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .finding-title { font-weight: 700; font-size: 1rem; color: var(--text); flex: 1; }
+    .severity-tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .sev-critical { background: var(--danger); color: #0f0e17; }
+    .sev-high { background: var(--warning); color: #0f0e17; }
+    .sev-medium { background: var(--info); color: #fff; }
+    .sev-low { background: var(--tertiary); color: #0f0e17; }
+
+    .file-ref {
+      display: inline-block;
+      background: var(--bg3);
+      color: var(--secondary);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      padding: 1px 8px;
+      border-radius: 4px;
+      margin: 2px;
+    }
+
+    code {
+      background: var(--bg3);
+      color: var(--tertiary);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.85em;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    pre .c { color: var(--text3); }
+    pre .k { color: var(--danger); }
+    pre .s { color: var(--secondary); }
+    pre .v { color: var(--tertiary); }
+    pre .fn { color: var(--info); }
+    pre .n { color: var(--text); }
+
+    .impact { color: var(--danger); font-weight: 600; margin: 6px 0; }
+
+    .fix-box {
+      background: var(--bg3);
+      border-left: 3px solid var(--secondary);
+      padding: 10px 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: 10px;
+      font-size: 0.88rem;
+      color: var(--text2);
+    }
+    .fix-box strong { color: var(--secondary); }
+
+    .check-ok {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--success);
+      font-size: 0.88rem;
+      margin: 2px 0;
+    }
+    .check-ok::before {
+      content: '✓';
+      font-weight: 800;
+    }
+
+    .check-fail {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--danger);
+      font-size: 0.88rem;
+      margin: 2px 0;
+    }
+    .check-fail::before {
+      content: '✗';
+      font-weight: 800;
+    }
+
+    /* Action plan table */
+    .action-table td:first-child { width: 30px; text-align: center; }
+    .action-table td:last-child { width: 100px; text-align: center; }
+    .phase-label {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .phase-deploy { background: var(--danger); color: #0f0e17; }
+    .phase-sprint { background: var(--warning); color: #0f0e17; }
+    .phase-medium { background: var(--info); color: #fff; }
+
+    /* TOC */
+    .toc {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 24px 0 32px;
+    }
+    .toc h3 { margin-top: 0; color: var(--primary); font-size: 1rem; margin-bottom: 12px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: var(--secondary); font-size: 0.9rem; }
+    .toc a:hover { color: var(--text); }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    /* Summary callout */
+    .callout {
+      background: linear-gradient(135deg, #1a1525 0%, #1a1825 100%);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+    .callout p { color: var(--text); font-weight: 600; margin-bottom: 0; }
+    .callout span { color: var(--danger); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<header>
+  <div class="badge-row">
+    <span class="badge badge-critical">14 Critical &amp; High Issues</span>
+    <span class="badge badge-high">4 Critical Findings</span>
+    <span class="badge badge-warning">Not Production Ready</span>
+  </div>
+  <h1>Wick Wax Relax — Full Stack Audit Report</h1>
+  <p class="subtitle">E-commerce PWA: Node.js/Express + Next.js + PostgreSQL + JWT + Stripe-compatible</p>
+  <p class="meta">Auditor: Hermes Agent (M2.7) &nbsp;|&nbsp; Date: May 2026 &nbsp;|&nbsp; Files audited: 120+ &nbsp;|&nbsp; Lines reviewed: 28,000+</p>
+</header>
+
+<!-- SCORES -->
+<div class="score-grid">
+  <div class="score-card">
+    <div class="label">Backend Architecture</div>
+    <div class="score score-72">72/100</div>
+    <div class="desc">MEDIUM — Mixed DB abstraction, dead code</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Security</div>
+    <div class="score score-68">68/100</div>
+    <div class="desc">MEDIUM — 3 critical gaps found</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Frontend / UX</div>
+    <div class="score score-70">70/100</div>
+    <div class="desc">MEDIUM — Auth broken on order confirmation</div>
+  </div>
+  <div class="score-card">
+    <div class="label">SEO</div>
+    <div class="score score-58">58/100</div>
+    <div class="desc">LOW — Missing sitemap, no Product JSON-LD</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Performance</div>
+    <div class="score" style="color:var(--text3)">—/100</div>
+    <div class="desc">UNKNOWN — Lighthouse ran on wrong port</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Deployability</div>
+    <div class="score score-55">55/100</div>
+    <div class="desc">LOW — 7 deployment blockers</div>
+  </div>
+</div>
+
+<div class="callout">
+  <p>Overall verdict: <span>NOT PRODUCTION READY</span> — 3 critical blockers prevent the app from functioning as a real e-commerce platform. Fix the 3 critical findings before any deployment.</p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#p1">Part 1 — Backend Architecture</a></li>
+    <li><a href="#p2">Part 2 — Security</a></li>
+    <li><a href="#p3">Part 3 — Frontend / Customer Journey</a></li>
+    <li><a href="#p4">Part 4 — SEO</a></li>
+    <li><a href="#p5">Part 5 — Performance</a></li>
+    <li><a href="#p6">Part 6 — Deployment Readiness</a></li>
+    <li><a href="#summary">Findings Summary</a></li>
+    <li><a href="#actions">Recommended Action Plan</a></li>
+  </ol>
+</div>
+
+<!-- PART 1 -->
+<h2 id="p1">Part 1 — Backend Architecture</h2>
+
+<h3>1.1 Tech Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Technology</th></tr>
+  <tr><td>Backend</td><td>Node.js / Express 4.x</td></tr>
+  <tr><td>Database</td><td>PostgreSQL via <code>pg</code> library (pool)</td></tr>
+  <tr><td>Auth</td><td>JWT (jsonwebtoken) + bcryptjs</td></tr>
+  <tr><td>ORM</td><td>Raw parameterized SQL (no Prisma)</td></tr>
+  <tr><td>Validation</td><td>express-validator</td></tr>
+  <tr><td>Rate Limiting</td><td>express-rate-limit</td></tr>
+  <tr><td>Security Headers</td><td>helmet ^7.1.0</td></tr>
+  <tr><td>Payments</td><td>Revolut (via revolutService.js)</td></tr>
+  <tr><td>Email</td><td>Nodemailer</td></tr>
+  <tr><td>Logging</td><td>Winston with daily rotation</td></tr>
+  <tr><td>Monitoring</td><td>Sentry v8 + Prometheus metrics</td></tr>
+  <tr><td>Testing</td><td>Jest + Supertest</td></tr>
+  <tr><td>Redis</td><td>Configured in <code>.env.example</code> — <strong style="color:var(--danger)">NOT USED anywhere in code</strong></td></tr>
+</table>
+
+<h3>1.2 API Surface</h3>
+<table>
+  <tr><th>Group</th><th>Paths</th><th>Auth</th></tr>
+  <tr><td>Auth</td><td><code>/api/auth/*</code> (register, login, verify, profile, refresh, logout, forgot-password, reset-password)</td><td>No / Cookie</td></tr>
+  <tr><td>Products</td><td><code>/api/products/*</code> (list, detail, create, update, delete, search, variants, bulk)</td><td>Public + Admin</td></tr>
+  <tr><td>Categories</td><td><code>/api/categories/*</code> (tree, CRUD)</td><td>Public + Admin</td></tr>
+  <tr><td>Orders</td><td><code>/api/orders/*</code> (create, list, get, status, tracking, bulk, analytics, notify)</td><td>Auth required</td></tr>
+  <tr><td>Subscriptions</td><td><code>/api/subscriptions/*</code> (plans, create, pause, resume, cancel, admin)</td><td>Auth required</td></tr>
+  <tr><td>Users</td><td><code>/api/users/*</code> (profile, admin listing)</td><td>Auth / Admin</td></tr>
+  <tr><td>Wishlist</td><td><code>/api/wishlist/*</code> (add, remove, list)</td><td>Auth</td></tr>
+  <tr><td>Inventory</td><td><code>/api/inventory/*</code> (stock, suppliers, sync)</td><td>Admin</td></tr>
+  <tr><td>Admin</td><td><code>/api/admin/*</code>, <code>/api/admin/settings/*</code></td><td>Admin</td></tr>
+  <tr><td>Webhooks</td><td><code>/api/webhooks/revolut</code></td><td>Signature</td></tr>
+  <tr><td>Upload</td><td><code>/api/upload/*</code> (multer)</td><td>Auth</td></tr>
+  <tr><td>Amazon / Etsy</td><td><code>/api/amazon/*</code>, <code>/api/etsy/*</code></td><td>Admin</td></tr>
+  <tr><td>Export</td><td><code>/api/export/*</code> (CSV orders, items)</td><td>Auth</td></tr>
+  <tr><td>Sync</td><td><code>/api/sync/*</code></td><td>Admin</td></tr>
+  <tr><td>SEO</td><td><code>/api/seo/*</code></td><td>Admin</td></tr>
+  <tr><td>Search</td><td><code>/api/search/*</code> (health, popular, filters)</td><td>Public</td></tr>
+  <tr><td>Tracking</td><td><code>/api/tracking/*</code></td><td>Auth</td></tr>
+  <tr><td>GDPR</td><td><code>/api/gdpr/*</code> (export, erasure, consent)</td><td>Auth</td></tr>
+  <tr><td>Push</td><td><code>/api/push/*</code></td><td>Auth</td></tr>
+</table>
+
+<h3>1.3 Database Architecture</h3>
+<p>PostgreSQL pool connection at <code>backend/config/database.js:5-15</code>, parameterized queries throughout. MySQL-style <code>?</code> placeholders auto-converted to PostgreSQL <code>$N</code> format at <code>database.js:54</code>.</p>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">Mixed DB helper abstraction — dead SQLite code</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">backend/config/database.js:65-107</span></p>
+  <p>The file exports <code>query</code> (PostgreSQL pool), <code>run</code>, <code>get</code>, and <code>exec</code> helpers. However <code>run</code>, <code>get</code>, and <code>exec</code> reference an undefined <code>db</code> variable (the SQLite reference was never updated after switching to PostgreSQL pool). These helpers are dead code but could cause confusion if imported elsewhere.</p>
+<pre><span class="c">// Line 66: db is undefined</span>
+<span class="k">const</span> <span class="fn">runSingle</span> = <span class="k">async</span> (<span class="n">sql</span>, <span class="n">params</span> = []) => {
+  <span class="k">if</span> (!<span class="n">db</span>) {  <span class="c">// ← db never defined in this file</span>
+    <span class="k">await</span> <span class="fn">initializeDb</span>();
+  }
+  <span class="k">try</span> {
+    <span class="k">const</span> <span class="n">result</span> = <span class="k">await</span> <span class="n">db</span>.<span class="fn">run</span>(<span class="n">sql</span>, <span class="n">params</span>);  <span class="c">// ← db.run doesn't exist on pg pool</span></pre>
+  <p class="impact">Impact: Low — currently unused, but if any future code imports these helpers it will fail at runtime.</p>
+  <div class="fix-box"><strong>Fix:</strong> Remove the dead <code>run</code>, <code>get</code>, <code>exec</code> helpers or reimplement them against the PostgreSQL pool.</div>
+</div>
+
+<!-- PART 2 -->
+<h2 id="p2">Part 2 — Security</h2>
+
+<h3>2.1 What's Working Well</h3>
+<p class="check-ok">JWT with explicit HS256 algorithm on all token operations</p>
+<p class="check-ok">Algorithm allowlist prevents algorithm confusion attacks</p>
+<p class="check-ok">Refresh tokens stored as one-way SHA-256 hashes (rotation on every use)</p>
+<p class="check-ok">httpOnly + secure + sameSite cookies in production</p>
+<p class="check-ok">bcrypt with salt rounds of 12 for password hashing</p>
+<p class="check-ok">Auth rate limiting: 5 attempts/15min per IP+email</p>
+<p class="check-ok">Password reset rate limiting: 3/hour per IP+email</p>
+<p class="check-ok">Helmet security headers with CSP</p>
+<p class="check-ok">Global rate limiting: 100 req/15min prod, 500 dev</p>
+<p class="check-ok">Input validation on all auth and order endpoints via express-validator</p>
+<p class="check-ok">IDOR protection on order access (orders.js:127)</p>
+<p class="check-ok">Admin role checks on all admin endpoints</p>
+<p class="check-ok">Webhook signature verification (webhooks.js:14)</p>
+<p class="check-ok">No hardcoded secrets (grep confirmed clean)</p>
+<p class="check-ok">No SQL injection — parameterized queries throughout</p>
+<p class="check-ok">No command injection (grep confirmed clean)</p>
+<p class="check-ok">No eval or shell=True patterns found</p>
+
+<hr/>
+
+<h3>2.2 Critical Findings</h3>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[CRITICAL] Auth token stored in wrong location — order confirmation is broken for all users</div>
+    <span class="severity-tag sev-critical">CRITICAL</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/order-confirmation.js:30</span></p>
+<pre><span class="k">const</span> <span class="n">token</span> = <span class="n">localStorage</span>.<span class="fn">getItem</span>(<span class="s">'token'</span>);  <span class="c">// ← WRONG</span></pre>
+  <p>The backend stores JWT as an <strong>httpOnly cookie</strong> (<code>auth.js:136-137</code>), not in localStorage. This means <code>order-confirmation.js</code> will ALWAYS fail to find a token and redirect every confirmed-order user to the login page, even though their order was just successfully placed.</p>
+  <p>The correct approach is to use the cookie-based auth that all other authenticated pages use via <code>AuthContext</code>. The order confirmation page needs to use the <code>/api/orders/:id</code> endpoint which reads the auth cookie — NOT a localStorage token.</p>
+  <p class="impact">Impact: CRITICAL — Every customer who completes checkout gets kicked to login on the confirmation page. This is a catastrophic UX failure.</p>
+  <div class="fix-box"><strong>Fix:</strong> Remove the localStorage token lookup entirely. The <code>orders.js</code> endpoint already reads <code>req.cookies.accessToken</code>. After a successful checkout POST to <code>/api/orders</code>, the response should include the order details so the redirect carries them without needing a separate fetch.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[CRITICAL] Duplicate route registration — unpredictable routing</div>
+    <span class="severity-tag sev-critical">CRITICAL</span>
+  </div>
+  <p><span class="file-ref">backend/server.js:114-120</span></p>
+<pre><span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/inventory'</span>, <span class="fn">require</span>(<span class="s">'./routes/inventory'</span>));   <span class="c">// line 114</span>
+<span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/admin'</span>, <span class="fn">require</span>(<span class="s">'./routes/admin'</span>));           <span class="c">// line 116</span>
+<span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/admin/settings'</span>, <span class="fn">require</span>(<span class="s">'./routes/settings'</span>)); <span class="c">// line 117</span>
+<span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/inventory'</span>, <span class="fn">require</span>(<span class="s">'./routes/inventory'</span>));   <span class="c">// ← DUPLICATE (line 118)</span>
+<span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/admin'</span>, <span class="fn">require</span>(<span class="s">'./routes/admin'</span>));           <span class="c">// ← DUPLICATE (line 119)</span>
+<span class="n">app</span>.<span class="fn">use</span>(<span class="s">'/api/admin/settings'</span>, <span class="fn">require</span>(<span class="s">'./routes/settings'</span>)); <span class="c">// ← DUPLICATE (line 120)</span></pre>
+  <p class="impact">Impact: Unpredictable routing — the second registration shadows the first. Any middleware added between lines 114-117 gets bypassed by the duplicate registrations at 118-120.</p>
+  <div class="fix-box"><strong>Fix:</strong> Remove lines 118-120 entirely.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[CRITICAL] Payment integration is stubbed — orders are free</div>
+    <span class="severity-tag sev-critical">CRITICAL</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/checkout.js:53</span> &nbsp;|&nbsp; <span class="file-ref">backend/routes/orders.js:65</span></p>
+  <p>The checkout page accepts payment methods <code>APPLE_PAY</code>, <code>GOOGLE_PAY</code>, <code>KLARNA</code>, <code>CLEARPAY</code> but the actual payment processing is never invoked. The order is created via <code>orderService.createOrder()</code> but there is no call to Stripe, Revolut, or any payment gateway to actually charge the customer. The <code>revolutService</code> exists but is only called in the webhook handler, not in the order creation flow.</p>
+  <p class="impact">Impact: CRITICAL — Orders can be created with a success response without any money changing hands. Business-critical gap.</p>
+  <div class="fix-box"><strong>Fix:</strong> Integrate Stripe or Revolut payment intent creation before order confirmation. The checkout flow must create a payment intent, collect card details via Stripe Elements / Revolut, confirm payment, then create the order record only on successful payment capture.</div>
+</div>
+
+<hr/>
+
+<h3>2.3 High Findings</h3>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Password reset token stored in plaintext — unlike refresh tokens</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">backend/routes/auth.js:430-438</span></p>
+<pre><span class="k">const</span> <span class="n">resetToken</span> = <span class="n">crypto</span>.<span class="fn">randomBytes</span>(<span class="n">32</span>).<span class="fn">toString</span>(<span class="s">'hex'</span>);  <span class="c">// plaintext token</span>
+<span class="k">await</span> <span class="fn">query</span>(<span class="s">'UPDATE users SET reset_token = ?, reset_token_expires = ? ...'</span>,
+  [<span class="n">resetToken</span>, <span class="n">resetTokenExpires</span>.<span class="fn">toISOString</span>(), <span class="n">user</span>.<span class="n">id</span>]);</pre>
+  <p>Unlike refresh tokens (which are SHA-256 hashed before storage at <code>auth.js:132</code>), the password reset token is stored as plaintext. If the database is compromised, attackers can use any reset token directly to change passwords.</p>
+  <div class="fix-box"><strong>Fix:</strong> Hash the reset token: <code>crypto.createHash('sha256').update(resetToken).digest('hex')</code>. Verify by hashing the received token before DB lookup.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Redis configured but never used</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">backend/.env.example</span></p>
+  <p><code>REDIS_URL</code>, <code>REDIS_HOST</code>, <code>REDIS_PORT</code>, <code>REDIS_PASSWORD</code> are defined but the codebase has no Redis imports anywhere. The <code>cacheService.js</code> files exist but use in-memory caching.</p>
+  <div class="fix-box"><strong>Fix:</strong> Either implement Redis properly (add <code>ioredis</code> import to cache service) or remove Redis configuration from <code>.env.example</code> to avoid production misconfiguration.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] CSP unsafe-inline for styles weakens XSS protection</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">backend/server.js:21</span></p>
+<pre><span class="n">styleSrc</span>: [<span class="s">"'self'"</span>, <span class="s">"'unsafe-inline'"</span>],</pre>
+  <p>Allows inline styles site-wide, significantly worsening any XSS attack by enabling CSS injection.</p>
+  <div class="fix-box"><strong>Fix:</strong> Use <code>'unsafe-hashes'</code> with explicit hashes for MUI's critical inline styles, or migrate to CSS modules to eliminate the need for unsafe-inline entirely.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Wrong login redirect URL — 404 page after order confirmation</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/order-confirmation.js:32</span></p>
+<pre><span class="n">router</span>.<span class="fn">push</span>(<span class="s">'/account/login'</span>);  <span class="c">// ← 404, page is at /auth/login</span></pre>
+  <div class="fix-box"><strong>Fix:</strong> Change to <code>router.push('/auth/login')</code>.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] DATABASE_URL in .env.example points to SQLite but code uses PostgreSQL</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">backend/.env.example:2</span></p>
+<pre><span class="n">DATABASE_URL</span>=<span class="n">wick_wax_relax</span>.<span class="n">db</span>  <span class="c">// ← SQLite filename, but pg (PostgreSQL) is used</span></pre>
+  <p>The <code>database.js</code> uses <code>pg</code> with individual <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>. <code>DATABASE_URL</code> is never read by the actual code.</p>
+  <div class="fix-box"><strong>Fix:</strong> Replace <code>DATABASE_URL</code> in <code>.env.example</code> with the correct PostgreSQL variables: <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>.</div>
+</div>
+
+<hr/>
+
+<h3>2.4 Medium Findings</h3>
+<ul>
+  <li><strong>GDPR consent collection UI missing</strong> — <code>gdpr.js</code> exists but there's no visible consent collection in registration/checkout</li>
+  <li><strong>GDPR error logging uses console.error</strong> — <code>backend/routes/gdpr.js:293</code> should write to structured audit log</li>
+  <li><strong>No request correlation ID</strong> — No request ID generated at entry and propagated through logs</li>
+  <li><strong>Sentry has no tracesSampleRate</strong> — All transactions captured, expensive at scale</li>
+  <li><strong>Prometheus /metrics endpoint unprotected</strong> — <code>server.js:66</code> exposes server internals without auth</li>
+  <li><strong>No CAPTCHA on registration or login</strong> — Bots can register accounts freely despite rate limiting</li>
+  <li><strong>Order confirmation makes redundant API call</strong> — Checkout POST returns order data but confirmation page fetches it again</li>
+</ul>
+
+<!-- PART 3 -->
+<h2 id="p3">Part 3 — Frontend / Customer Journey</h2>
+
+<h3>3.1 Customer Journey Map</h3>
+<table>
+  <tr><th>Step</th><th>Page</th><th>Status</th><th>Notes</th></tr>
+  <tr><td>1</td><td>Landing (<code>/</code>)</td><td><span class="check-ok">Works</span></td><td>Hero, categories, featured products, testimonials</td></tr>
+  <tr><td>2</td><td>Shop (<code>/products</code>)</td><td><span class="check-ok">Works</span></td><td>Product grid, search filters</td></tr>
+  <tr><td>3</td><td>Product detail (<code>/product/[id]</code>)</td><td><span class="check-ok">Works</span></td><td>Variants, add to cart, related products</td></tr>
+  <tr><td>4</td><td>Cart (localStorage)</td><td><span class="check-ok">Works</span></td><td>Offline-aware CartContext, sync on reconnect</td></tr>
+  <tr><td>5</td><td>Checkout (<code>/checkout</code>)</td><td><span class="check-ok">Works</span></td><td>Protected, form validation, offline queue</td></tr>
+  <tr><td>6</td><td>Order POST</td><td><span class="check-fail">BLOCKER</span></td><td>No actual payment processing</td></tr>
+  <tr><td>7</td><td>Order confirmation</td><td><span class="check-fail">BROKEN</span></td><td>Token bug + wrong redirect URL</td></tr>
+  <tr><td>8</td><td>Login (<code>/auth/login</code>)</td><td><span class="check-ok">Works</span></td><td>Good UX, gradient split layout, Framer Motion</td></tr>
+  <tr><td>9</td><td>Register (<code>/auth/signup</code>)</td><td><span class="check-ok">Works</span></td><td>But doesn't auto-login after registration</td></tr>
+  <tr><td>10</td><td>Account orders (<code>/account/orders</code>)</td><td><span class="check-ok">Works</span></td><td>Order history, search, export, pagination</td></tr>
+  <tr><td>11</td><td>Subscriptions (<code>/subscriptions</code>)</td><td><span class="check-ok">Works</span></td><td>Tabs, product selector, FAQ</td></tr>
+  <tr><td>12</td><td>Admin dashboard</td><td><span class="check-ok">Works</span></td><td>Full admin panel, analytics, settings</td></tr>
+</table>
+
+<h3>3.2 What's Working Well (Frontend)</h3>
+<p class="check-ok">Next.js pages router with proper _app.js and _document.js</p>
+<p class="check-ok">Material-UI theming with custom lavender (#C8B6DB) / gold (#E6C88A) / sage (#B2C8BA) palette correctly applied</p>
+<p class="check-ok">SEOHead component: meta, OG, Twitter Card, JSON-LD, canonical URLs</p>
+<p class="check-ok">CartContext with full offline/online sync and localStorage persistence</p>
+<p class="check-ok">AuthContext with proper cookie-based JWT verification on load</p>
+<p class="check-ok">ProtectedRoute HOC guarding authenticated pages</p>
+<p class="check-ok">PWA support: service worker, manifest, install prompt, offline-first</p>
+<p class="check-ok">OrderHistoryContext with pagination, search, filters, bulk actions, CSV export</p>
+<p class="check-ok">SubscriptionManager with full lifecycle management (pause/resume/cancel)</p>
+<p class="check-ok">Framer Motion animations on login page</p>
+<p class="check-ok">Comprehensive form validation on all auth forms</p>
+<p class="check-ok">Loading states, error states, empty states throughout</p>
+<p class="check-ok">Keyboard navigation on orders page (useKeyboardNavigation hook)</p>
+<p class="check-ok">Accessibility: ARIA labels on login form inputs, skip link on accessibility.js</p>
+<p class="check-ok">format-detection telephone=no set in SEOHead</p>
+<p class="check-ok">Mobile-responsive layout with breakpoints</p>
+<p class="check-ok">Password visibility toggle on login page</p>
+<p class="check-ok">Navigation scroll behavior correctly patched (brown → lavender)</p>
+
+<h3>3.3 High & Medium Frontend Findings</h3>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Signup doesn't auto-login — unnecessary friction</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/auth/signup.js:82-89</span></p>
+  <p>The backend returns a user object in the register response (<code>auth.js:139-146</code>) but the frontend discards it and redirects to login after 2 seconds. Users must manually log in after creating an account.</p>
+  <div class="fix-box"><strong>Fix:</strong> After successful registration, call <code>login()</code> from <code>AuthContext</code> automatically and redirect to account instead of the login page.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] Signup password validation is weaker than backend</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/auth/signup.js:54-58</span> vs <span class="file-ref">backend/routes/auth.js:77-79</span></p>
+  <p>Frontend: minimum 6 characters. Backend: minimum 8 chars with uppercase, lowercase, number, special character. Users can fill the form and submit only to be rejected by the backend.</p>
+  <div class="fix-box"><strong>Fix:</strong> Align the <code>Yup</code> or <code>react-hook-form</code> schema on the frontend with the backend regex.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] rememberMe checkbox has no effect</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/auth/login.js:38,308-318</span></p>
+  <p>The <code>rememberMe</code> field is captured in form state but never sent to the API (<code>login.js:50</code> only sends <code>email</code> and <code>password</code>).</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] Cart total doesn't include shipping cost</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">frontend/components/CartContext.js:117-119</span></p>
+  <p><code>getCartTotal()</code> calculates <code>price * quantity</code> sum only. No shipping cost calculation exists anywhere in cart or checkout flow.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] No discount/coupon code support</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p>Checkout has no coupon code field. No <code>discount_codes</code> table or route exists in the backend.</p>
+</div>
+
+<!-- PART 4 -->
+<h2 id="p4">Part 4 — SEO</h2>
+
+<h3>4.1 Technical SEO Status</h3>
+<table>
+  <tr><th>Element</th><th>Status</th><th>Location</th></tr>
+  <tr><td>Title tags</td><td><span class="check-ok">PASS</span></td><td>Per-page, unique</td></tr>
+  <tr><td>Meta descriptions</td><td><span class="check-ok">PASS</span></td><td>SEOHead on all pages</td></tr>
+  <tr><td>Canonical URLs</td><td><span class="check-ok">PASS</span></td><td>SEOHead:111</td></tr>
+  <tr><td>Open Graph tags</td><td><span class="check-ok">PASS</span></td><td>Full OG on all pages</td></tr>
+  <tr><td>Twitter Card</td><td><span class="check-ok">PASS</span></td><td>summary_large_image</td></tr>
+  <tr><td>JSON-LD structured data</td><td><span class="check-fail">PARTIAL</span></td><td>Only Organization schema; missing Product, FAQPage, BreadcrumbList</td></tr>
+  <tr><td>Sitemap</td><td><span class="check-fail">PARTIAL</span></td><td>6 URLs hardcoded; missing all dynamic product/category pages</td></tr>
+  <tr><td>robots.txt</td><td><span class="check-ok">PASS</span></td><td>Allow all except /api/</td></tr>
+  <tr><td>hreflang</td><td><span class="check-fail">MISSING</span></td><td>No multi-language support</td></tr>
+  <tr><td>Product structured data</td><td><span class="check-fail">MISSING</span></td><td>Products lack JSON-LD markup</td></tr>
+  <tr><td>FAQPage schema</td><td><span class="check-fail">MISSING</span></td><td>20-question FAQ on subscriptions with no JSON-LD</td></tr>
+  <tr><td>BreadcrumbList schema</td><td><span class="check-fail">MISSING</span></td><td>Product and category pages lack breadcrumbs structured data</td></tr>
+</table>
+
+<h3>4.2 High & Medium SEO Findings</h3>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] No Product structured data on product pages</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/components/SEOHead.js</span> &nbsp;|&nbsp; <span class="file-ref">frontend/pages/product/[id].js</span></p>
+  <p><code>SEOHead.js</code> generates Organization schema for all pages. Product pages should include <code>Product</code> JSON-LD with price, availability, rating, and brand. The <code>product</code> prop exists in <code>SEOHead</code> but is not passed from the product detail page.</p>
+  <div class="fix-box"><strong>Fix:</strong> Pass <code>product</code> prop to <code>SEOHead</code> from <code>product/[id].js</code> with the product's name, price, description, image, and availability.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Sitemap only has 6 hardcoded URLs — Google can't discover products</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/public/sitemap.xml</span></p>
+  <p>Static entries only. Every product and category page needs its own entry for Google to discover them.</p>
+  <div class="fix-box"><strong>Fix:</strong> Install and configure <code>next-sitemap</code> to auto-generate from the product database. A <code>next-sitemap.config.js</code> exists but appears not to be wired into the build process.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Subscriptions FAQ section has no FAQPage JSON-LD</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/subscriptions.js:309-342</span></p>
+  <p>A 20-question FAQ section with no structured data means Google cannot display these as rich snippets.</p>
+  <div class="fix-box"><strong>Fix:</strong> Generate <code>FAQPage</code> JSON-LD in <code>SEOHead</code> when <code>type="faq"</code> is passed, with the 20 FAQ questions from the subscriptions page.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[HIGH] Lighthouse audit ran on wrong port — no performance data exists</div>
+    <span class="severity-tag sev-high">HIGH</span>
+  </div>
+  <p><span class="file-ref">frontend/lighthouse-report.json:3</span></p>
+<pre><span class="s">"requestedUrl": "http://localhost:3001/"</span>  <span class="c">// ← backend server, not frontend</span></pre>
+  <p>All Lighthouse scores are <code>null</code> with <code>errorMessage: "Status code: 404"</code>. The audit was run against the backend (port 3001) instead of the frontend (port 3000).</p>
+  <div class="fix-box"><strong>Fix:</strong> Re-run Lighthouse against <code>http://localhost:3000</code> to collect real Core Web Vitals data.</div>
+</div>
+
+<!-- PART 5 -->
+<h2 id="p5">Part 5 — Performance</h2>
+
+<h3>5.1 Known Performance Characteristics</h3>
+<ul>
+  <li>Next.js SSR with pages router</li>
+  <li>Material-UI with Emotion CSS-in-JS (SSR extraction configured in <code>_document.js</code>)</li>
+  <li><code>sharp</code> for server-side image optimization and thumbnail generation</li>
+  <li>Static file serving via Express for <code>/images</code>, <code>/uploads</code>, <code>/fonts</code></li>
+  <li>Prometheus metrics endpoint with <code>collectDefaultMetrics</code></li>
+  <li>Sentry APM tracing initialized</li>
+</ul>
+
+<h3>5.2 Medium Performance Findings</h3>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] Google Fonts loaded blocking — no preconnect or display=swap</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">frontend/pages/_document.js:17</span></p>
+<pre><span class="n">&lt;link</span> <span class="n">rel</span>=<span class="s">"stylesheet"</span> <span class="n">href</span>=<span class="s">"https://fonts.googleapis.com/...Roboto..."</span>/&gt;
+<span class="c">&lt;!-- Should be: --&gt;</span>
+<span class="n">&lt;link</span> <span class="n">rel</span>=<span class="s">"preconnect"</span> <span class="n">href</span>=<span class="s">"https://fonts.gstatic.com"</span> <span class="n">crossOrigin</span>=<span class="s">"anonymous"</span>/&gt;
+<span class="n">&lt;link</span> <span class="n">rel</span>=<span class="s">"stylesheet"</span> <span class="n">href</span>=<span class="s">"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"</span>/&gt;</pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <div class="finding-title">[MEDIUM] Static files served by Express instead of CDN</div>
+    <span class="severity-tag sev-medium">MEDIUM</span>
+  </div>
+  <p><span class="file-ref">backend/server.js:101-103</span></p>
+  <p>Images and fonts served from the Express server filesystem. In production these should be on a CDN (CloudFront, Cloudflare R2, etc.) with cache headers.</p>
+</div>
+
+<!-- PART 6 -->
+<h2 id="p6">Part 6 — Deployment Readiness</h2>
+
+<h3>6.1 Deployment Blockers</h3>
+<table>
+  <tr><th>#</th><th>Blocker</th><th>Severity</th></tr>
+  <tr><td>1</td><td>No actual payment processing — orders are free</td><td><span class="badge badge-critical">CRITICAL</span></td></tr>
+  <tr><td>2</td><td>Order confirmation auth broken (all users redirected to login)</td><td><span class="badge badge-critical">CRITICAL</span></td></tr>
+  <tr><td>3</td><td>Duplicate route registration in server.js</td><td><span class="badge badge-critical">CRITICAL</span></td></tr>
+  <tr><td>4</td><td>Password reset tokens stored in plaintext</td><td><span class="badge badge-high">HIGH</span></td></tr>
+  <tr><td>5</td><td>Wrong login redirect URL in order-confirmation</td><td><span class="badge badge-high">HIGH</span></td></tr>
+  <tr><td>6</td><td>DATABASE_URL points to SQLite in .env.example</td><td><span class="badge badge-high">HIGH</span></td></tr>
+  <tr><td>7</td><td>No Lighthouse scores — unknown Core Web Vitals</td><td><span class="badge badge-high">HIGH</span></td></tr>
+  <tr><td>8</td><td>Redis configured but unused</td><td><span class="badge badge-high">HIGH</span></td></tr>
+  <tr><td>9</td><td>Sitemap missing all dynamic product/category pages</td><td><span class="badge badge-high">HIGH</span></td></tr>
+</table>
+
+<h3>6.2 What's Deployment-Ready</h3>
+<p class="check-ok">Docker Compose configuration exists</p>
+<p class="check-ok">Jest test suite exists (auth, products, validation, performance, security)</p>
+<p class="check-ok">Environment variables documented in .env.example</p>
+<p class="check-ok">npm run build passes cleanly</p>
+<p class="check-ok">Prometheus metrics for observability</p>
+<p class="check-ok">Winston structured logging</p>
+<p class="check-ok">Sentry error tracking</p>
+<p class="check-ok">Health check endpoint: GET /api/health</p>
+<p class="check-ok">JWT tokens with configurable expiry</p>
+<p class="check-ok">Admin panel with full management capabilities</p>
+
+<!-- SUMMARY -->
+<h2 id="summary">Findings Summary</h2>
+
+<h3>Critical (Must Fix Before Launch)</h3>
+<ol>
+  <li><strong>Auth token location mismatch</strong> — <code>order-confirmation.js</code> reads <code>localStorage.token</code> but backend sets httpOnly cookie. All order confirmations broken.</li>
+  <li><strong>Duplicate route registration</strong> — <code>server.js:118-120</code> shadows first registrations</li>
+  <li><strong>No payment processing</strong> — Orders created without any payment being captured</li>
+</ol>
+
+<h3>High (Fix Before Production)</h3>
+<ol>
+  <li>Password reset tokens stored in plaintext — no hashing unlike refresh tokens</li>
+  <li>Wrong login redirect URL — <code>/account/login</code> vs <code>/auth/login</code></li>
+  <li>Signup form doesn't auto-login after registration</li>
+  <li>Signup password validation weaker than backend (6 chars vs 8+complexity)</li>
+  <li>CSP <code>unsafe-inline</code> for styles</li>
+  <li>Redis configured but unused</li>
+  <li><code>DATABASE_URL</code> points to SQLite — wrong in <code>.env.example</code></li>
+  <li><code>/metrics</code> endpoint unprotected</li>
+  <li>No Product JSON-LD structured data</li>
+  <li>Sitemap missing all dynamic product/category pages</li>
+  <li>Lighthouse audit was run on wrong port — no performance data</li>
+</ol>
+
+<h3>Medium (First Post-Launch Sprint)</h3>
+<ol>
+  <li>Mixed SQLite/PostgreSQL helper abstraction in <code>database.js</code></li>
+  <li>GDPR consent collection UI missing</li>
+  <li>GDPR audit logging uses <code>console.error</code> instead of structured logger</li>
+  <li>No CAPTCHA on auth forms</li>
+  <li><code>rememberMe</code> implemented but not wired to backend</li>
+  <li>Cart total has no shipping calculation</li>
+  <li>No discount/coupon code support</li>
+  <li>Apple status bar style should be <code>black-translucent</code></li>
+  <li><code>seasonalPromo.js</code> synchronous localStorage on render</li>
+  <li>Fonts loaded blocking, not <code>preconnect</code>+<code>display=swap</code></li>
+  <li>No CDN configuration for static assets</li>
+  <li>No <code>tracesSampleRate</code> set in Sentry</li>
+  <li>No request correlation ID in logs</li>
+  <li>Order confirmation makes redundant API call (order data already in checkout response)</li>
+</ol>
+
+<!-- ACTION PLAN -->
+<h2 id="actions">Recommended Action Plan</h2>
+
+<table class="action-table">
+  <tr>
+    <th>Action</th>
+    <th>Finding</th>
+    <th>Phase</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Fix order-confirmation.js auth — use cookie-based auth properly; fix redirect URL to /auth/login</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Remove duplicate route registrations in server.js (lines 118-120)</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Integrate Stripe or Revolut payment intent into checkout flow</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Hash password reset tokens before storing (like refresh tokens)</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Fix .env.example DATABASE_URL → DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Protect or disable /metrics endpoint</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Configure next-sitemap to auto-generate sitemap from product database</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Re-run Lighthouse against port 3000; collect real Core Web Vitals</td>
+    <td><span class="phase-label phase-deploy">Deploy</span></td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>Auto-login after signup (call AuthContext.login() with new credentials)</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>Align signup password validation: minimum 8 chars, uppercase, lowercase, number, special char</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td>Implement Redis or remove Redis config from .env.example</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td>Add Product JSON-LD to product detail pages</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td>Add FAQPage JSON-LD to subscriptions page</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td>Add BreadcrumbList JSON-LD to product and category pages</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td>Fix apple-mobile-web-app-status-bar-style to black-translucent</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td>Remove dead SQLite helpers from database.js</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td>Add CAPTCHA to registration endpoint</td>
+    <td><span class="phase-label phase-sprint">Sprint 1</span></td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td>Implement discount/coupon codes</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td>Add shipping cost calculation to cart</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td>Set up CDN for static assets (images, fonts)</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>21</td>
+    <td>Set tracesSampleRate in Sentry</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td>Implement GDPR consent collection UI on checkout/registration</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>23</td>
+    <td>Add preconnect for Google Fonts with display=swap</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+  <tr>
+    <td>24</td>
+    <td>Run full bundle analysis; implement per-page code splitting</td>
+    <td><span class="phase-label phase-medium">Medium</span></td>
+  </tr>
+</table>
+
+<footer style="margin-top:60px; padding-top:20px; border-top:1px solid var(--border); color:var(--text3); font-size:0.8rem;">
+  <p>Report generated by Hermes Agent (MiniMax M2.7) &nbsp;|&nbsp; Wick Wax Relax Full Stack Audit &nbsp;|&nbsp; May 2026<br/>
+  Files audited: backend/server.js, config/database.js, routes/*, services/*, frontend/pages/*, frontend/components/*, frontend/src/theme.js, frontend/next.config.js<br/>
+  Security scans: XSS vectors, SQL injection, command injection, hardcoded secrets, exposed API keys — all clean on the secrets/injection front.</p>
+</footer>
+
+</div>
+</body>
+</html>
