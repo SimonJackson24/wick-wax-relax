@@ -345,9 +345,10 @@ router.get('/user/summary', authenticateToken, async (req, res) => {
 
 // Get all subscriptions (Admin only)
 router.get('/admin/all', authenticateToken, requireAdmin, [
-  query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('page').optional().isInt({ min: 1 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   query('status').optional().isIn(['ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']),
+  query('planId').optional().isInt({ min: 1 }).toInt(),
   query('userId').optional().isUUID()
 ], async (req, res) => {
   try {
@@ -356,15 +357,17 @@ router.get('/admin/all', authenticateToken, requireAdmin, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { page = 1, limit = 20, status, userId } = req.query;
+    const { page = 1, limit = 20, status, planId, userId } = req.query;
 
-    // This would require a more complex query to get all subscriptions with pagination
-    // For now, return a basic response
-    res.json({
-      message: 'Admin subscription listing - to be implemented',
-      pagination: { page, limit, total: 0, pages: 0 },
-      subscriptions: []
+    const result = await subscriptionService.getAdminSubscriptions({
+      page,
+      limit,
+      status: status || null,
+      planId: planId || null,
+      userId: userId || null
     });
+
+    res.json(result);
   } catch (error) {
     console.error('Error fetching all subscriptions:', error);
     res.status(500).json({ error: 'Failed to fetch subscriptions' });

@@ -1,10 +1,10 @@
 -- Add tracking fields to orders table
 ALTER TABLE orders ADD COLUMN tracking_number TEXT;
 ALTER TABLE orders ADD COLUMN carrier TEXT DEFAULT 'ROYAL_MAIL';
-ALTER TABLE orders ADD COLUMN shipping_date DATETIME;
-ALTER TABLE orders ADD COLUMN estimated_delivery_date DATETIME;
+ALTER TABLE orders ADD COLUMN shipping_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN estimated_delivery_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE orders ADD COLUMN tracking_status TEXT DEFAULT 'NOT_SHIPPED';
-ALTER TABLE orders ADD COLUMN tracking_updated_at DATETIME;
+ALTER TABLE orders ADD COLUMN tracking_updated_at TIMESTAMP WITH TIME ZONE;
 
 -- Create tracking history table
 CREATE TABLE tracking_history (
@@ -14,9 +14,9 @@ CREATE TABLE tracking_history (
   status TEXT NOT NULL,
   status_description TEXT,
   location TEXT,
-  timestamp DATETIME NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
   carrier_data TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for performance
@@ -30,9 +30,9 @@ CREATE TABLE tracking_cache (
   tracking_number TEXT NOT NULL UNIQUE,
   carrier TEXT NOT NULL DEFAULT 'ROYAL_MAIL',
   tracking_data TEXT NOT NULL,
-  last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-  expires_at DATETIME NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create index for cache lookups

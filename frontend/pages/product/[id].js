@@ -17,6 +17,7 @@ import {
   Alert
 } from '@mui/material';
 import axios from 'axios';
+import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../components/CartContext';
 
 export default function ProductDetail() {
@@ -95,15 +96,31 @@ export default function ProductDetail() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {message && (
+    <>
+      <SEOHead
+        title={product ? `${product.name} — Wick Wax Relax` : 'Product — Wick Wax Relax'}
+        description={product?.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}
+        keywords={product ? `wax melts, candles, ${product.name}, home fragrance, UK` : 'wax melts, candles, home fragrance'}
+        image={product?.image ? `https://wickwaxrelax.com${product.image}` : 'https://wickwaxrelax.com/images/hero-image.svg'}
+        url={`https://wickwaxrelax.com/product/${id}`}
+        type="product"
+        product={product ? {
+          name: product.name,
+          description: product.description,
+          image: product.image ? `https://wickwaxrelax.com${product.image}` : 'https://wickwaxrelax.com/images/hero-image.svg',
+          price: selectedVariantData?.price || product.price,
+          availability: selectedVariantData?.inventory_quantity > 0 ? 'in_stock' : 'out_of_stock',
+          category: product.category
+        } : undefined}
+      />
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {message && (
         <Alert severity={message.includes('Error') ? 'error' : 'success'} sx={{ mb: 2 }}>
           {message}
         </Alert>
       )}
 
       <Grid container spacing={4}>
-        {/* Product Image */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardMedia
@@ -123,7 +140,6 @@ export default function ProductDetail() {
           </Card>
         </Grid>
 
-        {/* Product Details */}
         <Grid item xs={12} md={6}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -134,7 +150,6 @@ export default function ProductDetail() {
               {product.description}
             </Typography>
 
-            {/* Scent Profile */}
             {product.scent_profile && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
@@ -148,7 +163,6 @@ export default function ProductDetail() {
               </Box>
             )}
 
-            {/* Variants */}
             {product.variants && product.variants.length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <FormControl fullWidth sx={{ mb: 2 }}>
@@ -179,7 +193,6 @@ export default function ProductDetail() {
               </Box>
             )}
 
-            {/* Quantity and Add to Cart */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
               <FormControl sx={{ minWidth: 80 }}>
                 <InputLabel id="quantity-label">Qty</InputLabel>
@@ -210,7 +223,6 @@ export default function ProductDetail() {
               </Button>
             </Box>
 
-            {/* Variant Details */}
             {selectedVariantData && selectedVariantData.attributes && (
               <Box>
                 <Typography variant="h6" gutterBottom>
@@ -227,5 +239,6 @@ export default function ProductDetail() {
         </Grid>
       </Grid>
     </Container>
+    </>
   );
 }

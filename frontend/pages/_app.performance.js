@@ -7,7 +7,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../components/AuthContext';
 import { CartProvider } from '../components/CartContext';
 import { PWAProvider } from '../components/PWAContext';
-import theme from '../utils/theme';
+import theme from '../src/theme';
 import { initializeOptimizations } from '../utils/bundleOptimization';
 
 // Set axios base URL to point to backend

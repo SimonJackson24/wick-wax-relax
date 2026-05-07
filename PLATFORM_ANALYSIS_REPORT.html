@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wick Wax & Relax - Platform Analysis Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg-primary: #0d0d12;
+      --bg-secondary: #151520;
+      --bg-card: #1a1a28;
+      --accent-purple: #C8B6DB;
+      --accent-gold: #E6C88A;
+      --accent-sage: #B2C8BA;
+      --text-primary: #f0e6ff;
+      --text-secondary: #a099b0;
+      --border: rgba(200, 182, 219, 0.15);
+      --red: #ff6b6b;
+      --orange: #ffa94d;
+      --yellow: #ffd43b;
+      --green: #69db7c;
+      --blue: #74c0fc;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+    
+    .date {
+      color: var(--accent-gold);
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      color: var(--accent-purple);
+      margin: 50px 0 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    h3 {
+      font-size: 1.15rem;
+      color: var(--accent-gold);
+      margin: 30px 0 16px;
+    }
+    
+    h4 {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin: 20px 0 12px;
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    .summary-card .number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent-purple);
+    }
+    
+    .summary-card .label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    
+    .issue {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    
+    .issue-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .badge-critical { background: var(--red); color: #000; }
+    .badge-high { background: var(--orange); color: #000; }
+    .badge-medium { background: var(--yellow); color: #000; }
+    .badge-low { background: var(--green); color: #000; }
+    
+    .file-tag {
+      background: rgba(200, 182, 219, 0.1);
+      color: var(--accent-purple);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    
+    code {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.9rem;
+      color: var(--accent-sage);
+    }
+    
+    pre {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    
+    pre code {
+      background: none;
+      padding: 0;
+      display: block;
+      color: var(--text-primary);
+    }
+    
+    .comment { color: #6a9955; }
+    .keyword { color: #569cd6; }
+    .string { color: #ce9178; }
+    .function { color: #dcdcaa; }
+    .variable { color: #9cdcfe; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      color: var(--accent-purple);
+      font-weight: 600;
+    }
+    
+    .check { color: var(--green); }
+    .cross { color: var(--red); }
+    
+    .fix-list {
+      list-style: none;
+    }
+    
+    .fix-list li {
+      padding: 12px 16px;
+      margin: 8px 0;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent-purple);
+    }
+    
+    .fix-list li.p0 { border-left-color: var(--red); }
+    .fix-list li.p1 { border-left-color: var(--orange); }
+    .fix-list li.p2 { border-left-color: var(--yellow); }
+    
+    .status-working { color: var(--green); }
+    .status-broken { color: var(--red); }
+    .status-missing { color: var(--orange); }
+    
+    .toc {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 30px 0;
+    }
+    
+    .toc h3 {
+      margin-top: 0;
+    }
+    
+    .toc ul {
+      list-style: none;
+      columns: 2;
+    }
+    
+    .toc li {
+      padding: 6px 0;
+    }
+    
+    .toc a {
+      color: var(--accent-purple);
+      text-decoration: none;
+    }
+    
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    
+    footer {
+      margin-top: 60px;
+      padding-top: 30px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Wick Wax & Relax</h1>
+      <p class="subtitle">Platform Analysis Report</p>
+      <p class="date">Generated: May 4, 2026</p>
+    </header>
+
+    <div class="toc">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#summary">Executive Summary</a></li>
+        <li><a href="#critical">Critical Navigation Failures</a></li>
+        <li><a href="#auth-pipeline">Auth Pipeline Analysis</a></li>
+        <li><a href="#checkout">Checkout Signup Analysis</a></li>
+        <li><a href="#other-issues">Other Platform Issues</a></li>
+        <li><a href="#fixes">Priority Fix List</a></li>
+        <li><a href="#working">Verified Working Components</a></li>
+      </ul>
+    </div>
+
+    <section id="summary">
+      <h2>Executive Summary</h2>
+      
+      <p>The Wick Wax & Relax platform has <strong>severe account/authentication issues</strong> causing navigation to appear broken. The core problem: the navigation component does NOT check authentication state, creating a broken user experience.</p>
+      
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="number">12</div>
+          <div class="label">Critical Issues Found</div>
+        </div>
+        <div class="summary-card">
+          <div class="number">4</div>
+          <div class="label">High Priority</div>
+        </div>
+        <div class="summary-card">
+          <div class="number">4</div>
+          <div class="label">Medium Priority</div>
+        </div>
+        <div class="summary-card">
+          <div class="number">4</div>
+          <div class="label">Files Affected</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="critical">
+      <h2>Critical Navigation Failures</h2>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-critical">CRITICAL</span>
+          <h3>Navigation Ignores Auth State</h3>
+        </div>
+        <p><span class="file-tag">frontend/components/NavigationWithCategories.js</span></p>
+        
+        <p>The navigation component never imports or uses <code>useAuth()</code>. It always displays Account/Orders links regardless of login state:</p>
+        
+        <pre><code><span class="comment">// Line 73-76 - Hardcoded links, NO auth check</span>
+<span class="keyword">const</span> userLinks = [
+  { name: <span class="string">'Account'</span>, href: <span class="string">'/account'</span>, icon: PersonIcon },
+  { name: <span class="string">'Orders'</span>, href: <span class="string">'/account/orders'</span>, icon: <span class="constant">null</span> },
+];</code></pre>
+        
+        <h4>Impact:</h4>
+        <ul>
+          <li>Logged-out users see "Account" and "Orders" in nav</li>
+          <li>Clicking these triggers ProtectedRoute redirect to login</li>
+          <li>Users see <strong>no login option</strong> in main navigation</li>
+          <li>Creates "broken navigation" illusion</li>
+        </ul>
+        
+        <h4>Fix Required:</h4>
+        <ol>
+          <li>Import <code>useAuth</code> from AuthContext</li>
+          <li>Conditionally render: Login/Signup when logged out, Account/Orders when logged in</li>
+          <li>Show user name or avatar when logged in</li>
+        </ol>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-critical">CRITICAL</span>
+          <h3>ProtectedRoute Uses Wrong Login Path</h3>
+        </div>
+        <p><span class="file-tag">frontend/components/ProtectedRoute.js:14</span></p>
+        
+        <pre><code>router.push(<span class="string">`/account/login?returnUrl=<span class="variable">${encodeURIComponent(returnUrl)}</span>`</span>);</code></pre>
+        
+        <p><strong>Problem:</strong> Redirects to <code>/account/login</code> (old, plain MUI pages) but the <strong>new styled auth pages</strong> are at <code>/auth/login</code>.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-critical">CRITICAL</span>
+          <h3>Auth Response Token Mismatch</h3>
+        </div>
+        <p><span class="file-tag">frontend/pages/auth/login.js</span></p>
+        
+        <p>Login pages expect <code>response.data.token</code> but the backend API returns <code>{user: {...}}</code> with NO token at the top level (token is set as httpOnly cookie).</p>
+        
+        <h4>Backend (auth.js):</h4>
+        <pre><code><span class="comment">// Token is set as COOKIE, not returned in JSON</span>
+res.cookie(<span class="string">'accessToken'</span>, accessToken, getSecureCookieOptions(<span class="number">15</span> * <span class="number">60</span> * <span class="number">1000</span>));
+res.json({ user: userResponse }); <span class="comment">// No token in body!</span></code></pre>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-high">HIGH</span>
+          <h3>Duplicate Auth Page Systems</h3>
+        </div>
+        
+        <p>Two complete sets of authentication pages with different styles:</p>
+        
+        <table>
+          <tr><th>Old (Plain MUI)</th><th>New (Styled)</th></tr>
+          <tr><td><code>/account/login</code></td><td><code>/auth/login</code></td></tr>
+          <tr><td><code>/account/signup</code></td><td><code>/auth/signup</code></td></tr>
+          <tr><td><code>/account/profile</code></td><td><em>(none)</em></td></tr>
+          <tr><td><code>/account/orders</code></td><td><em>(none)</em></td></tr>
+        </table>
+        
+        <p><strong>Recommendation:</strong> Deprecate old <code>/account/*</code> pages, use only <code>/auth/*</code> pages.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-high">HIGH</span>
+          <h3>Profile Page Missing Import</h3>
+        </div>
+        <p><span class="file-tag">frontend/pages/account/profile.js</span></p>
+        
+        <p>Uses <code>Link</code> component but doesn't import it:</p>
+        <pre><code><span class="comment">// Line 16: MISSING import</span>
+<span class="keyword">import</span> Link <span class="keyword">from</span> <span class="string">'next/link'</span>; <span class="comment">// NOT IMPORTED!</span>
+
+<span class="comment">// Line 147: Uses Link component</span>
+&lt;Button component={<span class="variable">Link</span>} href=<span class="string">"/account/orders"</span> ...&gt;</code></pre>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-high">HIGH</span>
+          <h3>Hardcoded API URLs</h3>
+        </div>
+        <p><span class="file-tag">frontend/pages/account/profile.js:42</span></p>
+        
+        <pre><code><span class="comment">// WRONG - hardcoded localhost</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> axios.get(<span class="string">'http://localhost:3001/api/orders'</span>);
+
+<span class="comment">// CORRECT - use configured baseURL</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> axios.get(<span class="string">'/api/orders'</span>);</code></pre>
+        
+        <p>Also in <span class="file-tag">frontend/pages/account/orders.js</span></p>
+      </div>
+    </section>
+
+    <section id="auth-pipeline">
+      <h2>Auth Pipeline Analysis</h2>
+
+      <h3>Full Signup Pipeline Status</h3>
+      
+      <table>
+        <tr><th>Component</th><th>Status</th><th>Notes</th></tr>
+        <tr><td><code>/auth/signup</code> page</td><td class="check">✅ Implemented</td><td>Modern gradient design</td></tr>
+        <tr><td><code>/auth/login</code> page</td><td class="check">✅ Implemented</td><td>Shows admin vs user redirect</td></tr>
+        <tr><td><code>/api/auth/register</code></td><td class="check">✅ Implemented</td><td>Strong password validation</td></tr>
+        <tr><td><code>/api/auth/login</code></td><td class="check">✅ Implemented</td><td>bcrypt, rate limited</td></tr>
+        <tr><td><code>/api/auth/verify</code></td><td class="check">✅ Implemented</td><td>Token verification</td></tr>
+        <tr><td><code>/api/auth/refresh</code></td><td class="check">✅ Implemented</td><td>Token rotation</td></tr>
+        <tr><td><code>/api/auth/logout</code></td><td class="check">✅ Implemented</td><td>Clears cookies</td></tr>
+        <tr><td><code>/forgot-password</code></td><td class="check">✅ Implemented</td><td>Reset request flow</td></tr>
+        <tr><td><code>/reset-password</code></td><td class="check">✅ Implemented</td><td>Token-based reset</td></tr>
+        <tr><td>Email service</td><td class="check">✅ Implemented</td><td>emailService.js</td></tr>
+      </table>
+
+      <h3>What's Missing from Auth Pipeline</h3>
+      <ul>
+        <li><span class="status-missing">Email verification on signup</span> - No confirmation email sent</li>
+        <li><span class="status-missing">Resend verification email</span> - No endpoint</li>
+        <li><span class="status-missing">OAuth providers</span> - No Google/GitHub/etc login</li>
+        <li><span class="status-missing">Social login buttons</span> - Not in UI</li>
+      </ul>
+    </section>
+
+    <section id="checkout">
+      <h2>Checkout Signup Analysis</h2>
+
+      <h3>Current Flow</h3>
+      <pre><code>Cart → Checkout (ProtectedRoute) → <span class="cross">Login Required</span></code></pre>
+
+      <p><strong>Problem:</strong> Checkout is wrapped in <code>ProtectedRoute</code>. Guests CANNOT proceed to checkout.</p>
+
+      <table>
+        <tr><th>Feature</th><th>Status</th><th>Notes</th></tr>
+        <tr><td>Guest add to cart</td><td class="check">✅ Works</td><td>localStorage</td></tr>
+        <tr><td>Guest view cart</td><td class="check">✅ Works</td><td>CartContext</td></tr>
+        <tr><td>Guest checkout</td><td class="cross">❌ BLOCKED</td><td>ProtectedRoute redirects</td></tr>
+        <tr><td>Create account at checkout</td><td class="cross">❌ NOT IMPLEMENTED</td><td>No inline signup form</td></tr>
+        <tr><td>Save cart for later</td><td class="cross">❌ NOT IMPLEMENTED</td><td>No server-side cart</td></tr>
+      </table>
+
+      <h3>Guest Checkout Options Needed</h3>
+      <ol>
+        <li><strong>Guest checkout option</strong> - Allow checkout without account (save order to email)</li>
+        <li><strong>Inline account creation</strong> - "Create account or checkout as guest" UI</li>
+        <li><strong>Post-purchase account creation</strong> - "Create account to track this order" email</li>
+      </ol>
+    </section>
+
+    <section id="other-issues">
+      <h2>Other Platform Issues</h2>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-high">HIGH</span>
+          <h3>Wishlist Not Persisted</h3>
+        </div>
+        <p><span class="file-tag">frontend/components/ProductCard.js</span></p>
+        
+        <pre><code><span class="keyword">const</span> [<span class="variable">isFavorite</span>, <span class="variable">setIsFavorite</span>] = <span class="function">useState</span>(<span class="constant">false</span>); <span class="comment">// Only local state!</span></code></pre>
+        
+        <p>Listed in audit report but <strong>NOT FIXED</strong>.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-header">
+          <span class="badge badge-medium">MEDIUM</span>
+          <h3>Cart Count Hardcoded</h3>
+        </div>
+        <p><span class="file-tag">frontend/components/NavigationWithCategories.js:50</span></p>
+        
+        <pre><code><span class="keyword">const</span> [<span class="variable">cartCount</span>, <span class="variable">setCartCount</span>] = <span class="function">useState</span>(<span class="number">3</span>); <span class="comment">// Always shows 3!</span></code></pre>
+        
+        <p>Should read from CartContext instead.</p>
+      </div>
+    </section>
+
+    <section id="fixes">
+      <h2>Priority Fix List</h2>
+
+      <h3>P0 - FIXED</h3>
+      <ul class="fix-list">
+        <li class="p0"><strong>[FIXED]</strong> NavigationWithCategories.js - Added auth state check, shows Login/Signup when logged out, Account dropdown when logged in</li>
+        <li class="p0"><strong>[FIXED]</strong> ProtectedRoute.js - Redirects to <code>/auth/login</code> instead of <code>/account/login</code></li>
+        <li class="p0"><strong>[FIXED]</strong> account/profile.js - Added missing <code>Link</code> import from next/link</li>
+        <li class="p0"><strong>[FIXED]</strong> account/profile.js - Fixed hardcoded localhost:3001 URL</li>
+        <li class="p0"><strong>[FIXED]</strong> account/orders.js - Fixed 2 hardcoded localhost:3001 URLs</li>
+      </ul>
+
+      <h3>P1 - Should Fix Soon</h3>
+      <ul class="fix-list">
+        <li class="p1"><strong>[DECISION]</strong> Auth pages - Pick one set (<code>/auth/*</code>) and deprecate <code>/account/*</code></li>
+        <li class="p1"><strong>[FEATURE]</strong> Guest checkout - Allow checkout without account</li>
+      </ul>
+
+      <h3>P2 - Nice to Have</h3>
+      <ul class="fix-list">
+        <li class="p2"><strong>[FEATURE]</strong> OAuth login - Google/GitHub sign-in</li>
+        <li class="p2"><strong>[FEATURE]</strong> Email verification - Confirm email on signup</li>
+        <li class="p2"><strong>[FEATURE]</strong> Inline checkout signup - Create account during checkout</li>
+        <li class="p2"><strong>[FEATURE]</strong> Wishlist persistence - Save favorites to database</li>
+        <li class="p2"><strong>[FEATURE]</strong> Cart from CartContext - Navigation should read cart count from context</li>
+      </ul>
+    </section>
+
+    <section id="working">
+      <h2>Verified Working Components</h2>
+
+      <h3>Backend Auth (Fully Working)</h3>
+      <ul>
+        <li>JWT with httpOnly cookies</li>
+        <li>bcrypt password hashing (12 rounds)</li>
+        <li>Access/refresh token rotation</li>
+        <li>Rate limiting (5 attempts/15 min)</li>
+        <li>Password reset flow</li>
+        <li>Token verification</li>
+      </ul>
+
+      <h3>Frontend Auth Context (Working)</h3>
+      <ul>
+        <li>AuthProvider wraps entire app</li>
+        <li>Login/logout/register functions</li>
+        <li>Token auto-verification on load</li>
+        <li>ProtectedRoute component</li>
+      </ul>
+
+      <h3>Backend API Endpoints</h3>
+      <table>
+        <tr><th>Endpoint</th><th>Status</th></tr>
+        <tr><td>POST /api/auth/register</td><td class="check">✅</td></tr>
+        <tr><td>POST /api/auth/login</td><td class="check">✅</td></tr>
+        <tr><td>POST /api/auth/logout</td><td class="check">✅</td></tr>
+        <tr><td>POST /api/auth/refresh</td><td class="check">✅</td></tr>
+        <tr><td>GET /api/auth/verify</td><td class="check">✅</td></tr>
+        <tr><td>GET /api/auth/profile</td><td class="check">✅</td></tr>
+        <tr><td>POST /api/auth/forgot-password</td><td class="check">✅</td></tr>
+        <tr><td>POST /api/auth/reset-password</td><td class="check">✅</td></tr>
+      </table>
+    </section>
+
+    <footer>
+      <p>Wick Wax & Relax Platform Analysis Report</p>
+      <p>Generated May 4, 2026</p>
+    </footer>
+  </div>
+</body>
+</html>

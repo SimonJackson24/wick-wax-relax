@@ -7,17 +7,13 @@ const promMid = require('express-prometheus-middleware');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
-// Import database configuration
 const { initializeDb } = require('./config/database');
-
-// Import monitoring services
 const { requestMonitoring, errorMonitoring } = require('./services/monitoring');
 const { requestLogger, errorLogger } = require('./services/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -29,20 +25,17 @@ app.use(helmet({
   },
 }));
 
-// Build allowed origins list dynamically
 const getAllowedOrigins = () => {
   const origins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
   ];
 
-  // Add localhost ports for development
   if (process.env.NODE_ENV !== 'production') {
     origins.push('http://localhost:3001');
     origins.push('http://localhost:3002');
     origins.push('http://localhost:3003');
   }
 
-  // SECURITY: Validate FRONTEND_URL is properly configured (not placeholder)
   const frontendUrl = process.env.FRONTEND_URL;
   if (frontendUrl && (frontendUrl.includes('yourdomain.com') || frontendUrl.includes('localhost') === false && !frontendUrl.startsWith('https://'))) {
     console.error('SECURITY ERROR: FRONTEND_URL appears to be misconfigured:', frontendUrl);
@@ -55,10 +48,8 @@ app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = getAllowedOrigins();
 
-    // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) return callback(null, true);
 
-    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -71,7 +62,6 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-// Monitoring middleware
 app.use(promMid({
   metricsPath: '/metrics',
   collectDefaultMetrics: true,
@@ -80,14 +70,12 @@ app.use(promMid({
   responseLengthBuckets: [512, 1024, 5120, 10240, 51200, 102400],
 }));
 
-// Request logging and monitoring
 app.use(requestLogger);
 app.use(requestMonitoring);
 
-// Rate limiting for API protection
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 500 : 100, // Higher limit for development
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 500 : 100,
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '15 minutes'
@@ -95,26 +83,28 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks and static files
-    return req.path === '/api/health' || req.path.startsWith('/images/') || req.path.startsWith('/fonts/');
+    const skippedPaths = [
+      '/api/health',
+      '/api/search/health',
+      '/api/search/popular',
+      '/api/search/filters',
+    ];
+    if (skippedPaths.includes(req.path)) return true;
+    if (req.path.startsWith('/images/') || req.path.startsWith('/fonts/')) return true;
+    return false;
   }
 });
 app.use(limiter);
 
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-// Static file serving
 app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/fonts', express.static(path.join(__dirname, '../frontend/public/fonts')));
 
 // Webhook routes (must be before JSON parsing for raw body access)
-
-// Webhook routes (must be before JSON parsing for raw body access)
 app.use('/api/webhooks', require('./routes/webhooks'));
 
-// Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
@@ -136,17 +126,15 @@ app.use('/api/tracking', require('./routes/tracking'));
 app.use('/api/export', require('./routes/export'));
 app.use('/api/sync', require('./routes/sync'));
 app.use('/api/seo', require('./routes/seo'));
+app.use('/api/search', require('./routes/search'));
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Error monitoring middleware
 app.use(errorLogger);
 app.use(errorMonitoring);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -155,19 +143,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize database and start server
 const startServer = async () => {
   try {
-    // Initialize database connection
     await initializeDb();
     console.log('Database initialized successfully');
 
-    // Start the server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -177,7 +161,6 @@ const startServer = async () => {
   }
 };
 
-// Only start server if not in test mode
 if (process.env.NODE_ENV !== 'test') {
   startServer();
 }

@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
     if (!loading && !isAuthenticated) {
       // Store the current path to redirect back after login
       const returnUrl = router.asPath;
-      router.push(`/account/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
     }
   }, [isAuthenticated, loading, router]);
 

@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
           inventory_quantity,
           attributes
         FROM product_variants
-        WHERE product_id = ?
+        WHERE product_id = $1
       `, [product.id]);
 
       product.variants = variants.rows;
@@ -65,7 +65,7 @@ router.get('/:id', [
         base_price,
         created_at
       FROM products
-      WHERE id = ?
+      WHERE id = $1
     `, [id]);
 
     if (product.rows.length === 0) {
@@ -82,7 +82,7 @@ router.get('/:id', [
         inventory_quantity,
         attributes
       FROM product_variants
-      WHERE product_id = ?
+      WHERE product_id = $1
     `, [id]);
 
     const result = { ...product.rows[0], variants: variants.rows };
@@ -110,7 +110,7 @@ router.get('/category/:categorySlug', async (req, res) => {
       FROM products p
       INNER JOIN product_categories pc ON p.id = pc.product_id
       INNER JOIN categories c ON pc.category_id = c.id
-      WHERE c.slug = ?
+      WHERE c.slug = $1
       ORDER BY p.created_at DESC
     `, [categorySlug]);
 
@@ -125,7 +125,7 @@ router.get('/category/:categorySlug', async (req, res) => {
           inventory_quantity,
           attributes
         FROM product_variants
-        WHERE product_id = ?
+        WHERE product_id = $1
       `, [product.id]);
 
       product.variants = variants.rows;

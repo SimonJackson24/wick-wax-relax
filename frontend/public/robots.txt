@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow API internals
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://wickwaxrelax.com/sitemap.xml

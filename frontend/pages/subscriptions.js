@@ -8,6 +8,11 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import {
   ShoppingCart as CartIcon,
@@ -16,6 +21,8 @@ import {
 } from '@mui/icons-material';
 import SubscriptionPlans from '../components/SubscriptionPlans';
 import SubscriptionManager from '../components/SubscriptionManager';
+import OrderHistory from '../components/OrderHistory';
+import ProductSelector from '../components/ProductSelector';
 import { useAuth } from '../components/AuthContext';
 
 const SubscriptionsPage = () => {
@@ -25,14 +32,16 @@ const SubscriptionsPage = () => {
 
   const [activeTab, setActiveTab] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productSelectorOpen, setProductSelectorOpen] = useState(false);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
   const handleProductSelect = (product) => {
-    setSelectedProduct(product);
-    // Optionally switch to plans tab
+    setSelectedProduct(product.selection || product);
+    setProductSelectorOpen(false);
+    // Switch to plans tab to continue subscription setup
     setActiveTab(1);
   };
 
@@ -46,13 +55,46 @@ const SubscriptionsPage = () => {
       label: 'Subscription Plans',
       icon: <CartIcon />,
       component: (
-        <SubscriptionPlans
-          selectedProduct={selectedProduct}
-          onSelectPlan={(plan) => {
-            // Handle plan selection
-            console.log('Selected plan:', plan);
-          }}
-        />
+        <Box sx={{ p: 3 }}>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Choose Your Product & Plan
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Select a product first, then choose your subscription plan
+              </Typography>
+            </Box>
+            <Button 
+              variant="outlined" 
+              onClick={() => setProductSelectorOpen(true)}
+            >
+              {selectedProduct ? 'Change Product' : 'Select Product'}
+            </Button>
+          </Box>
+          
+          {selectedProduct && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.light', borderRadius: 2 }}>
+              <Typography variant="subtitle2">Selected Product:</Typography>
+              <Typography variant="body1" fontWeight="bold">
+                {selectedProduct.product?.name || selectedProduct.name}
+              </Typography>
+              {selectedProduct.variant && (
+                <Typography variant="body2" color="text.secondary">
+                  {selectedProduct.variant.name || selectedProduct.variant.size} - £{selectedProduct.price?.toFixed(2)}
+                </Typography>
+              )}
+            </Box>
+          )}
+          
+          <SubscriptionPlans
+            selectedProduct={selectedProduct}
+            onSelectPlan={(plan) => {
+              // Handle plan selection
+              console.log('Selected plan:', plan);
+            }}
+          />
+        </Box>
       )
     },
     {
@@ -60,13 +102,7 @@ const SubscriptionsPage = () => {
       icon: <HistoryIcon />,
       component: (
         <Box sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Subscription Order History
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            View your past subscription deliveries and order details.
-          </Typography>
-          {/* Order history component would go here */}
+          <OrderHistory />
         </Box>
       )
     }
@@ -305,6 +341,25 @@ const SubscriptionsPage = () => {
           </Typography>
         </Box>
       </Box>
+
+      {/* Product Selector Dialog */}
+      <Dialog
+        open={productSelectorOpen}
+        onClose={() => setProductSelectorOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Select a Product</DialogTitle>
+        <DialogContent dividers>
+          <ProductSelector 
+            onSelect={handleProductSelect}
+            selectedProduct={selectedProduct}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setProductSelectorOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

@@ -32,9 +32,17 @@ class SearchService {
         LOWER(pv.name) LIKE LOWER(?) OR
         LOWER(pv.sku) LIKE LOWER(?)
       )`;
-      const searchPattern = `%${searchQuery}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
-      paramIndex += 4;
+      // Push 4 wildcard patterns for the WHERE clause's 4 ? placeholders
+      // runQuery converts ? to $1-$4; params[0-3] map to $1-$4
+      params.push(`%${searchQuery}%`);     // $1: name contains
+      params.push(`%${searchQuery}%`);     // $2: description contains
+      params.push(`%${searchQuery}%`);     // $3: variant name contains
+      params.push(`%${searchQuery}%`);     // $4: variant sku contains
+      // CASE has 3 ? (exact, prefix, substring) — push searchQuery 3 times
+      // runQuery converts these to $5, $6, $7 (after the 4 WHERE ?)
+      params.push(searchQuery);            // $5: exact name match
+      params.push(searchQuery);            // $6: prefix match
+      params.push(searchQuery);            // $7: substring match
     }
 
     // Category filter
@@ -93,24 +101,16 @@ class SearchService {
       case 'relevance':
       default:
         if (searchQuery) {
-          // For relevance, prioritize exact matches and then partial matches
-          orderByClause = `ORDER BY
-            CASE
-              WHEN LOWER(p.name) = LOWER('${searchQuery}') THEN 1
-              WHEN LOWER(p.name) LIKE LOWER('${searchQuery}%') THEN 2
-              WHEN LOWER(p.name) LIKE LOWER('%${searchQuery}%') THEN 3
-              ELSE 4
-            END,
-            p.created_at DESC`;
+          orderByClause = `ORDER BY relevance_rank ASC, p.created_at DESC`;
         } else {
           orderByClause = `ORDER BY p.created_at DESC`;
         }
         break;
     }
 
-    // Main search query
+    // Main search query — limit/offset inlined as integers (not user input)
     const searchQuerySQL = `
-      SELECT DISTINCT
+      SELECT
         p.id,
         p.name,
         p.description,
@@ -123,9 +123,16 @@ class SearchService {
         pv.price as variant_price,
         pv.inventory_quantity,
         pv.attributes,
-        GROUP_CONCAT(DISTINCT c.name) as categories,
+        STRING_AGG(DISTINCT c.name, ',') as categories,
         COALESCE(product_sales.total_sold, 0) as total_sold,
         COALESCE(product_sales.total_revenue, 0) as total_revenue
+        ${searchQuery ? `,
+        CASE
+          WHEN LOWER(p.name) = LOWER(?) THEN 1
+          WHEN LOWER(p.name) LIKE LOWER(? || '%') THEN 2
+          WHEN LOWER(p.name) LIKE LOWER('%' || ? || '%') THEN 3
+          ELSE 4
+        END as relevance_rank` : ''}
       FROM products p
       LEFT JOIN product_variants pv ON p.id = pv.product_id
       LEFT JOIN product_categories pc ON p.id = pc.product_id
@@ -143,23 +150,20 @@ class SearchService {
       ${whereClause}
       GROUP BY p.id, pv.id, product_sales.total_sold, product_sales.total_revenue
       ${orderByClause}
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
-
-    params.push(limit, offset);
 
     const results = await query(searchQuerySQL, params);
 
-    // Get total count for pagination
-    const countQuery = `
-      SELECT COUNT(DISTINCT p.id) as total
-      FROM products p
-      LEFT JOIN product_variants pv ON p.id = pv.product_id
-      LEFT JOIN product_categories pc ON p.id = pc.product_id
-      ${whereClause.replace(/GROUP BY.*$/, '')}
-    `;
+    // Strip "WHERE 1=1" and optional "AND " prefix to get just the conditions
+    // Handles both "WHERE 1=1 AND (...)" and bare "WHERE 1=1"
+    const conditionsOnly = whereClause.replace(/^WHERE\s+1=1\s+AND\s+/i, '').replace(/^WHERE\s+1=1$/i, '').trim();
+    const countQuery = conditionsOnly
+      ? `SELECT COUNT(DISTINCT p.id) as total FROM products p LEFT JOIN product_variants pv ON p.id = pv.product_id LEFT JOIN product_categories pc ON p.id = pc.product_id WHERE ${conditionsOnly}`
+      : `SELECT COUNT(DISTINCT p.id) as total FROM products p`;
 
-    const countParams = params.slice(0, -2); // Remove limit and offset
+    // count query has no CASE expression (3 ? placeholders), so exclude those 3 params when present
+    const countParams = searchQuery ? params.slice(0, -3) : params;
     const countResult = await query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].total);
 
@@ -385,7 +389,7 @@ class SearchService {
     const productInfo = await query(`
       SELECT
         p.scent_profile,
-        GROUP_CONCAT(pc.category_id) as category_ids
+        STRING_AGG(pc.category_id, ',') as category_ids
       FROM products p
       LEFT JOIN product_categories pc ON p.id = pc.product_id
       WHERE p.id = ?

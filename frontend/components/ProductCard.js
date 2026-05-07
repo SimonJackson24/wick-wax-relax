@@ -10,9 +10,7 @@ import {
   Box,
   Rating,
   IconButton,
-  Tooltip,
-  useTheme,
-  useMediaQuery
+  useTheme
 } from '@mui/material';
 import {
   ShoppingCart as CartIcon,
@@ -20,8 +18,7 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Visibility as VisibilityIcon,
   LocalShipping as ShippingIcon,
-  Inventory as InventoryIcon,
-  Star as StarIcon
+  Inventory as InventoryIcon
 } from '@mui/icons-material';
 import { useWishlist } from './WishlistContext';
 
@@ -35,36 +32,28 @@ const ProductCard = ({
   compact = false
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
 
-  // Check if product is in wishlist
   const isFavorite = isInWishlist(product.id);
-
-  // Get the first variant for pricing
   const firstVariant = product.variants?.[0];
   const price = firstVariant?.price || product.base_price || 0;
   const originalPrice = firstVariant?.attributes?.originalPrice;
   const isOnSale = originalPrice && originalPrice > price;
   const isNew = product.isNew || product.created_at && 
-    (new Date() - new Date(product.created_at)) < (30 * 24 * 60 * 60 * 1000); // 30 days
+    (new Date() - new Date(product.created_at)) < (30 * 24 * 60 * 60 * 1000);
 
-  // Calculate discount percentage
   const discountPercent = isOnSale
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
-  // Check stock status
   const totalStock = product.variants?.reduce((sum, variant) => sum + (variant.inventory_quantity || 0), 0) || 0;
   const isInStock = totalStock > 0;
   const isLowStock = totalStock > 0 && totalStock <= 5;
 
-  // Get categories as string
   const categories = product.categories?.join(', ') || '';
 
-  // Rating data (using provided rating or default)
   const rating = product.rating || 4.2;
   const reviewCount = product.reviewCount || product.total_reviews || 12;
 
@@ -75,16 +64,8 @@ const ProductCard = ({
     }
   };
 
-  const handleQuickAdd = (e) => {
-    e.stopPropagation();
-    if (onAddToCart && isInStock) {
-      onAddToCart(product.id, firstVariant?.id);
-    }
-  };
-
   const handleToggleFavorite = async (e) => {
     e.stopPropagation();
-    // Use the WishlistContext to toggle
     await toggleWishlist(product.id, firstVariant?.id);
   };
 
@@ -101,7 +82,6 @@ const ProductCard = ({
     }).format(amount);
   };
 
-  // List view implementation
   if (viewMode === 'list') {
     return (
       <Card
@@ -123,7 +103,6 @@ const ProductCard = ({
         role="article"
         aria-labelledby={`product-${product.id}-title`}
       >
-        {/* Product Image */}
         <Box sx={{ width: 200, height: 150, position: 'relative', overflow: 'hidden' }}>
           <CardMedia
             component="img"
@@ -135,7 +114,7 @@ const ProductCard = ({
               transition: 'transform 0.5s ease, opacity 0.3s ease-in-out',
               transform: isHovered ? 'scale(1.05)' : 'scale(1)',
             }}
-            image={product.image || '/images/placeholder-product.jpg'}
+            image={product.image || '/images/placeholder-product.svg'}
             alt={product.name}
             onLoad={() => setImageLoaded(true)}
           />
@@ -159,7 +138,6 @@ const ProductCard = ({
             </Box>
           )}
 
-          {/* Product badges */}
           <Box sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 0.5 }}>
             {isNew && (
               <Chip
@@ -187,7 +165,6 @@ const ProductCard = ({
             )}
           </Box>
 
-          {/* Stock Status */}
           {!isInStock && (
             <Chip
               label="Out of Stock"
@@ -216,7 +193,6 @@ const ProductCard = ({
           )}
         </Box>
 
-        {/* Product Details */}
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
           <CardContent sx={{ flex: 1, pb: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -254,7 +230,6 @@ const ProductCard = ({
                   {product.description}
                 </Typography>
 
-                {/* Product Rating */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Rating 
                     value={rating} 
@@ -268,7 +243,6 @@ const ProductCard = ({
                   </Typography>
                 </Box>
 
-                {/* Variants Info */}
                 {product.variants && product.variants.length > 1 && (
                   <Typography variant="caption" color="text.secondary">
                     {product.variants.length} variants available
@@ -276,7 +250,6 @@ const ProductCard = ({
                 )}
               </Box>
 
-              {/* Favorite Button */}
               <IconButton
                 onClick={handleToggleFavorite}
                 sx={{ ml: 1 }}
@@ -306,7 +279,6 @@ const ProductCard = ({
                 )}
               </Box>
 
-              {/* Stock Info */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                 {isInStock ? (
                   <>
@@ -369,7 +341,6 @@ const ProductCard = ({
     );
   }
 
-  // Grid view (default)
   return (
     <Card
       sx={{
@@ -394,7 +365,6 @@ const ProductCard = ({
       role="article"
       aria-labelledby={`product-${product.id}-title`}
     >
-      {/* Product Image */}
       <Box sx={{ position: 'relative', pt: variant === 'featured' ? '75%' : '100%', overflow: 'hidden' }}>
         <CardMedia
           component="img"
@@ -409,7 +379,7 @@ const ProductCard = ({
             transition: 'transform 0.5s ease, opacity 0.3s ease-in-out',
             transform: isHovered ? 'scale(1.05)' : 'scale(1)',
           }}
-          image={product.image || '/images/placeholder-product.jpg'}
+          image={product.image || '/images/placeholder-product.svg'}
           alt={product.name}
           onLoad={() => setImageLoaded(true)}
         />
@@ -434,7 +404,6 @@ const ProductCard = ({
           </Box>
         )}
 
-        {/* Product badges */}
         <Box sx={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 0.5, zIndex: 1 }}>
           {isNew && (
             <Chip
@@ -462,7 +431,6 @@ const ProductCard = ({
           )}
         </Box>
 
-        {/* Favorite Button */}
         <IconButton
           onClick={handleToggleFavorite}
           sx={{
@@ -486,7 +454,6 @@ const ProductCard = ({
           )}
         </IconButton>
 
-        {/* Quick Add Button - Appears on hover */}
         {showQuickAdd && isHovered && isInStock && (
           <Box
             sx={{
@@ -505,7 +472,7 @@ const ProductCard = ({
             <Button
               variant="contained"
               size="small"
-              onClick={handleQuickAdd}
+              onClick={handleAddToCart}
               sx={{
                 backgroundColor: theme.palette.tertiary.main,
                 color: 'white',
@@ -525,7 +492,6 @@ const ProductCard = ({
           </Box>
         )}
 
-        {/* Stock Status */}
         <Box sx={{ position: 'absolute', bottom: 8, right: 8, zIndex: 1 }}>
           {!isInStock && (
             <Chip
@@ -546,7 +512,6 @@ const ProductCard = ({
         </Box>
       </Box>
 
-      {/* Product Details */}
       <CardContent sx={{ 
         flex: 1, 
         pb: 1, 
@@ -595,7 +560,6 @@ const ProductCard = ({
           </Typography>
         )}
 
-        {/* Product Rating */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <Rating 
             value={rating} 
@@ -614,7 +578,6 @@ const ProductCard = ({
           </Typography>
         </Box>
 
-        {/* Price */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Typography 
             variant="h6" 
@@ -637,7 +600,6 @@ const ProductCard = ({
           )}
         </Box>
 
-        {/* Stock Info */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {isInStock ? (
@@ -665,7 +627,6 @@ const ProductCard = ({
         </Box>
       </CardContent>
 
-      {/* Actions */}
       <CardActions sx={{ 
         pt: 0, 
         px: variant === 'featured' ? 2 : 1.5, 

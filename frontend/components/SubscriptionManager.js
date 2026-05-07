@@ -19,6 +19,10 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   PlayArrow as ResumeIcon,
@@ -46,10 +50,35 @@ const SubscriptionManager = ({ userId }) => {
   const [cancelDialog, setCancelDialog] = useState({ open: false, subscription: null });
   const [editDialog, setEditDialog] = useState({ open: false, subscription: null });
   const [cancelReason, setCancelReason] = useState('');
+  
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    plan_id: '',
+    frequency: 'MONTHLY',
+    quantity: 1,
+    delivery_day: '',
+    next_billing_date: '',
+    address: {
+      full_name: '',
+      address_line1: '',
+      address_line2: '',
+      city: '',
+      postal_code: '',
+      country: 'GB',
+    },
+    delivery_instructions: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+  
+  // Subscription plans
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
 
   // Load subscriptions
   useEffect(() => {
     loadSubscriptions();
+    loadSubscriptionPlans();
   }, [userId]);
 
   const loadSubscriptions = async () => {
@@ -62,6 +91,75 @@ const SubscriptionManager = ({ userId }) => {
       setError('Failed to load subscriptions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSubscriptionPlans = async () => {
+    try {
+      const response = await axios.get('/api/subscriptions/plans');
+      setSubscriptionPlans(response.data.plans || []);
+    } catch (err) {
+      console.error('Error loading subscription plans:', err);
+    }
+  };
+
+  const handleEditSubscription = (subscription) => {
+    // Populate form with current subscription data
+    setEditForm({
+      plan_id: subscription.plan_id || subscription.plan?.id || '',
+      frequency: subscription.frequency || 'MONTHLY',
+      quantity: subscription.quantity || 1,
+      delivery_day: subscription.delivery_day || '',
+      next_billing_date: subscription.next_billing_date ? 
+        new Date(subscription.next_billing_date).toISOString().split('T')[0] : '',
+      address: {
+        full_name: subscription.shipping_address?.full_name || '',
+        address_line1: subscription.shipping_address?.address_line1 || '',
+        address_line2: subscription.shipping_address?.address_line2 || '',
+        city: subscription.shipping_address?.city || '',
+        postal_code: subscription.shipping_address?.postal_code || '',
+        country: subscription.shipping_address?.country || 'GB',
+      },
+      delivery_instructions: subscription.delivery_instructions || '',
+    });
+    setEditError(null);
+    setEditSuccess(false);
+    setEditDialog({ open: true, subscription });
+  };
+
+  const handleSaveSubscription = async () => {
+    if (!editDialog.subscription) return;
+    
+    try {
+      setEditLoading(true);
+      setEditError(null);
+      
+      const payload = {};
+      if (editForm.plan_id) payload.plan_id = editForm.plan_id;
+      if (editForm.frequency) payload.frequency = editForm.frequency;
+      if (editForm.quantity) payload.quantity = editForm.quantity;
+      if (editForm.delivery_day) payload.delivery_day = editForm.delivery_day;
+      if (editForm.next_billing_date) payload.next_billing_date = editForm.next_billing_date;
+      if (editForm.delivery_instructions) payload.delivery_instructions = editForm.delivery_instructions;
+      if (editForm.address) payload.address = editForm.address;
+      
+      await axios.patch(`/api/subscriptions/${editDialog.subscription.id}`, payload);
+      
+      setEditSuccess(true);
+      
+      // Reload subscriptions to get updated data
+      await loadSubscriptions();
+      
+      // Close dialog after short delay
+      setTimeout(() => {
+        setEditDialog({ open: false, subscription: null });
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Error saving subscription:', err);
+      setEditError(err.response?.data?.message || 'Failed to save subscription changes');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -301,7 +399,7 @@ const SubscriptionManager = ({ userId }) => {
                     <Button
                       size="small"
                       startIcon={<EditIcon />}
-                      onClick={() => setEditDialog({ open: true, subscription })}
+                      onClick={() => handleEditSubscription(subscription)}
                     >
                       Edit
                     </Button>
@@ -478,18 +576,222 @@ const SubscriptionManager = ({ userId }) => {
         fullScreen={isMobile}
       >
         <DialogTitle>Edit Subscription</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" gutterBottom>
-            Edit subscription for {editDialog.subscription?.product.name}
-          </Typography>
-          {/* Edit form would go here - shipping address, plan changes, etc. */}
-          <Typography variant="body2" color="text.secondary">
-            Edit functionality coming soon...
-          </Typography>
+        <DialogContent dividers>
+          <Box sx={{ mt: 2 }}>
+            {editError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setEditError(null)}>
+                {editError}
+              </Alert>
+            )}
+            
+            {editSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }} onClose={() => setEditSuccess(false)}>
+                Subscription updated successfully!
+              </Alert>
+            )}
+
+            <Typography variant="h6" gutterBottom>
+              Editing: {editDialog.subscription?.product?.name || 'Subscription'}
+            </Typography>
+
+            <Grid container spacing={3}>
+              {/* Plan Selection */}
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Subscription Plan</InputLabel>
+                  <Select
+                    value={editForm.plan_id || ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, plan_id: e.target.value }))}
+                    label="Subscription Plan"
+                  >
+                    {subscriptionPlans.map((plan) => (
+                      <MenuItem key={plan.id} value={plan.id}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                          <Typography>{plan.name}</Typography>
+                          <Typography color="primary">{plan.discount_percentage}% off</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Frequency */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Delivery Frequency</InputLabel>
+                  <Select
+                    value={editForm.frequency || 'MONTHLY'}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, frequency: e.target.value }))}
+                    label="Delivery Frequency"
+                  >
+                    <MenuItem value="WEEKLY">Weekly</MenuItem>
+                    <MenuItem value="BIWEEKLY">Every 2 Weeks</MenuItem>
+                    <MenuItem value="MONTHLY">Monthly</MenuItem>
+                    <MenuItem value="QUARTERLY">Quarterly</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Quantity */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Quantity"
+                  value={editForm.quantity || 1}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                  inputProps={{ min: 1, max: 10 }}
+                />
+              </Grid>
+
+              {/* Delivery Day */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Preferred Delivery Day</InputLabel>
+                  <Select
+                    value={editForm.delivery_day || ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, delivery_day: e.target.value }))}
+                    label="Preferred Delivery Day"
+                  >
+                    <MenuItem value="MONDAY">Monday</MenuItem>
+                    <MenuItem value="TUESDAY">Tuesday</MenuItem>
+                    <MenuItem value="WEDNESDAY">Wednesday</MenuItem>
+                    <MenuItem value="THURSDAY">Thursday</MenuItem>
+                    <MenuItem value="FRIDAY">Friday</MenuItem>
+                    <MenuItem value="SATURDAY">Saturday</MenuItem>
+                    <MenuItem value="SUNDAY">Sunday</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Next Billing Date */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Next Billing Date"
+                  value={editForm.next_billing_date || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, next_billing_date: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              {/* Shipping Address */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
+                  Shipping Address
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  value={editForm.address?.full_name || ''}
+                  onChange={(e) => setEditForm(prev => ({ 
+                    ...prev, 
+                    address: { ...prev.address, full_name: e.target.value }
+                  }))}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address Line 1"
+                  value={editForm.address?.address_line1 || ''}
+                  onChange={(e) => setEditForm(prev => ({ 
+                    ...prev, 
+                    address: { ...prev.address, address_line1: e.target.value }
+                  }))}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address Line 2 (Optional)"
+                  value={editForm.address?.address_line2 || ''}
+                  onChange={(e) => setEditForm(prev => ({ 
+                    ...prev, 
+                    address: { ...prev.address, address_line2: e.target.value }
+                  }))}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="City"
+                  value={editForm.address?.city || ''}
+                  onChange={(e) => setEditForm(prev => ({ 
+                    ...prev, 
+                    address: { ...prev.address, city: e.target.value }
+                  }))}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Postal Code"
+                  value={editForm.address?.postal_code || ''}
+                  onChange={(e) => setEditForm(prev => ({ 
+                    ...prev, 
+                    address: { ...prev.address, postal_code: e.target.value }
+                  }))}
+                />
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Country</InputLabel>
+                  <Select
+                    value={editForm.address?.country || 'GB'}
+                    onChange={(e) => setEditForm(prev => ({ 
+                      ...prev, 
+                      address: { ...prev.address, country: e.target.value }
+                    }))}
+                    label="Country"
+                  >
+                    <MenuItem value="GB">United Kingdom</MenuItem>
+                    <MenuItem value="IE">Ireland</MenuItem>
+                    <MenuItem value="FR">France</MenuItem>
+                    <MenuItem value="DE">Germany</MenuItem>
+                    <MenuItem value="ES">Spain</MenuItem>
+                    <MenuItem value="IT">Italy</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Notes */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  label="Delivery Instructions (Optional)"
+                  value={editForm.delivery_instructions || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, delivery_instructions: e.target.value }))}
+                  placeholder="e.g., Leave in safe place, ring doorbell, etc."
+                />
+              </Grid>
+            </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setEditDialog({ open: false, subscription: null })}>
-            Close
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveSubscription}
+            variant="contained"
+            color="primary"
+            disabled={editLoading}
+            startIcon={editLoading ? <LinearProgress size={20} /> : null}
+          >
+            {editLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

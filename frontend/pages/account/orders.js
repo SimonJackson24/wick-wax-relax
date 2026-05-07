@@ -113,7 +113,7 @@ function OrdersContent() {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
 
-      const response = await fetch(`http://localhost:3001/api/export/orders/csv?${params.toString()}`, {
+      const response = await fetch(`/api/export/orders/csv?${params.toString()}`, {
         method: 'GET',
         credentials: 'include'
       });
@@ -163,7 +163,7 @@ function OrdersContent() {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
 
-      const response = await fetch(`http://localhost:3001/api/export/orders/items/csv?${params.toString()}`, {
+      const response = await fetch(`/api/export/orders/items/csv?${params.toString()}`, {
         method: 'GET',
         credentials: 'include'
       });

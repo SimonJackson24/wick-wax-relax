@@ -46,12 +46,17 @@ const initializeDb = async () => {
 };
 
 // Helper function to run queries with PostgreSQL
+// Auto-converts MySQL-style ? placeholders to PostgreSQL $N format
 const runQuery = async (sql, params = []) => {
+  let convertedSql;
   try {
-    const result = await pool.query(sql, params);
+    let paramIndex = 1;
+    convertedSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
+    const result = await pool.query(convertedSql, params);
     return result;
   } catch (error) {
     console.error('Database query error:', error);
+    console.error('[DB ERROR] SQL was:', convertedSql ? convertedSql.substring(0, 200) : sql, '| PARAMS:', JSON.stringify(params));
     throw error;
   }
 };

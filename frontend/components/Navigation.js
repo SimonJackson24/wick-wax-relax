@@ -220,7 +220,7 @@ const Navigation = () => {
           sx={{
             backgroundColor: trigger
               ? 'rgba(250, 248, 243, 0.97)'
-              : 'rgba(62, 44, 31, 0.97)',
+              : 'rgba(62, 35, 81, 0.97)',
             backdropFilter: 'blur(20px)',
             borderBottom: trigger ? '1px solid rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -278,8 +278,8 @@ const Navigation = () => {
                         fontWeight: 700,
                         fontSize: { xs: '1.1rem', md: '1.4rem' },
                         background: trigger
-                          ? 'linear-gradient(135deg, #3E2C1F 0%, #5C4033 100%)'
-                          : 'linear-gradient(135deg, #E6C88A 0%, #D4A853 100%)',
+                          ? 'linear-gradient(135deg, #3E2351 0%, #4A235A 100%)'
+                          : 'linear-gradient(135deg, #9B59B6 0%, #6C3483 100%)',
                         backgroundClip: 'text',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
@@ -469,7 +469,7 @@ const Navigation = () => {
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: '280px',
-            background: 'linear-gradient(135deg, #3E2C1F 0%, #5C4033 100%)',
+            background: 'linear-gradient(135deg, #3E2351 0%, #4A235A 100%)',
             backdropFilter: 'blur(20px)',
             borderLeft: '1px solid rgba(230, 200, 138, 0.15)',
           },

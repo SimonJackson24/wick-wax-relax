@@ -12,6 +12,7 @@ import {
   Card,
   CardContent
 } from '@mui/material';
+import Link from 'next/link';
 import { useAuth } from '../../components/AuthContext';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import axios from 'axios';
@@ -29,7 +30,7 @@ function ProfileContent() {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/orders');
+      const response = await axios.get('/api/orders');
       setOrders(response.data.orders || []);
     } catch (error) {
       console.error('Error fetching orders:', error);

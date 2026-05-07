@@ -38,40 +38,25 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
   const [lastOnlineTime, setLastOnlineTime] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // Track when we went offline
   useEffect(() => {
     if (!isOnline) {
       setLastOnlineTime(new Date());
     }
   }, [isOnline]);
 
-  // Auto-hide after coming back online
-  useEffect(() => {
-    if (isOnline && autoHide && lastOnlineTime) {
-      const timer = setTimeout(() => {
-        // Could hide the component here if needed
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isOnline, autoHide, lastOnlineTime]);
-
   const handleRetry = async () => {
     setRetrying(true);
-
     try {
-      // Try to fetch a small resource to test connectivity
       const response = await fetch('/api/health', {
         method: 'GET',
         cache: 'no-cache'
       });
-
       if (response.ok) {
         setSnackbar({
           open: true,
           message: 'Connection restored!',
           severity: 'success'
         });
-        window.location.reload(); // Force page refresh to get fresh data
       } else {
         throw new Error('Connection test failed');
       }
@@ -97,22 +82,17 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
 
   const formatTimeAgo = (date) => {
     if (!date) return '';
-
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
-
     if (diffMins < 1) return 'just now';
     if (diffMins < 60) return `${diffMins} minutes ago`;
-
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} hours ago`;
-
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} days ago`;
   };
 
-  // Don't show if online and auto-hide is enabled
   if (isOnline && autoHide) {
     return null;
   }
@@ -123,7 +103,7 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
         elevation={3}
         sx={{
           position: 'fixed',
-          top: 80, // Below the PWA status bar
+          top: 80,
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 1200,
@@ -170,7 +150,6 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
           )}
         </Typography>
 
-        {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {!isOnline && (
             <Button
@@ -207,7 +186,6 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
           </Button>
         </Box>
 
-        {/* Expanded Details */}
         <Collapse in={showExpanded}>
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.3)' }}>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
@@ -272,7 +250,6 @@ const OfflineIndicator = ({ showDetails = true, autoHide = false }) => {
         </Collapse>
       </Paper>
 
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

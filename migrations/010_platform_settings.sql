@@ -7,8 +7,8 @@ CREATE TABLE platform_settings (
   encrypted INTEGER DEFAULT 0,
   description TEXT,
   validation_rules TEXT, -- JSON stored as TEXT in SQLite
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(category, key)
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE settings_audit_log (
   new_value TEXT,
   action TEXT NOT NULL CHECK (action IN ('CREATE', 'UPDATE', 'DELETE')),
   changed_by TEXT,
-  changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   ip_address TEXT,
   user_agent TEXT
 );

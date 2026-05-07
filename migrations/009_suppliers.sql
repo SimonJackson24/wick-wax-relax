@@ -11,8 +11,8 @@ CREATE TABLE suppliers (
   lead_time_days INTEGER,
   notes TEXT,
   is_active INTEGER DEFAULT 1,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create supplier products table (many-to-many relationship)
@@ -24,8 +24,8 @@ CREATE TABLE supplier_products (
   supplier_price REAL,
   minimum_order_quantity INTEGER DEFAULT 1,
   lead_time_days INTEGER,
-  last_ordered_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_ordered_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(supplier_id, product_id)
 );
 
@@ -39,8 +39,8 @@ CREATE TABLE supplier_orders (
   expected_delivery_date DATE,
   actual_delivery_date DATE,
   notes TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create supplier order items table
@@ -53,7 +53,7 @@ CREATE TABLE supplier_order_items (
   unit_price REAL,
   total_price REAL,
   received_quantity INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for performance

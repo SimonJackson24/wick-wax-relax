@@ -19,7 +19,6 @@ const SEOHead = ({
   const defaultImage = '/images/hero-image.svg';
   const siteName = 'Wick Wax Relax';
 
-  // Use provided values or defaults
   const pageTitle = title || `${siteName} - Premium Home Fragrance Products`;
   const pageDescription = description || 'Premium wax melts, candles, and home fragrance products. Hand-poured soy wax with natural essential oils.';
   const pageKeywords = keywords || 'wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy';
@@ -27,7 +26,6 @@ const SEOHead = ({
   const pageUrl = url || `${siteUrl}${router.asPath}`;
   const canonicalUrl = canonical || pageUrl;
 
-  // Generate structured data
   const generateStructuredData = () => {
     const baseData = {
       '@context': 'https://schema.org',
@@ -36,9 +34,7 @@ const SEOHead = ({
       url: siteUrl,
       logo: `${siteUrl}/images/logo.svg`,
       description: pageDescription,
-      sameAs: [
-        // Add social media URLs here when available
-      ]
+      sameAs: []
     };
 
     if (type === 'article' && article) {
@@ -85,9 +81,7 @@ const SEOHead = ({
           '@type': 'Offer',
           price: product.price,
           priceCurrency: 'GBP',
-          availability: product.availability === 'in_stock' ?
-            'https://schema.org/InStock' :
-            'https://schema.org/OutOfStock',
+          availability: product.availability === 'in_stock' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           seller: {
             '@type': 'Organization',
             name: siteName
@@ -108,17 +102,14 @@ const SEOHead = ({
 
   return (
     <Head>
-      {/* Basic Meta Tags */}
       <title>{pageTitle}</title>
       <meta name="description" content={pageDescription} />
       <meta name="keywords" content={pageKeywords} />
       <meta name="author" content={siteName} />
       <meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1'} />
 
-      {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />
 
-      {/* Open Graph Meta Tags */}
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
       <meta property="og:image" content={pageImage} />
@@ -127,14 +118,12 @@ const SEOHead = ({
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content="en_GB" />
 
-      {/* Twitter Card Meta Tags */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={pageTitle} />
       <meta name="twitter:description" content={pageDescription} />
       <meta name="twitter:image" content={pageImage} />
       <meta name="twitter:site" content="@wickwaxrelax" />
 
-      {/* Article specific meta tags */}
       {article && (
         <>
           <meta property="article:author" content={article.author} />
@@ -147,7 +136,6 @@ const SEOHead = ({
         </>
       )}
 
-      {/* Product specific meta tags */}
       {product && (
         <>
           <meta property="product:price:amount" content={product.price} />
@@ -157,19 +145,16 @@ const SEOHead = ({
         </>
       )}
 
-      {/* Additional SEO Meta Tags */}
-      <meta name="theme-color" content="#D2691E" />
-      <meta name="msapplication-TileColor" content="#D2691E" />
+      <meta name="theme-color" content="#C8B6DB" />
+      <meta name="msapplication-TileColor" content="#C8B6DB" />
       <meta name="application-name" content={siteName} />
 
-      {/* Favicon */}
       <link rel="icon" href="/favicon.ico" />
       <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
       <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
       <link rel="manifest" href="/site.webmanifest" />
 
-      {/* Structured Data (JSON-LD) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -177,30 +162,23 @@ const SEOHead = ({
         }}
       />
 
-      {/* Preconnect to external domains for performance */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
-      {/* DNS prefetch for external resources */}
       <link rel="dns-prefetch" href="//www.google-analytics.com" />
       <link rel="dns-prefetch" href="//www.googletagmanager.com" />
 
-      {/* Security headers */}
       <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
       <meta httpEquiv="X-Frame-Options" content="DENY" />
       <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
       <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 
-      {/* Mobile optimization */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="format-detection" content="telephone=no" />
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       <meta name="apple-mobile-web-app-title" content={siteName} />
-
-      {/* Additional performance hints */}
-      <link rel="preload" href="/fonts/roboto.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
     </Head>
   );
 };

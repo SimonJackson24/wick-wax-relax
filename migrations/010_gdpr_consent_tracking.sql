@@ -7,29 +7,29 @@ CREATE TABLE user_consents (
   consent_version TEXT NOT NULL,
   ip_address TEXT,
   user_agent TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Add GDPR-related columns to users table
 ALTER TABLE users ADD COLUMN marketing_consent BOOLEAN DEFAULT 0;
-ALTER TABLE users ADD COLUMN marketing_consent_date DATETIME;
+ALTER TABLE users ADD COLUMN marketing_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN marketing_consent_version TEXT;
 
 ALTER TABLE users ADD COLUMN analytics_consent BOOLEAN DEFAULT 0;
-ALTER TABLE users ADD COLUMN analytics_consent_date DATETIME;
+ALTER TABLE users ADD COLUMN analytics_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN analytics_consent_version TEXT;
 
 ALTER TABLE users ADD COLUMN third_party_consent BOOLEAN DEFAULT 0;
-ALTER TABLE users ADD COLUMN third_party_consent_date DATETIME;
+ALTER TABLE users ADD COLUMN third_party_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN third_party_consent_version TEXT;
 
 ALTER TABLE users ADD COLUMN data_processing_consent BOOLEAN DEFAULT 1; -- Default to true for existing users
-ALTER TABLE users ADD COLUMN data_processing_consent_date DATETIME DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE users ADD COLUMN data_processing_consent_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN data_processing_consent_version TEXT DEFAULT '1.0';
 
 ALTER TABLE users ADD COLUMN gdpr_deleted BOOLEAN DEFAULT 0;
-ALTER TABLE users ADD COLUMN gdpr_deletion_date DATETIME;
+ALTER TABLE users ADD COLUMN gdpr_deletion_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN gdpr_deletion_reason TEXT;
 
 -- Add GDPR anonymization flag to orders

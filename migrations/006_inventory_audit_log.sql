@@ -5,7 +5,7 @@ CREATE TABLE inventory_audit_log (
   quantity_change INTEGER NOT NULL,
   change_type TEXT NOT NULL CHECK (change_type IN ('RESERVED', 'RELEASED', 'ADJUSTMENT', 'SYNC')),
   reason TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for performance
@@ -20,7 +20,7 @@ CREATE TABLE order_status_history (
   new_status TEXT NOT NULL,
   changed_by TEXT, -- User who changed the status (nullable for system changes)
   reason TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for performance

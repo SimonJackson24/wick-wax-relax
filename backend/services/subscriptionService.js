@@ -930,6 +930,111 @@ class SubscriptionService {
 
     return result.rows;
   }
+
+  // Get all subscriptions for admin (with pagination and filtering)
+  async getAdminSubscriptions({ page = 1, limit = 20, status, planId, userId }) {
+    const offset = (page - 1) * limit;
+    const params = [];
+    const conditions = [];
+
+    if (status) {
+      conditions.push('us.status = ?');
+      params.push(status);
+    }
+
+    if (planId) {
+      conditions.push('us.plan_id = ?');
+      params.push(planId);
+    }
+
+    if (userId) {
+      conditions.push('us.user_id = ?');
+      params.push(userId);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Get total count
+    const countResult = await query(`
+      SELECT COUNT(*) as total
+      FROM user_subscriptions us
+      ${whereClause}
+    `, params);
+
+    const total = countResult.rows[0]?.total || 0;
+
+    // Get subscriptions with joins
+    const result = await query(`
+      SELECT
+        us.id,
+        us.user_id,
+        us.plan_id,
+        us.product_id,
+        us.variant_id,
+        us.status,
+        us.next_order_date,
+        us.last_order_date,
+        us.created_at,
+        us.updated_at,
+        us.cancelled_at,
+        sp.name as plan_name,
+        sp.interval as plan_interval,
+        sp.discount_percentage,
+        p.name as product_name,
+        p.sku as product_sku,
+        pv.name as variant_name,
+        pv.price as variant_price,
+        u.email,
+        u.first_name,
+        u.last_name
+      FROM user_subscriptions us
+      JOIN subscription_plans sp ON us.plan_id = sp.id
+      JOIN products p ON us.product_id = p.id
+      JOIN product_variants pv ON us.variant_id = pv.id
+      JOIN users u ON us.user_id = u.id
+      ${whereClause}
+      ORDER BY us.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+
+    return {
+      subscriptions: result.rows.map(row => ({
+        id: row.id,
+        status: row.status,
+        next_order_date: row.next_order_date,
+        last_order_date: row.last_order_date,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        cancelled_at: row.cancelled_at,
+        user: {
+          id: row.user_id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          email: row.email
+        },
+        product: {
+          id: row.product_id,
+          name: row.product_name,
+          sku: row.product_sku,
+          variant_id: row.variant_id,
+          variant_name: row.variant_name,
+          price: row.variant_price
+        },
+        plan: {
+          id: row.plan_id,
+          name: row.plan_name,
+          interval: row.plan_interval,
+          discount_percentage: row.discount_percentage
+        }
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    };
+  }
 }
 
 module.exports = new SubscriptionService();
