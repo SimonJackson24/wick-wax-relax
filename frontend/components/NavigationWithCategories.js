@@ -1,24 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Box,
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  useTheme,
-  useMediaQuery,
-  Container,
-  Badge,
-  useScrollTrigger,
-  Slide,
-  CircularProgress,
-  Avatar,
-  Menu,
-  MenuItem
+  Box, AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem,
+  useTheme, useMediaQuery, Container, Badge, useScrollTrigger, Slide, CircularProgress,
+  Avatar, Menu, MenuItem
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -65,10 +49,7 @@ const NavigationWithCategories = () => {
   const categoriesTriggerRef = useRef(null);
   const categoriesDropdownRef = useRef(null);
 
-  const trigger = useScrollTrigger({
-    disableHysteresis: true,
-    threshold: 50,
-  });
+  const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 50 });
 
   const navLinks = [
     { name: 'Home', href: '/', icon: null },
@@ -77,13 +58,8 @@ const NavigationWithCategories = () => {
     { name: 'Contact', href: '/#contact', icon: null },
   ];
 
-  const handleUserMenuOpen = (event) => {
-    setUserMenuAnchor(event.currentTarget);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserMenuAnchor(null);
-  };
+  const handleUserMenuOpen = (event) => setUserMenuAnchor(event.currentTarget);
+  const handleUserMenuClose = () => setUserMenuAnchor(null);
 
   const handleLogout = async () => {
     handleUserMenuClose();
@@ -91,16 +67,13 @@ const NavigationWithCategories = () => {
     router.push('/');
   };
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  useEffect(() => setIsClient(true), []);
 
   useEffect(() => {
     if (mobileOpen && drawerRef.current) {
       const focusableElements = drawerRef.current.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
-      
       if (focusableElements.length > 0) {
         firstFocusableRef.current = focusableElements[0];
         lastFocusableRef.current = focusableElements[focusableElements.length - 1];
@@ -110,9 +83,7 @@ const NavigationWithCategories = () => {
   }, [mobileOpen]);
 
   useEffect(() => {
-    if (categoriesOpen && categories.length === 0) {
-      fetchCategories();
-    }
+    if (categoriesOpen && categories.length === 0) fetchCategories();
   }, [categoriesOpen]);
 
   const fetchCategories = async () => {
@@ -154,114 +125,60 @@ const NavigationWithCategories = () => {
   const handleScroll = useCallback(
     throttle(() => {
       if (!isClient) return;
-
       try {
-        const sections = navLinks
-          .filter(link => link.href.startsWith('#'))
-          .map(link => link.href.substring(1));
-
-        if (router.pathname === '/account/orders') {
-          setActiveSection('orders');
-          return;
-        }
-        if (router.pathname === '/account' || router.pathname === '/account/profile') {
-          setActiveSection('account');
-          return;
-        }
-
+        const sections = navLinks.filter(link => link.href.startsWith('#')).map(link => link.href.substring(1));
+        if (router.pathname === '/account/orders') { setActiveSection('orders'); return; }
+        if (router.pathname === '/account' || router.pathname === '/account/profile') { setActiveSection('account'); return; }
         let currentSection = 'home';
         for (const section of sections) {
           const element = document.getElementById(section);
           if (element) {
             const rect = element.getBoundingClientRect();
             const navHeight = 80;
-            if (rect.top <= navHeight + 50 && rect.bottom >= navHeight) {
-              currentSection = section;
-              break;
-            }
+            if (rect.top <= navHeight + 50 && rect.bottom >= navHeight) { currentSection = section; break; }
           }
         }
         setActiveSection(currentSection);
-      } catch (error) {
-        console.warn('Error in scroll handler:', error);
-      }
+      } catch (error) { console.warn('Error in scroll handler:', error); }
     }, 100),
     [isClient, router.pathname, navLinks]
   );
 
   useEffect(() => {
     if (!isClient) return;
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll, isClient]);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const scrollToSection = useCallback((href) => {
     if (!isClient) return;
-
     if (href.startsWith('#')) {
       try {
         const sectionId = href.substring(1);
         const element = document.getElementById(sectionId);
         if (element) {
           const navHeight = isMobile ? 64 : 80;
-          const offsetTop = element.offsetTop - navHeight;
-
-          window.scrollTo({
-            top: offsetTop,
-            behavior: 'smooth'
-          });
+          window.scrollTo({ top: element.offsetTop - navHeight, behavior: 'smooth' });
         }
-      } catch (error) {
-        console.warn('Error scrolling to section:', error);
-      }
+      } catch (error) { console.warn('Error scrolling to section:', error); }
     }
-
-    if (mobileOpen) {
-      setMobileOpen(false);
-    }
+    if (mobileOpen) setMobileOpen(false);
   }, [isClient, isMobile, mobileOpen]);
 
   const isLinkActive = useCallback((link) => {
     if (!isClient) return false;
-
-    if (link.href.startsWith('#')) {
-      return activeSection === link.href.substring(1);
-    }
-
-    if (link.href === '/account') {
-      return router.pathname === '/account' || router.pathname === '/account/profile';
-    }
-
-    if (link.href === '/account/orders') {
-      return router.pathname === '/account/orders';
-    }
-
+    if (link.href.startsWith('#')) return activeSection === link.href.substring(1);
+    if (link.href === '/account') return router.pathname === '/account' || router.pathname === '/account/profile';
+    if (link.href === '/account/orders') return router.pathname === '/account/orders';
     return false;
   }, [activeSection, router.pathname, isClient]);
 
-  const handleCategoriesEnter = () => {
-    setCategoriesOpen(true);
-  };
-
-  const handleCategoriesLeave = () => {
-    setTimeout(() => {
-      setCategoriesOpen(false);
-    }, 150);
-  };
-
-  const handleCategoryClick = (slug) => {
-    setCategoriesOpen(false);
-    router.push(`/category/${slug}`);
-  };
+  const handleCategoriesEnter = () => setCategoriesOpen(true);
+  const handleCategoriesLeave = () => setTimeout(() => setCategoriesOpen(false), 150);
+  const handleCategoryClick = (slug) => { setCategoriesOpen(false); router.push(`/category/${slug}`); };
 
   const logoVariants = {
     initial: { opacity: 0, x: -20 },
@@ -272,7 +189,6 @@ const NavigationWithCategories = () => {
   return (
     <>
       <SkipLink href="#main-content">Skip to main content</SkipLink>
-
       <Slide appear={false} direction="down" in={!trigger}>
         <AppBar
           ref={navRef}
@@ -280,9 +196,7 @@ const NavigationWithCategories = () => {
           position="fixed"
           elevation={trigger ? 4 : 0}
           sx={{
-            backgroundColor: trigger
-              ? 'rgba(250, 248, 243, 0.97)'
-              : 'rgba(62, 35, 75, 0.97)',
+            backgroundColor: trigger ? 'rgba(250, 248, 243, 0.97)' : 'rgba(62, 35, 75, 0.97)',
             backdropFilter: 'blur(20px)',
             borderBottom: trigger ? '1px solid rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -301,22 +215,13 @@ const NavigationWithCategories = () => {
               <Box
                 component={motion.div}
                 {...logoVariants}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mr: { xs: 2, md: 4 }
-                }}
+                sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 4 } }}
               >
                 <Link href="/" style={{ textDecoration: 'none' }}>
                   <Box
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease',
-                      '&:hover': {
-                        transform: 'scale(1.02)'
-                      }
+                      display: 'flex', alignItems: 'center', cursor: 'pointer', transition: 'transform 0.2s ease',
+                      '&:hover': { transform: 'scale(1.02)' }
                     }}
                   >
                     <Image
@@ -324,10 +229,7 @@ const NavigationWithCategories = () => {
                       alt="Wick Wax Relax Logo"
                       width={isMobile ? 40 : 48}
                       height={isMobile ? 40 : 48}
-                      style={{
-                        borderRadius: '12px',
-                        objectFit: 'cover'
-                      }}
+                      style={{ borderRadius: '12px', objectFit: 'cover' }}
                       priority
                     />
                     <Typography
@@ -360,10 +262,8 @@ const NavigationWithCategories = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 sx={{
-                  flexGrow: 1,
-                  display: { xs: 'none', md: 'flex' },
-                  justifyContent: 'center',
-                  alignItems: 'center'
+                  flexGrow: 1, display: { xs: 'none', md: 'flex' },
+                  justifyContent: 'center', alignItems: 'center'
                 }}
               >
                 <nav role="navigation" aria-label="Main navigation">
@@ -380,12 +280,8 @@ const NavigationWithCategories = () => {
                               ? (trigger ? '#C8B6DB' : '#C8B6DB')
                               : (trigger ? theme.palette.text.primary : theme.palette.common.white),
                             fontWeight: isLinkActive(link) ? 600 : 500,
-                            fontSize: '0.95rem',
-                            px: 2,
-                            py: 1.5,
-                            position: 'relative',
-                            textTransform: 'none',
-                            borderRadius: '12px',
+                            fontSize: '0.95rem', px: 2, py: 1.5,
+                            position: 'relative', textTransform: 'none', borderRadius: '12px',
                             transition: 'all 0.3s ease',
                             '&:hover': {
                               backgroundColor: trigger
@@ -425,11 +321,8 @@ const NavigationWithCategories = () => {
                             ? '#C8B6DB'
                             : (trigger ? theme.palette.text.primary : theme.palette.common.white),
                           fontWeight: router.pathname.startsWith('/category') ? 600 : 500,
-                          fontSize: '0.95rem',
-                          px: 2,
-                          py: 1.5,
-                          textTransform: 'none',
-                          borderRadius: '12px',
+                          fontSize: '0.95rem', px: 2, py: 1.5,
+                          textTransform: 'none', borderRadius: '12px',
                           transition: 'all 0.3s ease',
                           '&:hover': {
                             backgroundColor: trigger
@@ -450,20 +343,13 @@ const NavigationWithCategories = () => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
-                            style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              zIndex: 1300,
-                            }}
+                            style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1300 }}
                             ref={categoriesDropdownRef}
                             onMouseLeave={handleCategoriesLeave}
                           >
                             <Box
                               sx={{
-                                mt: 1,
-                                minWidth: 280,
-                                maxWidth: 320,
+                                mt: 1, minWidth: 280, maxWidth: 320,
                                 backgroundColor: 'rgba(250, 248, 243, 0.98)',
                                 borderRadius: 2,
                                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
@@ -474,9 +360,7 @@ const NavigationWithCategories = () => {
                               {loadingCategories ? (
                                 <Box sx={{ p: 3, textAlign: 'center' }}>
                                   <CircularProgress size={24} />
-                                  <Typography variant="body2" sx={{ mt: 1 }} color="text.secondary">
-                                    Loading categories...
-                                  </Typography>
+                                  <Typography variant="body2" sx={{ mt: 1 }} color="text.secondary">Loading categories...</Typography>
                                 </Box>
                               ) : (
                                 <List sx={{ py: 1 }}>
@@ -485,14 +369,9 @@ const NavigationWithCategories = () => {
                                       <Button
                                         onClick={() => handleCategoryClick(category.slug)}
                                         sx={{
-                                          width: '100%',
-                                          justifyContent: 'flex-start',
-                                          textAlign: 'left',
-                                          py: 1.5,
-                                          px: 3,
-                                          color: theme.palette.text.primary,
-                                          textTransform: 'none',
-                                          borderRadius: 0,
+                                          width: '100%', justifyContent: 'flex-start', textAlign: 'left',
+                                          py: 1.5, px: 3, color: theme.palette.text.primary,
+                                          textTransform: 'none', borderRadius: 0,
                                           '&:hover': {
                                             backgroundColor: 'rgba(200, 182, 219, 0.15)',
                                             color: theme.palette.primary.main,
@@ -510,9 +389,7 @@ const NavigationWithCategories = () => {
                                   <Typography
                                     variant="body2"
                                     sx={{
-                                      color: theme.palette.primary.main,
-                                      textAlign: 'center',
-                                      cursor: 'pointer',
+                                      color: theme.palette.primary.main, textAlign: 'center', cursor: 'pointer',
                                       '&:hover': { textDecoration: 'underline' },
                                     }}
                                   >
@@ -534,11 +411,7 @@ const NavigationWithCategories = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
               >
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
                   {isAuthenticated ? (
@@ -547,24 +420,12 @@ const NavigationWithCategories = () => {
                         onClick={handleUserMenuOpen}
                         aria-controls="user-menu"
                         aria-haspopup="true"
-                        startIcon={
-                          <Avatar
-                            sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}
-                          >
-                            {user?.firstName?.[0] || user?.email?.[0] || 'U'}
-                          </Avatar>
-                        }
+                        startIcon={<Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}>{user?.firstName?.[0] || user?.email?.[0] || 'U'}</Avatar>}
                         sx={{
                           color: trigger ? theme.palette.text.primary : theme.palette.common.white,
-                          fontSize: '0.9rem',
-                          px: 2,
-                          py: 1,
-                          textTransform: 'none',
-                          borderRadius: '12px',
+                          fontSize: '0.9rem', px: 2, py: 1, textTransform: 'none', borderRadius: '12px',
                           '&:hover': {
-                            backgroundColor: trigger
-                              ? 'rgba(200, 182, 219, 0.12)'
-                              : 'rgba(155, 89, 182, 0.15)',
+                            backgroundColor: trigger ? 'rgba(200, 182, 219, 0.12)' : 'rgba(155, 89, 182, 0.15)',
                           },
                         }}
                       >
@@ -578,15 +439,9 @@ const NavigationWithCategories = () => {
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                       >
-                        <MenuItem onClick={() => { handleUserMenuClose(); router.push('/account'); }}>
-                          <PersonIcon sx={{ mr: 1, fontSize: 20 }} /> Account
-                        </MenuItem>
-                        <MenuItem onClick={() => { handleUserMenuClose(); router.push('/account/orders'); }}>
-                          Orders
-                        </MenuItem>
-                        <MenuItem onClick={handleLogout}>
-                          <LogoutIcon sx={{ mr: 1, fontSize: 20 }} /> Logout
-                        </MenuItem>
+                        <MenuItem onClick={() => { handleUserMenuClose(); router.push('/account'); }}><PersonIcon sx={{ mr: 1, fontSize: 20 }} /> Account</MenuItem>
+                        <MenuItem onClick={() => { handleUserMenuClose(); router.push('/account/orders'); }}>Orders</MenuItem>
+                        <MenuItem onClick={handleLogout}><LogoutIcon sx={{ mr: 1, fontSize: 20 }} /> Logout</MenuItem>
                       </Menu>
                     </>
                   ) : (
@@ -596,15 +451,9 @@ const NavigationWithCategories = () => {
                         href="/auth/login"
                         sx={{
                           color: trigger ? theme.palette.text.primary : theme.palette.common.white,
-                          fontSize: '0.9rem',
-                          px: 2,
-                          py: 1,
-                          textTransform: 'none',
-                          borderRadius: '12px',
+                          fontSize: '0.9rem', px: 2, py: 1, textTransform: 'none', borderRadius: '12px',
                           '&:hover': {
-                            backgroundColor: trigger
-                              ? 'rgba(200, 182, 219, 0.12)'
-                              : 'rgba(155, 89, 182, 0.15)',
+                            backgroundColor: trigger ? 'rgba(200, 182, 219, 0.12)' : 'rgba(155, 89, 182, 0.15)',
                           },
                         }}
                       >
@@ -616,11 +465,7 @@ const NavigationWithCategories = () => {
                         variant="outlined"
                         sx={{
                           color: theme.palette.common.white,
-                          fontSize: '0.9rem',
-                          px: 2,
-                          py: 1,
-                          textTransform: 'none',
-                          borderRadius: '12px',
+                          fontSize: '0.9rem', px: 2, py: 1, textTransform: 'none', borderRadius: '12px',
                           borderColor: 'rgba(255,255,255,0.3)',
                           '&:hover': {
                             borderColor: 'rgba(255,255,255,0.6)',
@@ -640,16 +485,12 @@ const NavigationWithCategories = () => {
                   aria-label={`Shopping cart with ${cartCount} items`}
                   sx={{
                     color: trigger ? theme.palette.text.primary : theme.palette.common.white,
-                    backgroundColor: trigger
-                      ? 'rgba(200, 182, 219, 0.18)'
-                      : 'rgba(155, 89, 182, 0.25)',
+                    backgroundColor: trigger ? 'rgba(200, 182, 219, 0.18)' : 'rgba(155, 89, 182, 0.25)',
                     p: { xs: 1.5, md: 2 },
                     borderRadius: '16px',
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      backgroundColor: trigger
-                        ? 'rgba(200, 182, 219, 0.28)'
-                        : 'rgba(155, 89, 182, 0.35)',
+                      backgroundColor: trigger ? 'rgba(200, 182, 219, 0.28)' : 'rgba(155, 89, 182, 0.35)',
                       transform: 'scale(1.05)',
                     }
                   }}
@@ -657,13 +498,7 @@ const NavigationWithCategories = () => {
                   <Badge
                     badgeContent={cartCount}
                     color="error"
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        fontSize: '0.7rem',
-                        minWidth: '18px',
-                        height: '18px',
-                      }
-                    }}
+                    sx={{ '& .MuiBadge-badge': { fontSize: '0.7rem', minWidth: '18px', height: '18px' } }}
                   >
                     <ShoppingCartIcon />
                   </Badge>
@@ -678,13 +513,9 @@ const NavigationWithCategories = () => {
                   sx={{
                     display: { md: 'none' },
                     color: trigger ? theme.palette.text.primary : theme.palette.common.white,
-                    ml: 1,
-                    p: 1.5,
-                    borderRadius: '12px',
+                    ml: 1, p: 1.5, borderRadius: '12px',
                     '&:hover': {
-                      backgroundColor: trigger
-                        ? 'rgba(200, 182, 219, 0.12)'
-                        : 'rgba(155, 89, 182, 0.15)',
+                      backgroundColor: trigger ? 'rgba(200, 182, 219, 0.12)' : 'rgba(155, 89, 182, 0.15)',
                     }
                   }}
                 >
@@ -700,9 +531,7 @@ const NavigationWithCategories = () => {
         anchor="right"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
+        ModalProps={{ keepMounted: true }}
         ref={drawerRef}
         onKeyDown={handleDrawerKeyDown}
         sx={{
@@ -716,42 +545,12 @@ const NavigationWithCategories = () => {
           },
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-          }}
-          role="navigation"
-          aria-label="Mobile navigation menu"
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              p: 3,
-              borderBottom: '1px solid rgba(200, 182, 219, 0.15)',
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                fontFamily: '"Playfair Display", serif',
-                fontWeight: 700,
-                color: '#C8B6DB',
-              }}
-            >
-              Menu
-            </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }} role="navigation" aria-label="Mobile navigation menu">
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3, borderBottom: '1px solid rgba(200, 182, 219, 0.15)' }}>
+            <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#C8B6DB' }}>Menu</Typography>
             <IconButton
               onClick={handleDrawerToggle}
-              sx={{
-                color: theme.palette.common.white,
-                '&:hover': {
-                  backgroundColor: 'rgba(200, 182, 219, 0.1)',
-                }
-              }}
+              sx={{ color: theme.palette.common.white, '&:hover': { backgroundColor: 'rgba(200, 182, 219, 0.1)' } }}
               aria-label="close navigation menu"
             >
               <CloseIcon />
@@ -764,21 +563,14 @@ const NavigationWithCategories = () => {
                 <Button
                   component={link.href.startsWith('#') ? 'button' : Link}
                   href={link.href.startsWith('#') ? undefined : link.href}
-                  onClick={link.href.startsWith('#') 
-                    ? (e) => { e.preventDefault(); scrollToSection(link.href); } 
+                  onClick={link.href.startsWith('#')
+                    ? (e) => { e.preventDefault(); scrollToSection(link.href); }
                     : handleDrawerToggle
                   }
                   sx={{
-                    width: '100%',
-                    justifyContent: 'flex-start',
-                    color: theme.palette.common.white,
-                    py: 2,
-                    px: 3,
-                    textTransform: 'none',
-                    borderRadius: 0,
-                    '&:hover': {
-                      backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                    },
+                    width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                    py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                    '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                   }}
                 >
                   {link.name}
@@ -790,16 +582,9 @@ const NavigationWithCategories = () => {
               <Button
                 onClick={() => setCategoriesOpen(!categoriesOpen)}
                 sx={{
-                  width: '100%',
-                  justifyContent: 'flex-start',
-                  color: theme.palette.common.white,
-                  py: 2,
-                  px: 3,
-                  textTransform: 'none',
-                  borderRadius: 0,
-                  '&:hover': {
-                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                  },
+                  width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                  py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                  '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                 }}
                 endIcon={<KeyboardArrowDownIcon sx={{ transform: categoriesOpen ? 'rotate(180deg)' : 'rotate(0)' }} />}
               >
@@ -814,18 +599,9 @@ const NavigationWithCategories = () => {
                     <Button
                       onClick={() => { handleCategoryClick(category.slug); handleDrawerToggle(); }}
                       sx={{
-                        width: '100%',
-                        justifyContent: 'flex-start',
-                        color: 'rgba(255,255,255,0.8)',
-                        py: 1.5,
-                        px: 3,
-                        textTransform: 'none',
-                        fontSize: '0.9rem',
-                        borderRadius: 0,
-                        '&:hover': {
-                          backgroundColor: 'rgba(155, 89, 182, 0.15)',
-                          color: '#C8B6DB',
-                        },
+                        width: '100%', justifyContent: 'flex-start', color: 'rgba(255,255,255,0.8)',
+                        py: 1.5, px: 3, textTransform: 'none', fontSize: '0.9rem', borderRadius: 0,
+                        '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.15)', color: '#C8B6DB' },
                       }}
                     >
                       {category.name}
@@ -846,16 +622,9 @@ const NavigationWithCategories = () => {
                     onClick={handleDrawerToggle}
                     startIcon={<PersonIcon sx={{ fontSize: 'small', color: 'inherit' }} />}
                     sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: theme.palette.common.white,
-                      py: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                      },
+                      width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                      py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                      '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                     }}
                   >
                     Account
@@ -867,16 +636,9 @@ const NavigationWithCategories = () => {
                     href="/account/orders"
                     onClick={handleDrawerToggle}
                     sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: theme.palette.common.white,
-                      py: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                      },
+                      width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                      py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                      '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                     }}
                   >
                     Orders
@@ -887,16 +649,9 @@ const NavigationWithCategories = () => {
                     onClick={() => { handleDrawerToggle(); handleLogout(); }}
                     startIcon={<LogoutIcon sx={{ fontSize: 'small', color: 'inherit' }} />}
                     sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: theme.palette.common.white,
-                      py: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                      },
+                      width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                      py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                      '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                     }}
                   >
                     Logout
@@ -911,16 +666,9 @@ const NavigationWithCategories = () => {
                     href="/auth/login"
                     onClick={handleDrawerToggle}
                     sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: theme.palette.common.white,
-                      py: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                      },
+                      width: '100%', justifyContent: 'flex-start', color: theme.palette.common.white,
+                      py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                      '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                     }}
                   >
                     Login
@@ -932,16 +680,9 @@ const NavigationWithCategories = () => {
                     href="/auth/signup"
                     onClick={handleDrawerToggle}
                     sx={{
-                      width: '100%',
-                      justifyContent: 'flex-start',
-                      color: '#C8B6DB',
-                      py: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                      },
+                      width: '100%', justifyContent: 'flex-start', color: '#C8B6DB',
+                      py: 2, px: 3, textTransform: 'none', borderRadius: 0,
+                      '&:hover': { backgroundColor: 'rgba(155, 89, 182, 0.1)' },
                     }}
                   >
                     Sign Up

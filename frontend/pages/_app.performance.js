@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useEffect } from 'react';
 import axios from 'axios';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import PerformanceOptimizer from '../components/PerformanceOptimizer';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../components/AuthContext';
@@ -10,14 +10,11 @@ import { PWAProvider } from '../components/PWAContext';
 import theme from '../src/theme';
 import { initializeOptimizations } from '../utils/bundleOptimization';
 
-// Set axios base URL to point to backend
 axios.defaults.baseURL = 'http://localhost:3001';
-// Enable cookies for cross-origin requests
 axios.defaults.withCredentials = true;
 
 function MyApp({ Component, pageProps }) {
   useEffect(() => {
-    // Initialize all performance optimizations
     initializeOptimizations();
   }, []);
 
@@ -39,17 +36,11 @@ function MyApp({ Component, pageProps }) {
                   <link rel="apple-touch-icon" href="/icon-192x192.png" />
                   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                   <meta name="apple-mobile-web-app-title" content="Wick Wax Relax" />
-
-                  {/* Performance optimization meta tags */}
                   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
-        <meta name="theme-color" content="#C8B6DB" />
-        <meta name="msapplication-TileColor" content="#C8B6DB" />
-
-                  {/* Preload critical resources */}
+                  <meta name="theme-color" content="#C8B6DB" />
+                  <meta name="msapplication-TileColor" content="#C8B6DB" />
                   <link rel="preload" href="/images/hero-image.webp" as="image" />
                   <link rel="preload" href="/images/logo.webp" as="image" />
-
-                  {/* DNS prefetch for external resources */}
                   <link rel="dns-prefetch" href="//www.google-analytics.com" />
                   <link rel="dns-prefetch" href="//www.googletagmanager.com" />
                 </Head>

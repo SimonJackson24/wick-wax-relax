@@ -44,7 +44,7 @@ const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [isClient, setIsClient] = useState(false);
-  const [cartCount, setCartCount] = useState(3); // This would come from context/state
+  const [cartCount, setCartCount] = useState(3);
   const navRef = useRef(null);
   const drawerRef = useRef(null);
   const firstFocusableRef = useRef(null);
@@ -201,12 +201,6 @@ const Navigation = () => {
     return false;
   }, [activeSection, router.pathname, isClient]);
 
-  const logoVariants = {
-    initial: { opacity: 0, x: -20 },
-    animate: { opacity: 1, x: 0 },
-    transition: { duration: 0.5 }
-  };
-
   return (
     <>
       <SkipLink href="#main-content">Skip to main content</SkipLink>
@@ -238,7 +232,9 @@ const Navigation = () => {
             >
               <Box
                 component={motion.div}
-                {...logoVariants}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',

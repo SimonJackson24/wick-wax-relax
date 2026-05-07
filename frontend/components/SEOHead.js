@@ -16,15 +16,13 @@ const SEOHead = ({
 }) => {
   const router = useRouter();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const defaultImage = '/images/hero-image.svg';
   const siteName = 'Wick Wax Relax';
 
   const pageTitle = title || `${siteName} - Premium Home Fragrance Products`;
   const pageDescription = description || 'Premium wax melts, candles, and home fragrance products. Hand-poured soy wax with natural essential oils.';
   const pageKeywords = keywords || 'wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy';
-  const pageImage = image || `${siteUrl}${defaultImage}`;
+  const pageImage = image || `${siteUrl}/images/hero-image.svg`;
   const pageUrl = url || `${siteUrl}${router.asPath}`;
-  const canonicalUrl = canonical || pageUrl;
 
   const generateStructuredData = () => {
     const baseData = {
@@ -98,8 +96,6 @@ const SEOHead = ({
     return baseData;
   };
 
-  const structuredData = generateStructuredData();
-
   return (
     <Head>
       <title>{pageTitle}</title>
@@ -108,7 +104,7 @@ const SEOHead = ({
       <meta name="author" content={siteName} />
       <meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1'} />
 
-      <link rel="canonical" href={canonicalUrl} />
+      <link rel="canonical" href={canonical || pageUrl} />
 
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
@@ -158,7 +154,7 @@ const SEOHead = ({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData)
+          __html: JSON.stringify(generateStructuredData())
         }}
       />
 
