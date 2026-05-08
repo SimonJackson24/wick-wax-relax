@@ -1,8 +1,8 @@
-// const Sentry = require('@sentry/node');
-// const { nodeProfilingIntegration } = require('@sentry/profiling-node');
+const Sentry = require('@sentry/node');
+const { nodeProfilingIntegration } = require('@sentry/profiling-node');
 const { logger, performanceMonitor } = require('./logger');
 
-// Initialize Sentry - commented out for testing
+// Sentry is commented out during testing — uncomment in production
 // Sentry.init({
 //   dsn: process.env.SENTRY_DSN,
 //   integrations: [
@@ -10,8 +10,8 @@ const { logger, performanceMonitor } = require('./logger');
 //     new Sentry.Integrations.Console(),
 //     nodeProfilingIntegration(),
 //   ],
-//   tracesSampleRate: 1.0,
-//   profilesSampleRate: 1.0,
+//   tracesSampleRate: 0.1,   // Sample 10% of transactions for performance monitoring
+//   profilesSampleRate: 0.1,
 //   environment: process.env.NODE_ENV || 'development',
 //   beforeSend: (event) => {
 //     // Filter out development errors
@@ -46,16 +46,13 @@ class MonitoringService {
     this.initMemoryMonitoring();
   }
 
-  // Initialize memory monitoring
   initMemoryMonitoring() {
-    // Log memory usage every 5 minutes
     this.memoryInterval = setInterval(() => {
       performanceMonitor.logMemoryUsage();
       this.checkMemoryThreshold();
     }, 5 * 60 * 1000);
   }
 
-  // Check memory usage thresholds
   checkMemoryThreshold() {
     const memUsage = process.memoryUsage();
     const heapUsedMB = memUsage.heapUsed / 1024 / 1024;
@@ -69,7 +66,6 @@ class MonitoringService {
         usagePercent: `${usagePercent.toFixed(2)}%`
       });
 
-      // Trigger garbage collection if available
       if (global.gc) {
         global.gc();
         logger.info('Manual garbage collection triggered');
@@ -77,22 +73,15 @@ class MonitoringService {
     }
   }
 
-  // Record request metrics
   recordRequest(method, url, statusCode, duration) {
     this.metrics.requests++;
-
-    // Record response time
     this.metrics.responseTime.push(duration);
     if (this.metrics.responseTime.length > 1000) {
       this.metrics.responseTime.shift(); // Keep only last 1000 measurements
     }
-
-    // Record errors
     if (statusCode >= 400) {
       this.metrics.errors++;
     }
-
-    // Log slow requests
     if (duration > 2000) {
       Sentry.withScope((scope) => {
         scope.setTag('type', 'slow_request');
@@ -104,7 +93,6 @@ class MonitoringService {
     }
   }
 
-  // Record cache metrics
   recordCacheHit() {
     this.metrics.cacheHits++;
   }
@@ -113,10 +101,8 @@ class MonitoringService {
     this.metrics.cacheMisses++;
   }
 
-  // Record database query
   recordDatabaseQuery(query, duration, success = true) {
     performanceMonitor.logDatabaseQuery(query, duration, success);
-
     if (!success) {
       Sentry.withScope((scope) => {
         scope.setTag('type', 'database_error');
@@ -127,10 +113,8 @@ class MonitoringService {
     }
   }
 
-  // Record external API call
   recordApiCall(service, endpoint, method, duration, statusCode, success = true) {
     performanceMonitor.logApiCall(service, endpoint, method, duration, statusCode, success);
-
     if (!success) {
       Sentry.withScope((scope) => {
         scope.setTag('type', 'api_error');
@@ -144,7 +128,6 @@ class MonitoringService {
     }
   }
 
-  // Record business metrics
   recordBusinessMetric(name, value, tags = {}) {
     logger.info('Business metric recorded', {
       metric: name,
@@ -154,17 +137,14 @@ class MonitoringService {
     });
   }
 
-  // Get current metrics
   getMetrics() {
     const uptime = Date.now() - this.startTime;
     const avgResponseTime = this.metrics.responseTime.length > 0
       ? this.metrics.responseTime.reduce((a, b) => a + b, 0) / this.metrics.responseTime.length
       : 0;
-
     const cacheHitRate = this.metrics.cacheHits + this.metrics.cacheMisses > 0
       ? (this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses)) * 100
       : 0;
-
     return {
       uptime: `${Math.floor(uptime / 1000)}s`,
       requests: this.metrics.requests,
@@ -177,11 +157,9 @@ class MonitoringService {
     };
   }
 
-  // Health check
   async healthCheck() {
     const metrics = this.getMetrics();
-    const isHealthy = metrics.errorRate < 5; // Less than 5% error rate
-
+    const isHealthy = metrics.errorRate < 5;
     return {
       status: isHealthy ? 'healthy' : 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -194,33 +172,27 @@ class MonitoringService {
     };
   }
 
-  // Check database health
   async checkDatabaseHealth() {
     try {
       // Implement database health check
-      // This would depend on your database setup
       return { status: 'healthy', responseTime: '10ms' };
     } catch (error) {
       return { status: 'unhealthy', error: error.message };
     }
   }
 
-  // Check cache health
   async checkCacheHealth() {
     try {
       // Implement cache health check
-      // This would depend on your cache setup
       return { status: 'healthy', responseTime: '5ms' };
     } catch (error) {
       return { status: 'unhealthy', error: error.message };
     }
   }
 
-  // Check external API health
   async checkExternalAPIHealth() {
     const services = ['amazon', 'etsy'];
     const results = {};
-
     for (const service of services) {
       try {
         // Implement external API health checks
@@ -229,14 +201,11 @@ class MonitoringService {
         results[service] = { status: 'unhealthy', error: error.message };
       }
     }
-
     return results;
   }
 
-  // Alert on critical issues
   alertCritical(message, data = {}) {
     logger.error('Critical alert', { message, ...data });
-
     Sentry.withScope((scope) => {
       scope.setLevel('fatal');
       scope.setTag('type', 'critical_alert');
@@ -247,12 +216,10 @@ class MonitoringService {
     });
   }
 
-  // Performance profiling
   startProfiling(label) {
     return performanceMonitor.startTimer(label);
   }
 
-  // Cleanup
   cleanup() {
     if (this.memoryInterval) {
       clearInterval(this.memoryInterval);
@@ -260,22 +227,17 @@ class MonitoringService {
   }
 }
 
-// Request monitoring middleware
 const requestMonitoring = (req, res, next) => {
   const start = Date.now();
-
   res.on('finish', () => {
     const duration = Date.now() - start;
     monitoringService.recordRequest(req.method, req.url, res.statusCode, duration);
   });
-
   next();
 };
 
-// Error monitoring middleware
 const errorMonitoring = (error, req, res, next) => {
   monitoringService.metrics.errors++;
-
   console.log('Error monitoring - Processing error:', error.message);
   Sentry.withScope((scope) => {
     console.log('Error monitoring - Scope object:', typeof scope, 'setUser type:', typeof scope.setUser);
@@ -295,7 +257,6 @@ const errorMonitoring = (error, req, res, next) => {
     scope.setExtra('params', req.params);
     Sentry.captureException(error);
   });
-
   next(error);
 };
 

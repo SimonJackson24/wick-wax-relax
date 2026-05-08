@@ -2,17 +2,16 @@ const express = require('express');
 const { query } = require('../config/database');
 const { body, validationResult } = require('express-validator');
 const { dataLogger, securityLogger } = require('../services/auditService');
+const { logger } = require('../services/logger');
 const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
-// Middleware to verify user owns the data
 const verifyDataOwnership = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    // Check if the user owns this data or is an admin
     const result = await query('SELECT id FROM users WHERE id = ? AND (id = ? OR is_admin = 1)', [id, userId]);
 
     if (result.rows.length === 0) {
@@ -31,21 +30,18 @@ const verifyDataOwnership = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Data ownership verification error:', error);
+    logger.error('Data ownership verification error', { error: error.message, stack: error.stack, userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to verify data ownership' });
   }
 };
 
-// GDPR Data Export Route
 router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    // Collect all user data
     const userData = {};
 
-    // Basic user information
     const userResult = await query(`
       SELECT id, email, first_name, last_name, created_at, last_login, is_admin
       FROM users WHERE id = ?
@@ -57,7 +53,6 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
 
     userData.profile = userResult.rows[0];
 
-    // Orders and order items
     const ordersResult = await query(`
       SELECT o.id, o.external_id, o.status, o.total, o.created_at,
              oi.product_id, oi.quantity, oi.price, p.name as product_name
@@ -70,7 +65,6 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
 
     userData.orders = ordersResult.rows;
 
-    // Audit log entries (user's own actions)
     const auditResult = await query(`
       SELECT event_type, resource, action, created_at, details
       FROM audit_log
@@ -81,7 +75,6 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
 
     userData.auditTrail = auditResult.rows;
 
-    // Log the data export
     dataLogger.logDataExport(
       userId,
       req.user.email,
@@ -90,7 +83,6 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
       1
     );
 
-    // Return data as JSON
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
     res.json({
@@ -101,12 +93,11 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
     });
 
   } catch (error) {
-    console.error('GDPR data export error:', error);
-    res.status(500).json({ error: 'Failed to export data' });
+      logger.error('GDPR data export error', { error: error.message, stack: error.stack, userId, ip: req.ip });
+      res.status(500).json({ error: 'Failed to export data' });
   }
 });
 
-// GDPR Data Deletion Route (Right to be Forgotten)
 router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
   body('confirmation').equals('DELETE_ALL_MY_DATA').withMessage('Confirmation text must match exactly'),
   body('reason').isIn(['withdraw_consent', 'no_longer_needed', 'other']).withMessage('Invalid deletion reason')
@@ -121,15 +112,13 @@ router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
     const { reason, additionalNotes } = req.body;
     const userId = req.user.userId;
 
-    // Start transaction for data deletion
-    const db = require('../config/database');
+    const { query: dbQuery } = require('../config/database');
 
     try {
-      // Anonymize user data instead of deleting (GDPR compliance)
-      await db.query('BEGIN');
+      await dbQuery('BEGIN');
 
-      // Update user profile to anonymized state
-      await db.query(`
+      // Anonymize user data instead of deleting (GDPR compliance)
+      await dbQuery(`
         UPDATE users SET
           first_name = 'Deleted',
           last_name = 'User',
@@ -145,7 +134,7 @@ router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
       `, [reason, id]);
 
       // Anonymize orders (keep for business records but remove personal data)
-      await db.query(`
+      await dbQuery(`
         UPDATE orders SET
           shipping_address = '{"anonymized": true}',
           billing_address = '{"anonymized": true}',
@@ -153,8 +142,7 @@ router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
         WHERE user_id = ?
       `, [id]);
 
-      // Log the deletion
-      await db.query(`
+      await dbQuery(`
         INSERT INTO audit_log (event_type, user_id, details)
         VALUES ('GDPR_DATA_DELETION', ?, ?)
       `, [userId, JSON.stringify({
@@ -164,9 +152,8 @@ router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
         timestamp: new Date().toISOString()
       })]);
 
-      await db.query('COMMIT');
+      await dbQuery('COMMIT');
 
-      // Log the data deletion
       dataLogger.logDataDeletion(
         userId,
         req.user.email,
@@ -182,17 +169,16 @@ router.delete('/delete/:id', authenticateToken, verifyDataOwnership, [
       });
 
     } catch (dbError) {
-      await db.query('ROLLBACK');
+      await dbQuery('ROLLBACK');
       throw dbError;
     }
 
   } catch (error) {
-    console.error('GDPR data deletion error:', error);
+      logger.error('GDPR data deletion error', { error: error.message, stack: error.stack, userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to delete data' });
   }
 });
 
-// GDPR Consent Management
 router.post('/consent/:id', authenticateToken, verifyDataOwnership, [
   body('consentType').isIn(['marketing', 'analytics', 'third_party', 'data_processing']).withMessage('Invalid consent type'),
   body('consent').isBoolean().withMessage('Consent must be boolean'),
@@ -208,7 +194,6 @@ router.post('/consent/:id', authenticateToken, verifyDataOwnership, [
     const { consentType, consent, consentVersion } = req.body;
     const userId = req.user.userId;
 
-    // Store consent record
     await query(`
       INSERT INTO user_consents (user_id, consent_type, consent_given, consent_version, ip_address, user_agent)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -221,7 +206,6 @@ router.post('/consent/:id', authenticateToken, verifyDataOwnership, [
       req.get('User-Agent')
     ]);
 
-    // Update user's consent preferences
     const consentField = `${consentType}_consent`;
     await query(`
       UPDATE users SET
@@ -231,7 +215,6 @@ router.post('/consent/:id', authenticateToken, verifyDataOwnership, [
       WHERE id = ?
     `, [consent, consentVersion, id]);
 
-    // Log consent change
     dataLogger.logGDPRRequest(
       userId,
       req.user.email,
@@ -248,12 +231,11 @@ router.post('/consent/:id', authenticateToken, verifyDataOwnership, [
     });
 
   } catch (error) {
-    console.error('GDPR consent management error:', error);
+      logger.error('GDPR consent management error', { error: error.message, stack: error.stack, userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to update consent' });
   }
 });
 
-// Get user's consent status
 router.get('/consent/:id', authenticateToken, verifyDataOwnership, async (req, res) => {
   try {
     const { id } = req.params;
@@ -274,7 +256,6 @@ router.get('/consent/:id', authenticateToken, verifyDataOwnership, async (req, r
     const user = result.rows[0];
     const consents = {};
 
-    // Format consent data
     ['marketing', 'analytics', 'third_party', 'data_processing'].forEach(type => {
       consents[type] = {
         granted: user[`${type}_consent`] || false,
@@ -290,18 +271,16 @@ router.get('/consent/:id', authenticateToken, verifyDataOwnership, async (req, r
     });
 
   } catch (error) {
-    console.error('GDPR consent retrieval error:', error);
+    logger.error('GDPR consent retrieval error', { error: error.message, stack: error.stack, userId: req.user?.userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to retrieve consent status' });
   }
 });
 
-// GDPR Data Portability - Export in machine-readable format
 router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (req, res) => {
   try {
     const { id } = req.params;
-    const format = req.query.format || 'json'; // json, csv, xml
+    const format = req.query.format || 'json';
 
-    // Similar to export but in different formats
     const userResult = await query(`
       SELECT
         id, email, first_name, last_name, created_at, last_login,
@@ -315,7 +294,6 @@ router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (re
 
     const userData = userResult.rows[0];
 
-    // Log data portability request
     dataLogger.logGDPRRequest(
       req.user.userId,
       req.user.email,
@@ -325,7 +303,6 @@ router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (re
     );
 
     if (format === 'csv') {
-      // Convert to CSV format
       const csvData = [
         ['Field', 'Value'],
         ['User ID', userData.id],
@@ -346,7 +323,6 @@ router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (re
       res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.csv"`);
       res.send(csvContent);
     } else {
-      // Default JSON format
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
       res.json({
@@ -358,7 +334,7 @@ router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (re
     }
 
   } catch (error) {
-    console.error('GDPR data portability error:', error);
+    logger.error('GDPR data portability error', { error: error.message, stack: error.stack, userId: req.user?.userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to export data' });
   }
 });

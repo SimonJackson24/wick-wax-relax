@@ -68,6 +68,16 @@ app.use(promMid({
   requestDurationBuckets: [0.1, 0.5, 1, 1.5, 2, 5, 10],
   requestLengthBuckets: [512, 1024, 5120, 10240, 51200, 102400],
   responseLengthBuckets: [512, 1024, 5120, 10240, 51200, 102400],
+  metricsMiddleware: {
+    // Restrict /metrics to localhost only — do not expose publicly
+    middleware: (req, res, next) => {
+      const allowed = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+      if (!allowed.includes(req.ip) && req.ip !== 'localhost') {
+        return res.status(403).json({ error: 'Metrics endpoint not available externally' });
+      }
+      next();
+    }
+  }
 }));
 
 app.use(requestLogger);
@@ -113,9 +123,6 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/suppliers', require('./routes/suppliers'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/admin/settings', require('./routes/settings'));
-app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin/settings', require('./routes/settings'));
 app.use('/api/upload', require('./routes/upload'));

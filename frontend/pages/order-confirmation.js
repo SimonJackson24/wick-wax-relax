@@ -27,20 +27,21 @@ export default function OrderConfirmation() {
 
   const fetchOrder = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/account/login');
+      // Auth is cookie-based — axios sends httpOnly cookie automatically.
+      // If not authenticated the API returns 401 and we redirect to login.
+      const response = await axios.get(`/api/orders/${orderId}`);
+
+      if (response.status !== 200) {
+        router.push('/auth/login');
         return;
       }
 
-      const response = await axios.get(`/api/orders/${orderId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
       setOrder(response.data);
     } catch (error) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        router.push('/auth/login');
+        return;
+      }
       console.error('Error fetching order:', error);
       setError('Failed to load order details');
     } finally {

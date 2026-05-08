@@ -1,7 +1,5 @@
 const { Pool } = require('pg');
-const path = require('path');
 
-// Create PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -14,7 +12,6 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Initialize connection pool
 const initializeDb = async () => {
   try {
     await pool.query('SELECT NOW()');
@@ -22,8 +19,6 @@ const initializeDb = async () => {
     return pool;
   } catch (error) {
     console.error('Failed to connect to database:', error);
-    
-    // Provide detailed connection error information
     if (error.code === '28P01') {
       console.error('🔐 Authentication failed. Please check:');
       console.error('   - Database user exists');
@@ -40,13 +35,11 @@ const initializeDb = async () => {
       console.error('   - Database name is correct');
       console.error('   - Database has been created');
     }
-    
     throw error;
   }
 };
 
-// Helper function to run queries with PostgreSQL
-// Auto-converts MySQL-style ? placeholders to PostgreSQL $N format
+// Converts MySQL-style ? placeholders to PostgreSQL $N format
 const runQuery = async (sql, params = []) => {
   let convertedSql;
   try {
@@ -61,56 +54,7 @@ const runQuery = async (sql, params = []) => {
   }
 };
 
-// Helper function to run a single query (for inserts, updates, etc.)
-const runSingle = async (sql, params = []) => {
-  if (!db) {
-    await initializeDb();
-  }
-  
-  try {
-    const result = await db.run(sql, params);
-    return result;
-  } catch (error) {
-    console.error('Database run error:', error);
-    throw error;
-  }
-};
-
-// Helper function to get a single row
-const getSingle = async (sql, params = []) => {
-  if (!db) {
-    await initializeDb();
-  }
-  
-  try {
-    const result = await db.get(sql, params);
-    return result;
-  } catch (error) {
-    console.error('Database get error:', error);
-    throw error;
-  }
-};
-
-// Helper function to execute raw SQL (for table creation, etc.)
-const executeRaw = async (sql) => {
-  if (!db) {
-    await initializeDb();
-  }
-  
-  try {
-    await db.exec(sql);
-    return { success: true };
-  } catch (error) {
-    console.error('Database exec error:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   query: runQuery,
-  run: runSingle,
-  get: getSingle,
-  exec: executeRaw,
-  db: () => db,
   initializeDb
 };
