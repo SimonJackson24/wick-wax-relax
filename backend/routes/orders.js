@@ -56,7 +56,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Create new order
+// Create new order (authenticated)
 router.post('/', authenticateToken, orderCreationLimiter, [
   body('items').isArray({ min: 1 }),
   body('items.*.variantId').isUUID(),
@@ -82,6 +82,40 @@ router.post('/', authenticateToken, orderCreationLimiter, [
 
   } catch (error) {
     console.error('Order creation error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create order' });
+  }
+});
+
+// Guest checkout (no auth required — order is created with user_id = NULL)
+router.post('/guest', [
+  body('items').isArray({ min: 1 }),
+  body('items.*.variantId').isUUID(),
+  body('items.*.quantity').isInt({ min: 1 }),
+  body('shippingAddress').isObject(),
+  body('shippingAddress.email').isEmail(),
+  body('shippingAddress.fullName').isString().isLength({ min: 1 }),
+  body('shippingAddress.addressLine1').isString().isLength({ min: 1 }),
+  body('shippingAddress.city').isString().isLength({ min: 1 }),
+  body('shippingAddress.postalCode').isString().isLength({ min: 1 }),
+  body('shippingAddress.country').optional().isString(),
+  body('paymentMethod').isIn(['APPLE_PAY', 'GOOGLE_PAY', 'KLARNA', 'CLEARPAY'])
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { items, shippingAddress, paymentMethod } = req.body;
+
+    const result = await orderService.createOrder(
+      { items, shippingAddress, paymentMethod },
+      null // guest — no user_id
+    );
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Guest order creation error:', error);
     res.status(500).json({ error: error.message || 'Failed to create order' });
   }
 });

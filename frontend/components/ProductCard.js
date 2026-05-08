@@ -21,20 +21,22 @@ import {
   Inventory as InventoryIcon
 } from '@mui/icons-material';
 import { useWishlist } from './WishlistContext';
+import { useCart } from './CartContext';
 
 const ProductCard = ({
   product,
   variant = 'default',
   showQuickAdd = false,
   onProductClick,
-  onAddToCart,
   viewMode = 'grid',
   compact = false
 }) => {
   const theme = useTheme();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [addedFeedback, setAddedFeedback] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
   const isFavorite = isInWishlist(product.id);
   const firstVariant = product.variants?.[0];
@@ -59,8 +61,10 @@ const ProductCard = ({
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    if (onAddToCart && isInStock) {
-      onAddToCart(product.id, firstVariant?.id);
+    if (isInStock && firstVariant) {
+      addToCart(product, firstVariant, 1);
+      setAddedFeedback(true);
+      setTimeout(() => setAddedFeedback(false), 1500);
     }
   };
 
@@ -473,8 +477,9 @@ const ProductCard = ({
               variant="contained"
               size="small"
               onClick={handleAddToCart}
+              disabled={addedFeedback}
               sx={{
-                backgroundColor: theme.palette.tertiary.main,
+                backgroundColor: addedFeedback ? theme.palette.success.main : theme.palette.tertiary.main,
                 color: 'white',
                 px: 2,
                 py: 0.8,
@@ -482,12 +487,12 @@ const ProductCard = ({
                 fontWeight: 'bold',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 '&:hover': {
-                  backgroundColor: theme.palette.tertiary.dark,
+                  backgroundColor: addedFeedback ? theme.palette.success.dark : theme.palette.tertiary.dark,
                   boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
                 }
               }}
             >
-              Quick Add
+              {addedFeedback ? 'Added!' : 'Quick Add'}
             </Button>
           </Box>
         )}

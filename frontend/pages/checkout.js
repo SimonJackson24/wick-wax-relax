@@ -25,7 +25,6 @@ import {
 import axios from 'axios';
 import { useAuth } from '../components/AuthContext';
 import { useCart } from '../components/CartContext';
-import ProtectedRoute from '../components/ProtectedRoute';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -42,6 +41,7 @@ function CheckoutContent() {
   });
 
   const [shippingAddress, setShippingAddress] = useState({
+    email: '',
     fullName: '',
     addressLine1: '',
     addressLine2: '',
@@ -105,8 +105,9 @@ function CheckoutContent() {
         }, 3000);
 
       } else {
-        // Online checkout
-        const response = await axios.post('/api/orders', orderData);
+        // Online checkout — use guest endpoint for non-authed users, authenticated endpoint otherwise
+        const endpoint = isAuthenticated ? '/api/orders' : '/api/orders/guest';
+        const response = await axios.post(endpoint, orderData);
 
         // Clear cart after successful order
         clearCart();
@@ -239,6 +240,18 @@ function CheckoutContent() {
             </Typography>
 
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+              {/* Email field — required for both guest and authenticated users */}
+              <TextField
+                fullWidth
+                label="Email Address"
+                name="email"
+                type="email"
+                value={shippingAddress.email}
+                onChange={handleAddressChange}
+                required
+                sx={{ mb: 2 }}
+                autoComplete="email"
+              />
               <TextField
                 fullWidth
                 label="Full Name"
@@ -335,9 +348,5 @@ function CheckoutContent() {
 }
 
 export default function Checkout() {
-  return (
-    <ProtectedRoute>
-      <CheckoutContent />
-    </ProtectedRoute>
-  );
+  return <CheckoutContent />;
 }

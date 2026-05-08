@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -23,21 +23,31 @@ import {
   Divider,
   CircularProgress,
   useTheme,
-  useMediaQuery
+  Collapse,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
 import ProductCard from '../../components/ProductCard';
+import ProductGallery from '../../components/ProductGallery';
+import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
+import SubscriptionPlans from '../../components/SubscriptionPlans';
 import TrustBadges from '../../components/TrustBadges';
+import StarRating from '../../components/StarRating';
+import ReviewList from '../../components/ReviewList';
+import ReviewForm from '../../components/ReviewForm';
 import { useCart } from '../../components/CartContext';
+import { useWishlist } from '../../components/WishlistContext';
+import { useAuth } from '../../components/AuthContext';
 
 export default function ProductDetail() {
   const router = useRouter();
   const { id } = router.query;
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const theme = useTheme();
 
   const [product, setProduct] = useState(null);
@@ -50,6 +60,11 @@ export default function ProductDetail() {
   const [newProducts, setNewProducts] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [expandedAccordion, setExpandedAccordion] = useState('details');
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 });
 
   useEffect(() => {
     if (id) {
@@ -96,6 +111,26 @@ export default function ProductDetail() {
     }
   };
 
+  const fetchReviews = useCallback(async () => {
+    if (!id) return;
+    setReviewsLoading(true);
+    try {
+      const response = await axios.get(`/api/products/${id}/reviews?limit=10`);
+      setReviews(response.data.reviews || []);
+      setReviewStats({ average: response.data.averageRating || 0, count: response.data.reviewCount || 0 });
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [id]);
+
+  const handleReviewsToggle = () => {
+    const newOpen = !reviewsOpen;
+    setReviewsOpen(newOpen);
+    if (newOpen && reviews.length === 0) fetchReviews();
+  };
+
   const handleAddToCart = async () => {
     if (!selectedVariant) {
       setMessage('Please select a variant');
@@ -119,14 +154,6 @@ export default function ProductDetail() {
     } finally {
       setAddingToCart(false);
     }
-  };
-
-  const handleProductClick = (productId) => {
-    router.push(`/product/${productId}`);
-  };
-
-  const handleAddToCartInline = (productId, variantId) => {
-    console.log(`Quick add: ${productId} / ${variantId}`);
   };
 
   const selectedVariantData = product?.variants?.find(v => v.id === selectedVariant);
@@ -203,24 +230,10 @@ export default function ProductDetail() {
 
         <Grid container spacing={4} sx={{ mb: 6 }}>
           <Grid item xs={12} md={6}>
-            <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}` }}>
-              <CardMedia
-                component="div"
-                sx={{
-                  height: 500,
-                  backgroundColor: '#f5f0eb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="h5" color="text.secondary" textAlign="center" sx={{ p: 4 }}>
-                  {product.name}<br />
-                  <Typography variant="body2" color="text.disabled">Product Image</Typography>
-                </Typography>
-              </CardMedia>
-            </Card>
+            <ProductGallery
+              images={product.images || []}
+              productName={product.name}
+            />
           </Grid>
 
           <Grid item xs={12} md={6}>
@@ -328,6 +341,21 @@ export default function ProductDetail() {
 
               <Divider sx={{ mb: 3 }} />
 
+              {selectedVariant && (
+                <SubscriptionPlans
+                  productId={product.id}
+                  variantId={selectedVariant}
+                  variantName={selectedVariantData?.name || ''}
+                  price={selectedVariantData?.price || 0}
+                  isAuthenticated={isAuthenticated}
+                  onSubscribe={(frequency) => {
+                    if (!isAuthenticated) {
+                      router.push('/login?redirect=' + encodeURIComponent(router.asPath));
+                    }
+                  }}
+                />
+              )}
+
               <Accordion
                 expanded={expandedAccordion === 'details'}
                 onChange={() => setExpandedAccordion(expandedAccordion === 'details' ? false : 'details')}
@@ -384,6 +412,51 @@ export default function ProductDetail() {
           </Grid>
         </Grid>
 
+        <Box sx={{ mt: 6, mb: 6 }}>
+          <Divider sx={{ mb: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="h4" component="h2" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400, fontSize: { xs: '1.5rem', md: '1.75rem' } }}>
+                Customer Reviews
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
+                {reviewStats.count === 0 && (
+                  <Typography variant="body2" color="text.secondary">No reviews yet</Typography>
+                )}
+              </Box>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RateReviewIcon />}
+              onClick={() => setReviewFormOpen(!reviewFormOpen)}
+              sx={{ borderRadius: 3 }}
+            >
+              {reviewFormOpen ? 'Cancel' : 'Write a Review'}
+            </Button>
+          </Box>
+
+          <Collapse in={reviewFormOpen}>
+            <Box sx={{ mb: 4 }}>
+              <ReviewForm productId={id} onReviewSubmitted={() => { setReviewFormOpen(false); fetchReviews(); }} />
+            </Box>
+          </Collapse>
+
+          <Button
+            variant="text"
+            onClick={handleReviewsToggle}
+            endIcon={<ExpandMoreIcon sx={{ transform: reviewsOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />}
+            sx={{ mb: 2, color: 'text.secondary' }}
+          >
+            {reviewsOpen ? 'Hide reviews' : `Show reviews${reviewStats.count > 0 ? ` (${reviewStats.count})` : ''}`}
+          </Button>
+
+          <Collapse in={reviewsOpen}>
+            <ReviewList reviews={reviews} loading={reviewsLoading} />
+          </Collapse>
+        </Box>
+
         <TrustBadges />
 
         {(relatedProducts.length > 0 || relatedLoading) && (
@@ -422,8 +495,8 @@ export default function ProductDetail() {
                       product={product}
                       variant="featured"
                       showQuickAdd={true}
-                      onProductClick={handleProductClick}
-                      onAddToCart={handleAddToCartInline}
+                      onProductClick={(productId) => router.push(`/product/${productId}`)}
+                      onAddToCart={(pid, vid) => console.log(`Quick add: ${pid} / ${vid}`)}
                     />
                   </Grid>
                 ))}
@@ -478,8 +551,8 @@ export default function ProductDetail() {
                     product={product}
                     variant="featured"
                     showQuickAdd={true}
-                    onProductClick={handleProductClick}
-                    onAddToCart={handleAddToCartInline}
+                    onProductClick={(productId) => router.push(`/product/${productId}`)}
+                    onAddToCart={(pid, vid) => console.log(`Quick add: ${pid} / ${vid}`)}
                   />
                 </Grid>
               ))}
@@ -487,6 +560,9 @@ export default function ProductDetail() {
           </Box>
         )}
       </Container>
+
+      {product && <FrequentlyBoughtTogether productId={id} />}
+
     </>
   );
 }

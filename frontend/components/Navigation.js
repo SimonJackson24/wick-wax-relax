@@ -21,6 +21,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import { useCart } from './CartContext';
+import CartDrawer from './CartDrawer';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -44,7 +46,38 @@ const Navigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [isClient, setIsClient] = useState(false);
-  const [cartCount, setCartCount] = useState(3);
+  const { getCartItemCount } = useCart();
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    // Keep local cart count in sync with CartContext
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const items = JSON.parse(savedCart);
+        const count = items.reduce((s, i) => s + i.quantity, 0);
+        setCartItemCount(count);
+      } catch (e) {}
+    }
+  }, []);
+
+  // Listen for custom cart update events
+  useEffect(() => {
+    const handler = () => {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        try {
+          const items = JSON.parse(savedCart);
+          setCartItemCount(items.reduce((s, i) => s + i.quantity, 0));
+        } catch (e) {}
+      } else {
+        setCartItemCount(0);
+      }
+    };
+    window.addEventListener('cart-updated', handler);
+    return () => window.removeEventListener('cart-updated', handler);
+  }, []);
   const navRef = useRef(null);
   const drawerRef = useRef(null);
   const firstFocusableRef = useRef(null);
@@ -391,8 +424,8 @@ const Navigation = () => {
 
                 <IconButton
                   component={Link}
-                  href="/checkout"
-                  aria-label={`Shopping cart with ${cartCount} items`}
+                  href="/cart"
+                  aria-label={`Shopping cart with ${cartItemCount} items`}
                   sx={{
                     color: trigger ? theme.palette.text.primary : theme.palette.common.white,
                     backgroundColor: trigger
@@ -410,7 +443,7 @@ const Navigation = () => {
                   }}
                 >
                   <Badge
-                    badgeContent={cartCount}
+                    badgeContent={cartItemCount}
                     color="error"
                     sx={{
                       '& .MuiBadge-badge': {
@@ -613,6 +646,11 @@ const Navigation = () => {
       <Box sx={{
         height: { xs: 64, md: 80 }
       }} />
+
+      <CartDrawer
+        open={cartDrawerOpen}
+        onClose={() => setCartDrawerOpen(false)}
+      />
     </>
   );
 };

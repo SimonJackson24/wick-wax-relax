@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { usePWA } from './PWAContext';
+import axios from 'axios';
 
 const CartContext = createContext();
 
@@ -15,6 +16,9 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [offlineQueue, setOfflineQueue] = useState([]);
   const [isOnline, setIsOnline] = useState(true);
+  const [promoCode, setPromoCode] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [savedForLater, setSavedForLater] = useState([]);
   const { isOnline: pwaOnline } = usePWA();
 
   // Load cart from localStorage on mount
@@ -29,7 +33,6 @@ export const CartProvider = ({ children }) => {
       }
     }
 
-    // Load offline queue
     const savedQueue = localStorage.getItem('cartOfflineQueue');
     if (savedQueue) {
       try {
@@ -39,24 +42,53 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('cartOfflineQueue');
       }
     }
+
+    const savedLater = localStorage.getItem('savedForLater');
+    if (savedLater) {
+      try {
+        setSavedForLater(JSON.parse(savedLater));
+      } catch (error) {
+        console.error('Error parsing saved for later:', error);
+        localStorage.removeItem('savedForLater');
+      }
+    }
+
+    const savedPromo = localStorage.getItem('appliedPromo');
+    if (savedPromo) {
+      try {
+        setPromoCode(JSON.parse(savedPromo));
+      } catch (error) {
+        localStorage.removeItem('appliedPromo');
+      }
+    }
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Persist cart
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cartItems));
+    window.dispatchEvent(new Event('cart-updated'));
   }, [cartItems]);
 
-  // Save offline queue whenever it changes
   useEffect(() => {
     localStorage.setItem('cartOfflineQueue', JSON.stringify(offlineQueue));
   }, [offlineQueue]);
 
-  // Sync online status with PWA context
+  useEffect(() => {
+    localStorage.setItem('savedForLater', JSON.stringify(savedForLater));
+  }, [savedForLater]);
+
+  useEffect(() => {
+    if (promoCode) {
+      localStorage.setItem('appliedPromo', JSON.stringify(promoCode));
+    } else {
+      localStorage.removeItem('appliedPromo');
+    }
+  }, [promoCode]);
+
   useEffect(() => {
     setIsOnline(pwaOnline);
   }, [pwaOnline]);
 
-  // Process offline queue when coming back online
   useEffect(() => {
     if (isOnline && offlineQueue.length > 0) {
       processOfflineQueue();
@@ -70,14 +102,12 @@ export const CartProvider = ({ children }) => {
       );
 
       if (existingItem) {
-        // Update quantity if item already exists
         return prevItems.map(item =>
           item.variantId === variant.id && item.productId === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        // Add new item
         return [...prevItems, {
           id: `${product.id}-${variant.id}`,
           productId: product.id,
@@ -102,7 +132,6 @@ export const CartProvider = ({ children }) => {
       removeFromCart(itemId);
       return;
     }
-
     setCartItems(prevItems =>
       prevItems.map(item =>
         item.id === itemId ? { ...item, quantity } : item
@@ -112,6 +141,8 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => {
     setCartItems([]);
+    setPromoCode(null);
+    setPromoError('');
   };
 
   const getCartTotal = () => {
@@ -122,14 +153,71 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const getDiscountAmount = () => {
+    if (!promoCode) return 0;
+    const subtotal = getCartTotal();
+    if (promoCode.discount_type === 'percentage') {
+      return subtotal * (promoCode.discount_value / 100);
+    }
+    return Math.min(promoCode.discount_value, subtotal);
+  };
+
+  const applyPromoCode = async (code) => {
+    try {
+      const response = await axios.post('/api/promo/validate', {
+        code,
+        subtotal: getCartTotal()
+      });
+      if (response.data.valid) {
+        setPromoCode({
+          code: response.data.code,
+          discount_type: response.data.discount_type,
+          discount_value: parseFloat(response.data.discount_value)
+        });
+        setPromoError('');
+        return { success: true, message: response.data.message };
+      } else {
+        setPromoError(response.data.message || 'Invalid promo code');
+        return { success: false, error: response.data.message };
+      }
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to validate promo code';
+      setPromoError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode(null);
+    setPromoError('');
+  };
+
+  const saveForLater = (item) => {
+    setSavedForLater(prev => {
+      if (prev.find(i => i.id === item.id)) return prev;
+      return [...prev, item];
+    });
+    removeFromCart(item.id);
+  };
+
+  const moveToCart = (savedItem) => {
+    addToCart(
+      { id: savedItem.productId, name: savedItem.productName, image: savedItem.image },
+      { id: savedItem.variantId, name: savedItem.variantName, price: savedItem.price, attributes: savedItem.attributes || {} },
+      savedItem.quantity
+    );
+    setSavedForLater(prev => prev.filter(i => i.id !== savedItem.id));
+  };
+
+  const removeSavedForLater = (itemId) => {
+    setSavedForLater(prev => prev.filter(i => i.id !== itemId));
+  };
+
   const processOfflineQueue = async () => {
     if (offlineQueue.length === 0) return;
-
     console.log('Processing offline queue:', offlineQueue.length, 'items');
-
     for (const queueItem of offlineQueue) {
       try {
-        // Process each queued operation
         switch (queueItem.type) {
           case 'add_to_cart':
             await addToCart(queueItem.product, queueItem.variant, queueItem.quantity);
@@ -145,12 +233,9 @@ export const CartProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Error processing offline queue item:', error);
-        // Keep failed items in queue for retry
         continue;
       }
     }
-
-    // Clear processed queue
     setOfflineQueue([]);
   };
 
@@ -158,7 +243,7 @@ export const CartProvider = ({ children }) => {
     const queueItem = {
       ...operation,
       timestamp: Date.now(),
-      id: `queue_${Date.now()}_${Math.random()}`,
+      id: `queue_${Date.now()}_${Math.random()}`
     };
     setOfflineQueue(prev => [...prev, queueItem]);
   };
@@ -167,12 +252,21 @@ export const CartProvider = ({ children }) => {
     cartItems,
     offlineQueue,
     isOnline,
+    promoCode,
+    promoError,
+    savedForLater,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
     getCartTotal,
     getCartItemCount,
+    getDiscountAmount,
+    applyPromoCode,
+    removePromoCode,
+    saveForLater,
+    moveToCart,
+    removeSavedForLater,
     processOfflineQueue,
     addToOfflineQueue,
   };
