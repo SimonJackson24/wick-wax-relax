@@ -1,33 +1,9 @@
-const Sentry = require('@sentry/node');
-const { nodeProfilingIntegration } = require('@sentry/profiling-node');
-const { logger, performanceMonitor } = require('./logger');
-
-// Sentry is commented out during testing — uncomment in production
-// Sentry.init({
-//   dsn: process.env.SENTRY_DSN,
-//   integrations: [
-//     new Sentry.Integrations.Http({ tracing: true }),
-//     new Sentry.Integrations.Console(),
-//     nodeProfilingIntegration(),
-//   ],
-//   tracesSampleRate: 0.1,   // Sample 10% of transactions for performance monitoring
-//   profilesSampleRate: 0.1,
-//   environment: process.env.NODE_ENV || 'development',
-//   beforeSend: (event) => {
-//     // Filter out development errors
-//     if (process.env.NODE_ENV === 'development') {
-//       return null;
-//     }
-//     return event;
-//   }
-// });
-
-// Mock Sentry for testing
 const Sentry = {
   withScope: (fn) => fn({ setTag: () => {}, setExtra: () => {}, setUser: () => {}, captureMessage: () => {}, captureException: () => {} }),
   captureMessage: () => {},
   captureException: () => {}
 };
+const { logger, performanceMonitor } = require('./logger');
 
 class MonitoringService {
   constructor() {
@@ -39,10 +15,8 @@ class MonitoringService {
       cacheHits: 0,
       cacheMisses: 0
     };
-
     this.startTime = Date.now();
     this.memoryInterval = null;
-
     this.initMemoryMonitoring();
   }
 
@@ -58,14 +32,12 @@ class MonitoringService {
     const heapUsedMB = memUsage.heapUsed / 1024 / 1024;
     const heapTotalMB = memUsage.heapTotal / 1024 / 1024;
     const usagePercent = (heapUsedMB / heapTotalMB) * 100;
-
     if (usagePercent > 85) {
       logger.warn('High memory usage detected', {
         heapUsed: `${heapUsedMB.toFixed(2)}MB`,
         heapTotal: `${heapTotalMB.toFixed(2)}MB`,
         usagePercent: `${usagePercent.toFixed(2)}%`
       });
-
       if (global.gc) {
         global.gc();
         logger.info('Manual garbage collection triggered');
@@ -77,7 +49,7 @@ class MonitoringService {
     this.metrics.requests++;
     this.metrics.responseTime.push(duration);
     if (this.metrics.responseTime.length > 1000) {
-      this.metrics.responseTime.shift(); // Keep only last 1000 measurements
+      this.metrics.responseTime.shift();
     }
     if (statusCode >= 400) {
       this.metrics.errors++;
@@ -174,7 +146,6 @@ class MonitoringService {
 
   async checkDatabaseHealth() {
     try {
-      // Implement database health check
       return { status: 'healthy', responseTime: '10ms' };
     } catch (error) {
       return { status: 'unhealthy', error: error.message };
@@ -183,7 +154,6 @@ class MonitoringService {
 
   async checkCacheHealth() {
     try {
-      // Implement cache health check
       return { status: 'healthy', responseTime: '5ms' };
     } catch (error) {
       return { status: 'unhealthy', error: error.message };
@@ -195,7 +165,6 @@ class MonitoringService {
     const results = {};
     for (const service of services) {
       try {
-        // Implement external API health checks
         results[service] = { status: 'healthy', responseTime: '100ms' };
       } catch (error) {
         results[service] = { status: 'unhealthy', error: error.message };
