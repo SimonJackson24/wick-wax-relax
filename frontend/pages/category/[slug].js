@@ -390,7 +390,7 @@ const CategoryPage = () => {
                     <ProductCard
                       product={product}
                       viewMode={viewMode}
-                      onProductClick={(productId) => router.push(`/product/${productId}`)}
+                      onProductClick={() => router.push(`/product/${product.slug || product.id}`)}
                     />
                   </Grid>
                 ))}

@@ -1,8 +1,9 @@
-const Sentry = {
-  withScope: (fn) => fn({ setTag: () => {}, setExtra: () => {}, setUser: () => {}, captureMessage: () => {}, captureException: () => {} }),
-  captureMessage: () => {},
-  captureException: () => {}
-};
+// Real Sentry SDK. Initialized in server.js startServer() BEFORE any
+// other setup so it can capture startup errors and instrument the app.
+// All call sites in this file (withScope / captureException /
+// captureMessage) use the real @sentry/node v8 API — the previous
+// hand-rolled stub silently swallowed every event.
+const Sentry = require('@sentry/node');
 const { logger, performanceMonitor } = require('./logger');
 
 class MonitoringService {
@@ -206,20 +207,19 @@ const requestMonitoring = (req, res, next) => {
 };
 
 const errorMonitoring = (error, req, res, next) => {
+  // Application-level error counter. The actual Sentry capture is done
+  // by Sentry.setupExpressErrorHandler(app) in server.js, but we also
+  // tag the event with request-scoped context (method/url/user/body) so
+  // the resulting issue is actionable in the Sentry UI.
   monitoringService.metrics.errors++;
-  console.log('Error monitoring - Processing error:', error.message);
   Sentry.withScope((scope) => {
-    console.log('Error monitoring - Scope object:', typeof scope, 'setUser type:', typeof scope.setUser);
     scope.setTag('method', req.method);
     scope.setTag('url', req.url);
-    try {
-      scope.setUser({
-        id: req.user?.id || 'anonymous',
-        ip_address: req.ip
-      });
-      console.log('Error monitoring - setUser called successfully');
-    } catch (setUserError) {
-      console.error('Error monitoring - setUser error:', setUserError.message);
+    scope.setLevel('error');
+    if (req.user && req.user.id) {
+      scope.setUser({ id: String(req.user.id), ip_address: req.ip });
+    } else {
+      scope.setUser({ ip_address: req.ip });
     }
     scope.setExtra('body', req.body);
     scope.setExtra('query', req.query);

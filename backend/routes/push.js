@@ -1,14 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const pushService = require('../services/pushService');
 const { body, validationResult } = require('express-validator');
+const { authenticateToken, requireAdminMfa } = require('../middleware/auth');
+
+// Per-IP rate limit on subscription endpoints. Without this, a single client
+// can spam thousands of fake push endpoints and bloat the database.
+const subscribeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many subscription requests. Please try again later.' },
+});
 
 // Subscribe to push notifications
-router.post('/subscribe', [
-  body('endpoint').isURL(),
+router.post('/subscribe', subscribeLimiter, [
+  body('endpoint').isURL({ protocols: ['https'], require_tld: true }),
   body('keys').exists(),
-  body('keys.auth').isString(),
-  body('keys.p256dh').isString()
+  body('keys.auth').isString().isLength({ min: 10, max: 100 }),
+  body('keys.p256dh').isString().isLength({ min: 10, max: 200 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -47,10 +59,10 @@ router.post('/unsubscribe', async (req, res) => {
 });
 
 // Send test notification (admin only)
-router.post('/test', [
+router.post('/test', authenticateToken, requireAdminMfa, [
   body('userId').optional().isString(),
-  body('title').isString(),
-  body('body').isString()
+  body('title').isString().isLength({ min: 1, max: 200 }),
+  body('body').isString().isLength({ min: 1, max: 1000 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -119,10 +131,10 @@ router.post('/product-available', [
 });
 
 // Send promotional notification to all users
-router.post('/promotion', [
-  body('title').isString(),
-  body('body').isString(),
-  body('url').optional().isURL()
+router.post('/promotion', authenticateToken, requireAdminMfa, [
+  body('title').isString().isLength({ min: 1, max: 200 }),
+  body('body').isString().isLength({ min: 1, max: 1000 }),
+  body('url').optional().isURL({ protocols: ['https'] })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

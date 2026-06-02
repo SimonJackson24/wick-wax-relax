@@ -1,10 +1,11 @@
 const express = require('express');
 const { query } = require('../config/database');
 const { body, param, validationResult } = require('express-validator');
-const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const orderService = require('../services/order');
 const revolutService = require('../services/revolut');
+const { authenticateToken, requireAdminMfa } = require('../middleware/auth');
+const { logAdminAccess } = require('../middleware/adminAudit');
 
 const router = express.Router();
 
@@ -16,45 +17,6 @@ const orderCreationLimiter = rateLimit({
   keyGenerator: (req) => req.user?.userId || req.ip,
   skip: (req) => !req.user // Skip if not authenticated (will fail anyway)
 });
-
-// Middleware to authenticate JWT token (supports both header and cookie)
-function authenticateToken(req, res, next) {
-  // Try header first
-  const authHeader = req.headers['authorization'];
-  let token = authHeader && authHeader.split(' ')[1];
-
-  // If no header token, try cookie
-  if (!token) {
-    token = req.cookies.accessToken;
-  }
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  // SECURITY: Fail if JWT_SECRET not configured
-  if (!process.env.JWT_SECRET) {
-    console.error('SECURITY ERROR: JWT_SECRET not configured');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  // SECURITY: Explicit algorithm specification
-  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-}
-
-// Admin middleware
-function requireAdmin(req, res, next) {
-  if (!req.user || !req.user.isAdmin) {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-}
 
 // Create new order (authenticated)
 router.post('/', authenticateToken, orderCreationLimiter, [
@@ -120,15 +82,30 @@ router.post('/guest', [
   }
 });
 
-// Get user's orders
+// Get orders.
+//  - Non-admin users: always scoped to their own userId.
+//  - Admin users: see every order, with an optional ?userId= filter.
+// SECURITY (H-17/H-18): we pass userId through to the service so the
+// SQL layer also enforces the scope (defense in depth).
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const status = req.query.status;
 
+    let userId;
+    if (req.user.isAdmin) {
+      // Admins can scope to one user via ?userId=, or see everyone by
+      // omitting the param. Validate it is a non-empty string when given.
+      const q = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
+      userId = q.length > 0 ? q : undefined;
+    } else {
+      // Non-admins are unconditionally locked to their own id.
+      userId = req.user.userId;
+    }
+
     const result = await orderService.getOrders(
-      { status },
+      { status, userId },
       page,
       limit
     );
@@ -141,7 +118,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get single order by ID with IDOR protection
-router.get('/:id', authenticateToken, [
+router.get('/:id', authenticateToken, logAdminAccess('order'), [
   param('id').isUUID()
 ], async (req, res) => {
   try {
@@ -162,6 +139,9 @@ router.get('/:id', authenticateToken, [
       return res.status(403).json({ error: 'Access denied to this order' });
     }
 
+    // Make the order owner visible to the audit middleware so it can be logged
+    // when an admin accesses another user's order.
+    res.locals.resourceOwnerId = order.user_id;
     res.json(order);
   } catch (error) {
     console.error('Error fetching order:', error);
@@ -170,7 +150,7 @@ router.get('/:id', authenticateToken, [
 });
 
 // Update order status (Admin only)
-router.patch('/:id/status', authenticateToken, requireAdmin, [
+router.patch('/:id/status', authenticateToken, requireAdminMfa, [
   param('id').isUUID(),
   body('status').isIn(['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']),
   body('reason').optional().isString()
@@ -230,7 +210,7 @@ router.post('/:id/confirm-payment', authenticateToken, [
 });
 
 // Get order statistics (Admin only)
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/stats', authenticateToken, requireAdminMfa, async (req, res) => {
   try {
     const { dateFrom, dateTo } = req.query;
     const stats = await orderService.getOrderStats(dateFrom, dateTo);
@@ -242,7 +222,7 @@ router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => 
 });
 
 // Set tracking number for an order (Admin only)
-router.post('/:id/tracking', authenticateToken, requireAdmin, [
+router.post('/:id/tracking', authenticateToken, requireAdminMfa, [
   param('id').isUUID(),
   body('trackingNumber').isString().isLength({ min: 1 }),
   body('carrier').optional().isString()
@@ -290,7 +270,7 @@ router.get('/:id/tracking', authenticateToken, [
 });
 
 // Refresh tracking data for an order
-router.post('/:id/tracking/refresh', authenticateToken, [
+router.post('/:id/tracking/refresh', authenticateToken, logAdminAccess('order_tracking_refresh'), [
   param('id').isUUID()
 ], async (req, res) => {
   try {
@@ -300,6 +280,18 @@ router.post('/:id/tracking/refresh', authenticateToken, [
     }
 
     const { id } = req.params;
+
+    // SECURITY: IDOR check — verify ownership before performing the write
+    // (which costs us a Royal Mail API call) and the audit log entry.
+    const owner = await query('SELECT user_id FROM orders WHERE id = ?', [id]);
+    if (owner.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    if (owner.rows[0].user_id !== req.user.userId && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied to this order' });
+    }
+    res.locals.resourceOwnerId = owner.rows[0].user_id;
+
     const trackingData = await orderService.refreshTrackingData(id);
 
     res.json({
@@ -309,12 +301,12 @@ router.post('/:id/tracking/refresh', authenticateToken, [
     });
   } catch (error) {
     console.error('Error refreshing tracking data:', error);
-    res.status(500).json({ error: error.message || 'Failed to refresh tracking data' });
+    res.status(500).json({ error: 'Failed to refresh tracking data' });
   }
 });
 
 // Bulk update order status (Admin only)
-router.post('/bulk/status', authenticateToken, requireAdmin, [
+router.post('/bulk/status', authenticateToken, requireAdminMfa, [
   body('orderIds').isArray(),
   body('status').isIn(['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']),
   body('reason').optional().isString()
@@ -353,7 +345,7 @@ router.post('/bulk/status', authenticateToken, requireAdmin, [
 });
 
 // Get order analytics (Admin only)
-router.get('/admin/analytics', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/analytics', authenticateToken, requireAdminMfa, async (req, res) => {
   try {
     const { period = '30' } = req.query;
     const days = parseInt(period);
@@ -369,7 +361,7 @@ router.get('/admin/analytics', authenticateToken, requireAdmin, async (req, res)
 });
 
 // Send order notification (Admin only)
-router.post('/:id/notify', authenticateToken, requireAdmin, [
+router.post('/:id/notify', authenticateToken, requireAdminMfa, [
   param('id').isUUID(),
   body('type').isIn(['status_update', 'shipping_update', 'delay_notification']),
   body('message').optional().isString()
@@ -397,7 +389,7 @@ router.post('/:id/notify', authenticateToken, requireAdmin, [
 });
 
 // Get orders by status for dashboard (Admin only)
-router.get('/admin/dashboard/:status', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/dashboard/:status', authenticateToken, requireAdminMfa, async (req, res) => {
   try {
     const { status } = req.params;
     const { limit = 10 } = req.query;

@@ -500,7 +500,7 @@ class AnalyticsService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       let result;
       switch (queryType) {
@@ -520,11 +520,11 @@ class AnalyticsService {
           throw new Error('Unknown query type');
       }
 
-      await client.commit();
+      await client.query('COMMIT');
       return result;
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Custom analytics query error:', error);
       throw error;
     }

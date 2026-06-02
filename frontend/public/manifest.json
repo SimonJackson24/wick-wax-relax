@@ -3,6 +3,7 @@
   "short_name": "Wick Wax",
   "description": "Hand-crafted soy wax candles, wax melts, bath bombs and reed diffusers. Made in the UK with ethically sourced ingredients.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F5F2ED",
   "theme_color": "#C8B6DB",
@@ -10,19 +11,40 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/images/icon-192.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/images/icon-512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Wick Wax Relax mobile view"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Wick Wax Relax desktop view"
     }
   ],
   "categories": ["shopping", "lifestyle"],
-  "screenshots": [],
   "prefer_related_applications": false
 }

@@ -1,6 +1,7 @@
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
+const { sanitize } = require('../middleware/piiSanitizer');
 
 // Define log levels
 const levels = {
@@ -133,7 +134,9 @@ const requestLogger = (req, res, next) => {
   next();
 };
 
-// Error logging middleware
+// Error logging middleware. Strips obvious PII from body/query/params
+// before the log line is written — protects against accidental leakage of
+// emails, addresses and tokens via Sentry/file aggregators.
 const errorLogger = (error, req, res, next) => {
   const logData = {
     message: error.message,
@@ -143,9 +146,9 @@ const errorLogger = (error, req, res, next) => {
     userId: req.user?.id || 'anonymous',
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    body: req.body,
-    query: req.query,
-    params: req.params
+    body: sanitize(req.body),
+    query: sanitize(req.query),
+    params: sanitize(req.params),
   };
 
   logger.error('Application error', logData);

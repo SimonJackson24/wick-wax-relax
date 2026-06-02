@@ -4,6 +4,20 @@ cloudpanel.env
 cloudpanel.env.example
 /etc/wick-wax-relax/
 
+# Application .env files — must NEVER be committed.
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.new
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+!backend/.env.example
+!frontend/.env.example
+
 # Docker and deployment
 docker-compose.cloudpanel.yml
 deploy-production.sh
@@ -15,19 +29,18 @@ cloudpanel/
 node_modules/
 npm-debug.log
 
-# Environment variables
-.env
-.env.local
-.env.development
-.env.test
-
 # Logs
 logs/
 *.log
+backend/logs/
+frontend/.next/
 
 # Database files
 *.db
 *.sqlite
+*.sqlite3
+backend/temp/
+backend/uploads/
 
 # IDE specific
 .idea/
@@ -55,5 +68,15 @@ jspm_packages/
 # Local development
 .DS_Store
 
+# Test reports (Lighthouse etc.)
+frontend/lighthouse*.json
+frontend/lighthouse*.html
+
 # Generated Nginx config for CloudPanel deployments
 cloudpanel/nginx/wick-wax.conf
+
+# Audit reports — keep these (deliberately committed for team visibility)
+# audits/
+
+# Security scan reports
+security-audit/

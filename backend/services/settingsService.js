@@ -102,7 +102,7 @@ class SettingsService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Get existing setting
       const existingResult = await client.query(
@@ -146,7 +146,7 @@ class SettingsService {
         client
       );
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return {
         id: settingId,
@@ -158,7 +158,7 @@ class SettingsService {
       };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Error setting platform setting:', error);
       throw error;
     }
@@ -170,7 +170,7 @@ class SettingsService {
     const results = [];
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       for (const update of updates) {
         const { category, key, value } = update;
@@ -178,11 +178,11 @@ class SettingsService {
         results.push(result);
       }
 
-      await client.commit();
+      await client.query('COMMIT');
       return results;
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Error bulk updating settings:', error);
       throw error;
     }
@@ -193,7 +193,7 @@ class SettingsService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Get existing setting for audit log
       const existingResult = await client.query(
@@ -226,11 +226,11 @@ class SettingsService {
         client
       );
 
-      await client.commit();
+      await client.query('COMMIT');
       return { deleted: true, category, key };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Error deleting setting:', error);
       throw error;
     }

@@ -22,6 +22,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import { useCart } from './CartContext';
+import { useSubscription } from './SubscriptionContext';
 import CartDrawer from './CartDrawer';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -47,7 +48,9 @@ const Navigation = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [isClient, setIsClient] = useState(false);
   const { getCartItemCount } = useCart();
+  const { getSubscriptionItemCount } = useSubscription();
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [subCount, setSubCount] = useState(0);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -77,6 +80,21 @@ const Navigation = () => {
     };
     window.addEventListener('cart-updated', handler);
     return () => window.removeEventListener('cart-updated', handler);
+  }, []);
+
+  useEffect(() => {
+    const subHandler = () => {
+      const saved = localStorage.getItem('subscriptionBasket');
+      if (saved) {
+        try {
+          const items = JSON.parse(saved);
+          setSubCount(items.reduce((s, i) => s + (i.quantity || 1), 0));
+        } catch (e) { setSubCount(0); }
+      } else { setSubCount(0); }
+    };
+    subHandler();
+    window.addEventListener('subscription-updated', subHandler);
+    return () => window.removeEventListener('subscription-updated', subHandler);
   }, []);
   const navRef = useRef(null);
   const drawerRef = useRef(null);
@@ -421,6 +439,42 @@ const Navigation = () => {
                     </Button>
                   ))}
                 </Box>
+
+                <IconButton
+                  component={Link}
+                  href="/subscriptions"
+                  aria-label={`Subscription basket with ${subCount} items`}
+                  sx={{
+                    color: trigger ? theme.palette.text.primary : theme.palette.common.white,
+                    backgroundColor: trigger
+                      ? 'rgba(200, 182, 219, 0.18)'
+                      : 'rgba(230, 200, 138, 0.2)',
+                    p: { xs: 1.5, md: 2 },
+                    borderRadius: '16px',
+                    transition: 'all 0.3s ease',
+                    mr: 1,
+                    '&:hover': {
+                      backgroundColor: trigger
+                        ? 'rgba(200, 182, 219, 0.28)'
+                        : 'rgba(230, 200, 138, 0.3)',
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                >
+                  <Badge
+                    badgeContent={subCount}
+                    color="secondary"
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        fontSize: '0.7rem',
+                        minWidth: '18px',
+                        height: '18px',
+                      }
+                    }}
+                  >
+                    <LoyaltyIcon />
+                  </Badge>
+                </IconButton>
 
                 <IconButton
                   component={Link}

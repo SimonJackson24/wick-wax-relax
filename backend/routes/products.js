@@ -1,8 +1,24 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { query } = require('../config/database');
 const { param, body, validationResult } = require('express-validator');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Per-user rate limit on review submission. Prevents a single account from
+// spamming reviews of the same (or any) product. The keyGenerator uses the
+// authenticated userId so anonymous floods are also blocked because the
+// authenticateToken middleware in front of this rejects unauthenticated
+// requests with 401 before they reach the limiter.
+const reviewSubmissionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,                   // 5 reviews per hour per user
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many reviews submitted, please try again later' },
+  keyGenerator: (req) => (req.user && req.user.userId) ? String(req.user.userId) : req.ip
+});
 
 router.get('/:id/reviews', [
   param('id').isUUID()
@@ -60,7 +76,7 @@ router.get('/:id/reviews', [
   }
 });
 
-router.post('/:id/reviews', [
+router.post('/:id/reviews', authenticateToken, reviewSubmissionLimiter, [
   param('id').isUUID(),
   body('rating').isInt({ min: 1, max: 5 }),
   body('title').optional().isString().isLength({ max: 200 }),
@@ -80,17 +96,21 @@ router.post('/:id/reviews', [
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // authenticateToken guarantees req.user is populated; if it ever is
+    // not, this is a server bug and we fail closed (no anonymous reviews).
+    const userId = req.user && req.user.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to submit a review' });
+    }
     let verifiedPurchase = false;
-    if (req.user && req.user.id) {
-      const orderCheck = await query(`
+    const orderCheck = await query(`
         SELECT 1 FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN product_variants pv ON oi.variant_id = pv.id
         WHERE o.user_id = $1 AND pv.product_id = $2
         LIMIT 1
-      `, [req.user.id, productId]);
-      verifiedPurchase = orderCheck.rows.length > 0;
-    }
+      `, [userId, productId]);
+    verifiedPurchase = orderCheck.rows.length > 0;
 
     const upsertResult = await query(`
       INSERT INTO reviews (product_id, user_id, rating, title, review_text, verified_purchase)
@@ -102,7 +122,7 @@ router.post('/:id/reviews', [
         verified_purchase = GREATEST(reviews.verified_purchase, EXCLUDED.verified_purchase),
         updated_at = NOW()
       RETURNING id, rating, title, review_text, verified_purchase, helpful_count, created_at, updated_at
-    `, [productId, req.user?.id || null, rating, title || null, comment || null, verifiedPurchase]);
+    `, [productId, userId, rating, title || null, comment || null, verifiedPurchase]);
 
     res.status(201).json(upsertResult.rows[0]);
   } catch (error) {
@@ -117,6 +137,7 @@ router.get('/', async (req, res) => {
       SELECT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
@@ -154,6 +175,7 @@ router.get('/featured', async (req, res) => {
       SELECT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
@@ -189,6 +211,7 @@ router.get('/new', async (req, res) => {
       SELECT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
@@ -243,6 +266,7 @@ router.get('/related/:id', [
       SELECT DISTINCT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
@@ -281,6 +305,7 @@ router.get('/category/:categorySlug', async (req, res) => {
       SELECT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
@@ -364,13 +389,14 @@ router.get('/:id/fbt', [
         SELECT DISTINCT
           p.id,
           p.name,
+          p.slug,
           p.description,
           p.base_price,
-          p.images
+          p.created_at
         FROM products p
         INNER JOIN product_categories pc ON p.id = pc.product_id
-        WHERE pc.category_id = ANY(?)
-          AND p.id != ?
+        WHERE pc.category_id = ANY($1)
+          AND p.id != $2
         ORDER BY p.created_at DESC
         LIMIT 4
       `, [categoryIds, id]);
@@ -382,11 +408,11 @@ router.get('/:id/fbt', [
     if (fbtProducts.length < 4) {
       const existingIds = [id, ...fbtProducts.map(p => p.id)];
       const remaining = await query(`
-        SELECT id, name, description, base_price, images
+        SELECT id, name, slug, description, base_price
         FROM products
-        WHERE id != ALL(?)
+        WHERE id != ALL($1)
         ORDER BY RANDOM()
-        LIMIT ?
+        LIMIT $2
       `, [existingIds, 4 - fbtProducts.length]);
 
       fbtProducts = [...fbtProducts, ...remaining.rows];
@@ -411,6 +437,49 @@ router.get('/:id/fbt', [
   }
 });
 
+
+// Slug-based product lookup (SEO-friendly URLs)
+router.get('/slug/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const product = await query(`
+      SELECT
+        id,
+        name,
+        slug,
+        description,
+        scent_profile,
+        base_price,
+        created_at
+      FROM products
+      WHERE slug = $1
+    `, [slug]);
+
+    if (product.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const variants = await query(`
+      SELECT
+        id,
+        sku,
+        name,
+        price,
+        inventory_quantity,
+        attributes
+      FROM product_variants
+      WHERE product_id = $1
+    `, [product.rows[0].id]);
+
+    const result = { ...product.rows[0], variants: variants.rows };
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching product by slug:', error);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
 // MUST be last (catch-all for UUIDs)
 router.get('/:id', [
   param('id').isUUID()
@@ -427,6 +496,7 @@ router.get('/:id', [
       SELECT
         id,
         name,
+        slug,
         description,
         scent_profile,
         base_price,

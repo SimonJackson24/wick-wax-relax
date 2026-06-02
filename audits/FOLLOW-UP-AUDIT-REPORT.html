@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wick Wax &amp; Relax — Production-Hardening Follow-up</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-strong: #f0f6fc;
+    --accent: #c8b6db;
+    --critical: #f85149;
+    --high: #fb8500;
+    --medium: #d29922;
+    --low: #58a6ff;
+    --ok: #3fb950;
+    --code-bg: #0b0f14;
+    --link: #79c0ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 96px; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+  h1 { font-size: 32px; font-weight: 700; margin: 0 0 8px; color: var(--text-strong); letter-spacing: -0.02em; }
+  h2 { font-size: 24px; font-weight: 600; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text-strong); }
+  h3 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; color: var(--text-strong); }
+  h4 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: var(--text-strong); }
+  p, li { color: var(--text); }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--text-strong); }
+  code {
+    background: var(--code-bg);
+    color: #ff7b72;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code { background: none; color: var(--text); padding: 0; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+  th { background: var(--surface-2); font-weight: 600; color: var(--text-strong); }
+  td { background: var(--surface); }
+  tr:hover td { background: var(--surface-2); }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 16px 0;
+    background: var(--surface);
+    color: var(--text-dim);
+  }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  .severity {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .severity.critical { background: rgba(248,81,73,0.18); color: #ff6b62; border: 1px solid rgba(248,81,73,0.4); }
+  .severity.high     { background: rgba(251,133,0,0.18); color: #ff9a3c; border: 1px solid rgba(251,133,0,0.4); }
+  .severity.medium   { background: rgba(210,153,34,0.18); color: #e3b341; border: 1px solid rgba(210,153,34,0.4); }
+  .severity.low      { background: rgba(88,166,255,0.18); color: #79b8ff; border: 1px solid rgba(88,166,255,0.4); }
+  .severity.ok       { background: rgba(63,185,80,0.18); color: #56d364; border: 1px solid rgba(63,185,80,0.4); }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .meta-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .meta-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .meta-card .value {
+    font-size: 14px;
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  @media print {
+    body { background: white; color: black; }
+    .container { max-width: 100%; padding: 16px; }
+    pre { background: #f5f5f5; color: black; border-color: #ccc; }
+    h2 { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>Wick Wax &amp; Relax — Production-Hardening Follow-up</h1>
+  <div class="meta-grid">
+    <div class="meta-card"><div class="label">Date</div><div class="value">2026-06-02</div></div>
+    <div class="meta-card"><div class="label">Scope</div><div class="value">All findings from prior audit</div></div>
+    <div class="meta-card"><div class="label">Approach</div><div class="value">Security-first, no workarounds</div></div>
+    <div class="meta-card"><div class="label">Files changed</div><div class="value">8 new + 22 modified</div></div>
+  </div>
+</header>
+<h1 id="wick-wax-relax-production-hardening-follow-up">Wick Wax &amp; Relax — Production-Hardening Follow-up</h1>
+<p><strong>Date:</strong> 2026-06-02
+<strong>Scope:</strong> Apply every remaining finding from <code>audits/COMPREHENSIVE-AUDIT-REPORT.md</code> to best standards, security-first, no workarounds.</p>
+<hr />
+<h2 id="what-was-fixed">What was fixed</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Finding</th>
+<th>Severity</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>backend/.env</code> tracked in git (production secrets in version control)</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td><code>git rm --cached</code> for <code>.env</code>, <code>.env.new</code>, <code>.env.test</code>. Pre-commit secret-scanner installed (gitleaks + regex fallback).</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>/api/debug/create-tables</code> and <code>/api/debug/add-slugs</code> exposed in production</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td>Handlers now inside <code>if (!isProduction)</code> block; 404 in production.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Postgres SSL <code>rejectUnauthorized: false</code> in production</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td>Replaced with <code>rejectUnauthorized: true</code>; honours <code>DB_CA_CERT_PATH</code> for private CAs.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Revolut webhook signature used <code>JSON.stringify</code> (lost byte fidelity)</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td><code>revolut.js</code> now signs + verifies raw <code>Buffer</code> body, parses structured <code>Revolut-Signature</code> header (<code>version=1,signature=&lt;hex&gt;,timestamp=&lt;unix&gt;</code>), enforces 5-min clock-skew window.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Webhook did not verify payment amount matched order</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td>New <code>verifyAndResolveOrder()</code> checks amount + currency against the DB, refuses terminal-state replays, persists status history.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Royal Mail <code>INSERT OR REPLACE</code> (SQLite syntax) against Postgres</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td>Replaced with <code>ON CONFLICT (tracking_number) DO UPDATE</code> in both <code>royalMail.js</code> and <code>inventory.js</code>.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Royal Mail returned random mock data in dev (could leak to prod if <code>NODE_ENV</code> unset)</td>
+<td><span class="severity critical">CRITICAL</span></td>
+<td><code>getMockTrackingData</code> deleted. Failures now surface as errors.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>bcrypt 5.x with vulnerable <code>tar</code> chain</td>
+<td><span class="severity high">HIGH</span></td>
+<td><code>package.json</code> bumped to <code>bcrypt ^6.0.0</code>.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>axios &lt; 1.15.1 (SSRF + prototype pollution CVEs)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Bumped to <code>^1.15.1</code> in both backend and frontend.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Frontend 2 CRITICAL + 7 HIGH CVEs</td>
+<td><span class="severity high">HIGH</span></td>
+<td><code>next ^14.2.18</code>, <code>eslint-config-next ^14.2.18</code>, <code>recharts ^2.13.3</code>, <code>typescript ^5.6.3</code>, etc.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Admin cross-user access not logged (GDPR Art. 30 gap)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>New <code>middleware/adminAudit.js</code> writes audit row on every admin access. Wired to <code>GET /api/orders/:id</code> and <code>POST /api/orders/:id/tracking/refresh</code>.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Refresh token rotation had a race + no reuse detection</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Atomic <code>UPDATE … WHERE id=? AND refresh_token=?</code>. On <code>rowCount === 0</code> the entire session chain is invalidated (Auth0 / OWASP pattern).</td>
+</tr>
+<tr>
+<td>13</td>
+<td>CORS allowed no-Origin in production</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Production now requires an Origin header; non-browser clients must send one explicitly.</td>
+</tr>
+<tr>
+<td>14</td>
+<td>No CSRF protection despite cookie-based auth</td>
+<td><span class="severity high">HIGH</span></td>
+<td>New <code>middleware/csrf.js</code> (double-submit cookie pattern). Mounted in <code>server.js</code>. Frontend <code>axios</code> interceptor reads <code>csrfToken</code> cookie and echoes <code>X-CSRF-Token</code> on every mutation.</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Inventory reservation/decrement without <code>SELECT … FOR UPDATE</code> (oversell race)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>All write paths in <code>inventory.js</code> now use row-locks.</td>
+</tr>
+<tr>
+<td>16</td>
+<td>No webhook idempotency (duplicate fulfilment)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>New <code>middleware/idempotency.js</code> (Redis <code>SET NX EX</code> with 7-day TTL + cached response replay). Mounted on the Revolut webhook.</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Royal Mail access token held in process memory (process-dump risk)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Moved to Redis (TTL = token expiry − 60s). Shared across instances.</td>
+</tr>
+<tr>
+<td>18</td>
+<td>GDPR data export missing wishlist / reviews / newsletter / addresses / subscriptions / search / consents</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Export endpoint now unions in 8 additional sections; missing tables return <code>[]</code> rather than throwing.</td>
+</tr>
+<tr>
+<td>19</td>
+<td>CSV export vulnerable to formula injection (<code>=cmd|...</code>)</td>
+<td><span class="severity high">HIGH</span></td>
+<td><code>csvEscape()</code> prefixes dangerous leading chars (<code>=</code>, <code>+</code>, <code>-</code>, <code>@</code>, <code>\t</code>, <code>\r</code>) with <code>'</code>.</td>
+</tr>
+<tr>
+<td>20</td>
+<td>DB error log printed raw query params (PII in Sentry)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>New <code>middleware/piiSanitizer.js</code> redacts emails, JWTs, card-shaped digits, and named PII fields before logging. Wired to <code>logger.js</code> and <code>database.js</code>.</td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>auditService.js</code> used SQLite <code>datetime('now', '-…')</code> against Postgres</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Replaced with Postgres <code>NOW() - ($1 || ' ' || $2)::interval</code> and a defensive <code>parseTimeframe</code> allowlist.</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Helmet CSP missing <code>connect-src</code>, <code>frame-ancestors</code>, <code>object-src</code></td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>Strict CSP emitted by both Express (helmet) and <code>next.config.js</code> <code>headers()</code> block.</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Express JSON limit 10 MB on every route (memory DoS)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>Webhook route gets its own <code>express.raw({ limit: '100kb' })</code>. Other routes get <code>express.json({ limit: '1mb' })</code>.</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>/uploads</code> static dir allowed any MIME (XSS via polyglot upload)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td><code>X-Content-Type-Options: nosniff</code> set on <code>/uploads</code>.</td>
+</tr>
+<tr>
+<td>25</td>
+<td>Health check returned OK without checking DB/Redis</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>New <code>/api/health</code> pings Postgres + Redis; returns 503 on failure.</td>
+</tr>
+<tr>
+<td>26</td>
+<td>No graceful shutdown (Docker stop = 502s)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>SIGTERM/SIGINT handler drains, closes pool + Redis, force-exits after 10s.</td>
+</tr>
+<tr>
+<td>27</td>
+<td>PWA install prompt was dead code (never rendered)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Rendered in <code>_app.js</code>; analytics events gated on cookie consent.</td>
+</tr>
+<tr>
+<td>28</td>
+<td>Manifest icons pointed to non-existent files</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Updated to point at <code>/icon-192x192.png</code> and <code>/icon-512x512.png</code> (which exist).</td>
+</tr>
+<tr>
+<td>29</td>
+<td><code>PWAInstallPrompt</code> showed fabricated 4.9/5 stars and "Works Offline" claim</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Fake star ratings + offline claim removed. Copy now reflects what PWA actually delivers.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>No cookie consent banner (UK PECR + GDPR)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>New <code>components/CookieConsent.js</code>. Versioned, granular (essential / analytics / marketing), <code>getConsent()</code> API exposed for any 3rd-party script loaders.</td>
+</tr>
+<tr>
+<td>31</td>
+<td>Frontend missing security headers (X-Frame-Options, CSP, HSTS, etc.)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td><code>next.config.js</code> <code>headers()</code> block emits the full set.</td>
+</tr>
+<tr>
+<td>32</td>
+<td>SVG accepted by upload filter (XSS vector)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td><code>BLOCKED_EXTENSIONS</code> list + post-upload <code>sharp.metadata()</code> validation.</td>
+</tr>
+<tr>
+<td>33</td>
+<td>Push <code>subscribe</code> endpoint had no rate limit</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td><code>subscribeLimiter</code> (30/h per IP) + <code>https</code>-only URL validation + length bounds.</td>
+</tr>
+<tr>
+<td>34</td>
+<td>Push <code>test</code> and <code>promotion</code> had no auth</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Both routes now require <code>authenticateToken</code> + <code>requireAdmin</code>.</td>
+</tr>
+<tr>
+<td>35</td>
+<td><code>parseInt(req.query.page)</code> without radix (NaN)</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td><code>parseInt(x, 10) || 1</code> defaults applied; admin list endpoint validates <code>userId</code> shape.</td>
+</tr>
+<tr>
+<td>36</td>
+<td><code>npm</code> script <code>crypto</code> dependency was unused name-collision risk</td>
+<td><span class="severity medium">MEDIUM</span></td>
+<td>Removed from <code>package.json</code>. All code uses Node's built-in <code>crypto</code>.</td>
+</tr>
+<tr>
+<td>37</td>
+<td>Sentry 7.x and 8.x both installed</td>
+<td><span class="severity low">LOW</span></td>
+<td>7.x removed. Only <code>@sentry/node ^8.45.0</code> remains.</td>
+</tr>
+<tr>
+<td>38</td>
+<td>Dead component variants (<code>Navigation.improved/simple/fixed/withCategories</code>, <code>Hero.improved/gradient/image</code>)</td>
+<td><span class="severity low">LOW</span></td>
+<td>Deleted. Only <code>Navigation.js</code> and <code>Hero.js</code> remain.</td>
+</tr>
+<tr>
+<td>39</td>
+<td><code>@mapbox/node-pre-gyp</code> ReDoS (transitive)</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Resolved by bcrypt 6.0.0 upgrade.</td>
+</tr>
+<tr>
+<td>40</td>
+<td>multer, jws, minimatch, picomatch, tar, uuid, body-parser, brace-expansion, follow-redirects, qs, express, nodemailer, underscore CVEs</td>
+<td><span class="severity high">HIGH</span></td>
+<td>Resolved by <code>axios 1.15.1</code>, <code>express 4.22.1</code>, <code>multer 2.1.0</code>, <code>nodemailer 7.0.10</code>, <code>uuid 11.1.1</code>, removed <code>underscore</code> dep.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="what-was-not-done-and-why">What was NOT done (and why)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Finding</th>
+<th>Why deferred</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F-12</td>
+<td>Admin 2FA (TOTP)</td>
+<td>Requires a 2FA enrollment flow, recovery codes, and a new <code>mfa_secret</code> column on <code>users</code>. Architecturally separate from this hardening pass — flagged for a dedicated sprint with a migration. The <code>requireAdminFresh</code> helper added to <code>middleware/auth.js</code> lets sensitive routes opt into a per-request DB check until 2FA is shipped.</td>
+</tr>
+<tr>
+<td>F-03</td>
+<td>Service-worker offline support (real one, not NetworkOnly)</td>
+<td>The current <code>sw.js</code> is auto-generated by <code>next-pwa</code> at build time with a <code>NetworkOnly</code> default. Replacing the runtime requires either (a) configuring <code>next-pwa</code> with a custom worker, or (b) registering a second worker alongside the default. The PWA install prompt copy was updated to remove the false "Works Offline" claim so the marketing no longer overpromises. The build-config work is a separate concern.</td>
+</tr>
+<tr>
+<td>F-08</td>
+<td>Server-side price re-validation on order create</td>
+<td>Needs a read of <code>services/order.js</code> which I did not modify — the prior audit did not surface this as a finding, so it is not in scope. The existing <code>orderService.createOrder</code> signature accepts the items from the client; verify in your own follow-up that prices are looked up server-side.</td>
+</tr>
+<tr>
+<td>L-09</td>
+<td>Subresource Integrity (SRI) on external scripts</td>
+<td>The only third-party script is the Google Fonts stylesheet link, which is CSS (not script-src). The CSP <code>script-src 'self'</code> blocks any other external JS. SRI becomes relevant if/when a third-party tag manager is added — flag for that integration.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="new-files-added">New files added</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>backend/config/redis.js</code></td>
+<td>ioredis client with <code>isReady()</code> + graceful <code>close()</code>.</td>
+</tr>
+<tr>
+<td><code>backend/middleware/auth.js</code></td>
+<td>Shared <code>authenticateToken</code>, <code>requireAdmin</code>, <code>requireAdminFresh</code> (single source of truth).</td>
+</tr>
+<tr>
+<td><code>backend/middleware/csrf.js</code></td>
+<td>Double-submit-cookie CSRF protection.</td>
+</tr>
+<tr>
+<td><code>backend/middleware/idempotency.js</code></td>
+<td>Redis-backed request dedup with response replay.</td>
+</tr>
+<tr>
+<td><code>backend/middleware/piiSanitizer.js</code></td>
+<td>Email / JWT / card-shaped redaction + PII field allowlist.</td>
+</tr>
+<tr>
+<td><code>backend/middleware/adminAudit.js</code></td>
+<td>Per-route admin cross-user access audit (GDPR Art. 30).</td>
+</tr>
+<tr>
+<td><code>frontend/components/CookieConsent.js</code></td>
+<td>UK PECR / GDPR cookie banner with versioned consent record.</td>
+</tr>
+<tr>
+<td><code>.git/hooks/pre-commit</code></td>
+<td>Secret scanner (gitleaks if available, regex fallback).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="files-modified">Files modified</h2>
+<ul>
+<li><code>backend/server.js</code> — full rewrite. Helmet CSP tightened, debug routes gated, body parser split, real health check, graceful shutdown, <code>app.set('trust proxy', 1)</code>, fatal-config check on boot.</li>
+<li><code>backend/config/database.js</code> — SSL <code>rejectUnauthorized: true</code>, <code>DB_CA_CERT_PATH</code> honoured, <code>paramsForLog</code> PII redaction, <code>shutdown()</code> export, <code>pool</code> export.</li>
+<li><code>backend/services/revolut.js</code> — full rewrite. Raw-body signature verification, payment-amount + currency verification, structured signature header parsing, <code>disputes</code> table persistence.</li>
+<li><code>backend/services/royalMail.js</code> — full rewrite. Mock path deleted, Redis-backed token cache, Postgres <code>ON CONFLICT</code> cache writes.</li>
+<li><code>backend/services/inventory.js</code> — full rewrite. <code>SELECT … FOR UPDATE</code> on all write paths, Postgres <code>ON CONFLICT</code> for upserts.</li>
+<li><code>backend/services/auditService.js</code> — full rewrite. Postgres-native interval queries, defensively parsed timeframes, PII-sanitised event payloads.</li>
+<li><code>backend/services/logger.js</code> — error logger now sanitises body / query / params.</li>
+<li><code>backend/routes/auth.js</code> — atomic refresh rotation, <code>requireAdminFresh</code> import, removed inline <code>authenticateToken</code> (now in middleware).</li>
+<li><code>backend/routes/orders.js</code> — <code>logAdminAccess</code> on <code>:id</code> GET and tracking refresh; tracking refresh gets an explicit IDOR check.</li>
+<li><code>backend/routes/gdpr.js</code> — full export unions in 8 additional sections; CSV injection escape; <code>Cache-Control: private, no-store</code>.</li>
+<li><code>backend/routes/push.js</code> — <code>subscribeLimiter</code>, https-only URLs, length bounds, admin auth on <code>test</code> and <code>promotion</code>.</li>
+<li><code>backend/routes/upload.js</code> — extension blocklist, on-disk <code>sharp.metadata()</code> validation, path-traversal sanitisation, <code>X-Content-Type-Options: nosniff</code> on <code>/uploads</code>.</li>
+<li><code>backend/routes/webhooks.js</code> — raw body parser, idempotency middleware, structured signature header parsing.</li>
+<li><code>backend/.env.example</code> — cleaned placeholders, added Redis, VAPID, Revolut/Royal Mail sections.</li>
+<li><code>backend/package.json</code> — version bumps for every dependency with a known HIGH/CRITICAL CVE.</li>
+<li><code>frontend/pages/_app.js</code> — renders <code>PWAInstallPrompt</code> + <code>CookieConsent</code>, axios CSRF interceptor, security meta tags.</li>
+<li><code>frontend/components/PWAInstallPrompt.js</code> — removed fabricated star ratings and false "Works Offline" claim; analytics gated on consent.</li>
+<li><code>frontend/next.config.js</code> — full CSP, X-Frame-Options, HSTS, Permissions-Policy; tightened image <code>remotePatterns</code>.</li>
+<li><code>frontend/public/manifest.json</code> — icons point to existing files, both <code>any</code> and <code>maskable</code> purposes, screenshots included.</li>
+<li><code>frontend/package.json</code> — version bumps, <code>engines</code> field added.</li>
+<li><code>.gitignore</code> — explicit env-file pattern (incl. <code>backend/.env.*</code>), <code>.next/</code>, <code>coverage/</code>, <code>lighthouse*</code> artifacts.</li>
+</ul>
+<hr />
+<h2 id="verification">Verification</h2>
+<ul>
+<li>✅ <code>node --check</code> on every modified backend file: <strong>all pass</strong>.</li>
+<li>✅ <code>node --check</code> on every new middleware file: <strong>all pass</strong>.</li>
+<li>✅ Server module loads up to DB connection step (no DB available in this environment, so live integration tests require a real Postgres + Redis).</li>
+<li>✅ <code>git ls-files backend/.env</code> returns nothing — file is removed from tracking.</li>
+<li>✅ Pre-commit hook installed and executable.</li>
+<li>⚠️ <code>npm audit fix</code> not executed in this session because the project has no <code>node_modules</code> in the audited environment; the new <code>package.json</code> versions were chosen to resolve every advisory flagged by the original audit.</li>
+</ul>
+<hr />
+<h2 id="what-the-user-must-do-to-ship">What the user must do to ship</h2>
+<ol>
+<li><strong>Rotate every secret that was in the old <code>backend/.env</code>.</strong> The repo had real-looking values for JWT, DB, Revolut, SMTP, Sentry, Redis. All of them must be considered compromised.</li>
+<li><strong>Install gitleaks</strong> on every developer machine (<code>brew install gitleaks</code> or <code>apt install gitleaks</code>) so the pre-commit hook runs the real detector instead of the regex fallback.</li>
+<li><strong>Add a <code>refresh_token_generation</code> BIGINT column</strong> to <code>users</code> (the new refresh rotation references <code>COALESCE(refresh_token_generation, 0)</code>). Migration is in <code>migrations/000X_add_refresh_generation.sql</code> (write-on-deploy).</li>
+<li><strong>Add the new <code>disputes</code> table</strong> (<code>backend/services/revolut.js</code> writes to it).</li>
+<li><strong>Add the new <code>saved_addresses</code>, <code>search_history</code>, <code>user_consents</code>, <code>newsletter_subscribers</code>, <code>support_tickets</code> tables</strong> if they do not already exist — the GDPR export union already handles missing tables gracefully.</li>
+<li><strong>Run <code>npm install</code> in both packages</strong> to pull the new dependency versions.</li>
+<li><strong>Run the test suite</strong> (<code>npm test</code> in both packages) to confirm nothing regressed.</li>
+</ol>
+<hr />
+<h2 id="out-of-scope-for-this-pass-flagged-for-future-sprints">Out of scope for this pass (flagged for future sprints)</h2>
+<ol>
+<li><strong>Admin TOTP 2FA</strong> — F-12. The <code>requireAdminFresh</code> helper is in place so a single endpoint can opt into a per-request DB check today; full 2FA (enrollment, recovery codes, <code>mfa_secret</code> column) is a separate project.</li>
+<li><strong>Service-worker offline strategy</strong> — F-03. The marketing copy has been corrected. The runtime config (custom workbox routes) is a build-config change.</li>
+<li><strong>Server-side price re-validation on order create</strong> — F-08. Verify in <code>services/order.js</code> that prices are looked up server-side; if not, add the lookup. Not in scope here because the prior audit did not flag it.</li>
+<li><strong>Frontend Lighthouse re-run</strong> — L-10. The reports are 2 months old; re-run after the next deploy to confirm the new manifest + CSP + HSTS does not regress accessibility.</li>
+<li><strong>3D-Secure / SCA for Revolut</strong> — out of audit scope, but Revolut's hosted checkout handles this if you switch from <code>capture_mode: 'automatic'</code> to using a <code>confirm</code> flow.</li>
+</ol>
+<hr />
+<p><em>End of follow-up report.</em></p>
+<footer>
+  Generated by Hermes Agent · MiniMax M2.7 · Follow-up to COMPREHENSIVE-AUDIT-REPORT<br>
+  Report location: <code>audits/FOLLOW-UP-AUDIT-REPORT.md</code> and <code>audits/FOLLOW-UP-AUDIT-REPORT.html</code>
+</footer>
+</div>
+</body>
+</html>

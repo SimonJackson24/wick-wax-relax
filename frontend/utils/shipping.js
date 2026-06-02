@@ -87,6 +87,12 @@ export function getShippingOptions(cartTotal = 0) {
   };
 }
 
+export function getShippingCost(cartTotal = 0) {
+  const freeThreshold = 40;
+  if (cartTotal >= freeThreshold) return 0;
+  return 2.99;
+}
+
 export function getDeliveryEstimator(cartTotal = 0) {
   const now = getUKDate();
   const dispatch = getDispatchInfo();
@@ -135,4 +141,14 @@ export function getDeliveryEstimator(cartTotal = 0) {
     cutoffLabel: '3pm',
     daysUntilFree: cartTotal < 40 ? Math.ceil((40 - cartTotal) / 20) : 0,
   };
+}
+
+export function getDeliveryDate(cartTotal = 0) {
+  const estimator = getDeliveryEstimator(cartTotal);
+  if (!estimator.shipping.deliveryEstimates || estimator.shipping.deliveryEstimates.length === 0) {
+    return '2-3 working days';
+  }
+  // Return the earliest (free/next-day) delivery estimate
+  const first = estimator.shipping.deliveryEstimates[0];
+  return first.deliveryLabel;
 }

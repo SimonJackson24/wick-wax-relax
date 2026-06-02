@@ -89,7 +89,7 @@ export default function WishlistPage() {
                 }}>
                   {/* Image */}
                   <Box sx={{ position: 'relative' }}>
-                    <Link href={`/product/${product.id}`} passHref legacyBehavior>
+                    <Link href={`/product/${product.slug || product.id}`} passHref legacyBehavior>
                       <CardMedia
                         component="div"
                         sx={{
@@ -127,7 +127,7 @@ export default function WishlistPage() {
                   </Box>
 
                   <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, '&:last-child': { pb: 2 } }}>
-                    <Link href={`/product/${product.id}`} passHref legacyBehavior
+                    <Link href={`/product/${product.slug || product.id}`} passHref legacyBehavior
                       style={{ textDecoration: 'none' }}>
                       <Typography variant="body2" fontWeight={600} noWrap
                         sx={{ color: '#3E2351', cursor: 'pointer', '&:hover': { color: '#C8B6DB' } }}>

@@ -131,7 +131,7 @@ class SupplierService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       const { supplier_id, items, expected_delivery_date, notes } = orderData;
 
@@ -157,10 +157,10 @@ class SupplierService {
         `, [orderId, item.product_id, item.variant_id, item.quantity, item.unit_price, item.quantity * item.unit_price]);
       }
 
-      await client.commit();
+      await client.query('COMMIT');
       return { id: orderId, ...orderData };
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       throw error;
     }
   }

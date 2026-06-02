@@ -10,7 +10,7 @@ class OrderService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       const { items, shippingAddress, paymentMethod } = orderData;
 
@@ -100,7 +100,7 @@ class OrderService {
         // Don't fail the order creation if email fails
       }
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return {
         orderId,
@@ -113,7 +113,7 @@ class OrderService {
       };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Order creation error:', error);
       throw error;
     }
@@ -124,6 +124,16 @@ class OrderService {
     let whereClause = '';
     const params = [];
     let paramIndex = 1;
+
+    // SECURITY (H-17): callers MUST scope to a specific user unless they
+    // are an admin. This filter is enforced both here (defense in depth) and
+    // at the route layer. The admin route (which has no userId in filters)
+    // intentionally gets to see every user's orders.
+    if (filters.userId) {
+      whereClause += ` AND o.user_id = ?`;
+      params.push(filters.userId);
+      paramIndex++;
+    }
 
     if (filters.status) {
       whereClause += ` AND o.status = ?`;
@@ -343,7 +353,7 @@ class OrderService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Get current status
       const currentResult = await client.query(
@@ -369,12 +379,12 @@ class OrderService {
       // Handle status-specific actions
       await this.handleStatusChangeActions(orderId, oldStatus, newStatus, client);
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return { success: true, oldStatus, newStatus };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       throw error;
     }
   }
@@ -560,7 +570,7 @@ class OrderService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Update order with tracking information
       await client.query(
@@ -577,11 +587,11 @@ class OrderService {
       // Log status change
       await this.logOrderStatusChange(orderId, null, 'SHIPPED', null, `Tracking number set: ${trackingNumber}`, client);
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return { success: true, trackingNumber, carrier };
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Error setting tracking number:', error);
       throw error;
     }

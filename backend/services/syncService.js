@@ -282,7 +282,7 @@ class ChannelSyncService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Get channel ID
       const channelResult = await client.query(
@@ -299,13 +299,13 @@ class ChannelSyncService {
       // Update or insert inventory record
       await client.query(`
         INSERT OR REPLACE INTO inventory (product_id, channel_id, quantity, last_synced)
-        VALUES (?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
       `, [variantId, channelId, quantity]);
 
-      await client.commit();
+      await client.query('COMMIT');
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       throw error;
     }
   }
@@ -476,7 +476,7 @@ class ChannelSyncService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Get channel ID
       const channelResult = await client.query(
@@ -515,11 +515,11 @@ class ChannelSyncService {
         }
       }
 
-      await client.commit();
+      await client.query('COMMIT');
       return { id: orderId };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       throw error;
     }
   }

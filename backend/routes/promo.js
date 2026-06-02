@@ -1,11 +1,25 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { query } = require('../config/database');
 
 const router = express.Router();
 
+// Rate limit on /validate to prevent brute-force / enumeration of valid
+// promo codes. Tracks by IP; the endpoint is unauthenticated (works for
+// guests too) so userId is not available. 10 attempts / 15min / IP is
+// generous for legitimate checkout flows and tight enough to make code
+// guessing impractical.
+const promoValidateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { valid: false, message: 'Too many attempts, please try again later' }
+});
+
 // POST /api/promo/validate — no auth required (works for guests too)
-router.post('/validate', [
+router.post('/validate', promoValidateLimiter, [
   body('code').trim().notEmpty().isString().isLength({ max: 50 }),
   body('subtotal').optional().isFloat({ min: 0 }),
 ], async (req, res) => {
@@ -24,22 +38,28 @@ router.post('/validate', [
       [code]
     );
 
+    // SECURITY: Collapse every not-usable branch into the same generic
+    // message so an attacker cannot tell from the response whether a code
+    // does not exist, is inactive, has expired, or has been used up. The
+    // only specific detail we still expose is the min_order_amount for the
+    // code the user actually submitted (user-facing UX, only revealed when
+    // the code itself is otherwise valid, so it does not help enumeration).
     if (result.rows.length === 0) {
-      return res.json({ valid: false, message: 'Promo code not found' });
+      return res.json({ valid: false, message: 'This promo code is not valid' });
     }
 
     const promo = result.rows[0];
 
     if (!promo.active) {
-      return res.json({ valid: false, message: 'This promo code is no longer active' });
+      return res.json({ valid: false, message: 'This promo code is not valid' });
     }
 
     if (promo.expiry_date && new Date(promo.expiry_date) < new Date()) {
-      return res.json({ valid: false, message: 'This promo code has expired' });
+      return res.json({ valid: false, message: 'This promo code is not valid' });
     }
 
     if (promo.max_uses !== null && promo.used_count >= promo.max_uses) {
-      return res.json({ valid: false, message: 'This promo code has reached its usage limit' });
+      return res.json({ valid: false, message: 'This promo code is not valid' });
     }
 
     if (promo.min_order_amount > subtotal) {

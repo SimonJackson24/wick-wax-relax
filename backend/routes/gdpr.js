@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 const { body, validationResult } = require('express-validator');
 const { dataLogger, securityLogger } = require('../services/auditService');
 const { logger } = require('../services/logger');
-const { authenticateToken } = require('./auth');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -12,7 +12,12 @@ const verifyDataOwnership = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    const result = await query('SELECT id FROM users WHERE id = ? AND (id = ? OR is_admin = 1)', [id, userId]);
+    // SECURITY: Self-service endpoint. A user can only export/delete their
+    // OWN data. Admin data access goes through the separate admin routes
+    // (see routes/admin.js) which check req.user.isAdmin. Previously this
+    // query had 'OR is_admin = 1' which let any logged-in user read or
+    // destroy any admin's data — fixed in C-08.
+    const result = await query('SELECT id FROM users WHERE id = ? AND id = ?', [id, userId]);
 
     if (result.rows.length === 0) {
       securityLogger.logUnauthorizedAccess(
@@ -65,10 +70,82 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
 
     userData.orders = ordersResult.rows;
 
+    // GDPR Art. 15 requires a complete copy of personal data. The previous
+    // implementation only included profile/orders/audit and silently dropped
+    // wishlist, reviews, newsletter subscriptions, and saved addresses. We
+    // now union in every user-data table; missing tables return zero rows
+    // rather than throwing, so the export still succeeds.
+    const additionalSections = [
+      {
+        key: 'wishlist',
+        sql: `SELECT w.id, w.product_id, w.created_at, p.name AS product_name
+                FROM wishlist w LEFT JOIN products p ON p.id = w.product_id
+               WHERE w.user_id = ? ORDER BY w.created_at DESC`,
+        params: [id],
+      },
+      {
+        key: 'reviews',
+        sql: `SELECT id, product_id, rating, title, body, created_at, approved
+                FROM reviews WHERE user_id = ? ORDER BY created_at DESC`,
+        params: [id],
+      },
+      {
+        key: 'newsletterSubscriptions',
+        sql: `SELECT id, email, status, subscribed_at, unsubscribed_at
+                FROM newsletter_subscribers WHERE email = (SELECT email FROM users WHERE id = ?)`,
+        params: [id],
+      },
+      {
+        key: 'savedAddresses',
+        sql: `SELECT id, label, recipient_name, line1, line2, city, postcode, country, phone, is_default, created_at
+                FROM saved_addresses WHERE user_id = ? ORDER BY created_at DESC`,
+        params: [id],
+      },
+      {
+        key: 'subscriptions',
+        sql: `SELECT id, plan_id, status, current_period_start, current_period_end, created_at
+                FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC`,
+        params: [id],
+      },
+      {
+        key: 'searchHistory',
+        sql: `SELECT query_text, created_at FROM search_history
+                WHERE user_id = ? AND created_at >= NOW() - INTERVAL '2 years'
+                ORDER BY created_at DESC LIMIT 1000`,
+        params: [id],
+      },
+      {
+        key: 'supportTickets',
+        sql: `SELECT id, subject, status, created_at, closed_at
+                FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC`,
+        params: [id],
+      },
+      {
+        key: 'consents',
+        sql: `SELECT consent_type, consent_given, consent_version, recorded_at
+                FROM user_consents WHERE user_id = ? ORDER BY recorded_at DESC`,
+        params: [id],
+      },
+    ];
+
+    for (const section of additionalSections) {
+      try {
+        const r = await query(section.sql, section.params);
+        userData[section.key] = r.rows;
+      } catch (err) {
+        // Missing table is not a failure of the export.
+        if (err.code === '42P01') {
+          userData[section.key] = [];
+        } else {
+          throw err;
+        }
+      }
+    }
+
     const auditResult = await query(`
       SELECT event_type, resource, action, created_at, details
       FROM audit_log
-      WHERE user_id = ? AND created_at >= datetime('now', '-2 years')
+      WHERE user_id = ? AND created_at >= NOW() - INTERVAL '2 years'
       ORDER BY created_at DESC
       LIMIT 1000
     `, [id]);
@@ -85,11 +162,12 @@ router.get('/export/:id', authenticateToken, verifyDataOwnership, async (req, re
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
+    res.setHeader('Cache-Control', 'private, no-store');
     res.json({
       exportDate: new Date().toISOString(),
       userId: id,
       data: userData,
-      gdprNotice: 'This data export is provided in accordance with GDPR Article 15 - Right of Access'
+      gdprNotice: 'This data export is provided in accordance with GDPR Article 15 - Right of Access',
     });
 
   } catch (error) {
@@ -276,6 +354,21 @@ router.get('/consent/:id', authenticateToken, verifyDataOwnership, async (req, r
   }
 });
 
+// Escape a value for safe inclusion in a CSV file. The leading-character
+// check is what blocks formula injection in Excel / LibreOffice: cells
+// starting with =, +, -, @, TAB, or CR will be interpreted as a formula
+// by the spreadsheet program and can execute commands. We prefix with a
+// single quote and quote-wrap the field.
+function csvEscape(value) {
+  if (value === null || value === undefined) return '""';
+  let str = String(value);
+  const formulaChars = ['=', '+', '-', '@', '\t', '\r'];
+  if (formulaChars.includes(str.charAt(0))) {
+    str = `'${str}`;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
 router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (req, res) => {
   try {
     const { id } = req.params;
@@ -314,27 +407,29 @@ router.get('/portability/:id', authenticateToken, verifyDataOwnership, async (re
         ['Marketing Consent', userData.marketing_consent],
         ['Analytics Consent', userData.analytics_consent],
         ['Third Party Consent', userData.third_party_consent],
-        ['Data Processing Consent', userData.data_processing_consent]
+        ['Data Processing Consent', userData.data_processing_consent],
       ];
 
-      const csvContent = csvData.map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+      const csvContent = csvData.map((row) => row.map(csvEscape).join(',')).join('\r\n');
 
-      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.csv"`);
+      res.setHeader('Cache-Control', 'private, no-store');
       res.send(csvContent);
     } else {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="user-data-${id}.json"`);
+      res.setHeader('Cache-Control', 'private, no-store');
       res.json({
         dataPortability: true,
         exportDate: new Date().toISOString(),
         user: userData,
-        gdprNotice: 'Data exported in accordance with GDPR Article 20 - Right to Data Portability'
+        gdprNotice: 'Data exported in accordance with GDPR Article 20 - Right to Data Portability',
       });
     }
 
   } catch (error) {
-    logger.error('GDPR data portability error', { error: error.message, stack: error.stack, userId: req.user?.userId, ip: req.ip });
+      logger.error('GDPR data portability error', { error: error.message, stack: error.stack, userId: req.user?.userId, ip: req.ip });
     res.status(500).json({ error: 'Failed to export data' });
   }
 });

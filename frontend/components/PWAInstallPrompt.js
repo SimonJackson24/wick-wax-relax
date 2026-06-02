@@ -15,13 +15,12 @@ import {
 import {
   GetApp as InstallIcon,
   Close as CloseIcon,
-  Star as StarIcon,
   Speed as SpeedIcon,
-  OfflineBolt as OfflineIcon,
   Notifications as NotificationIcon,
   Smartphone as MobileIcon,
 } from '@mui/icons-material';
 import { usePWA } from './PWAContext';
+import { getConsent } from './CookieConsent';
 
 const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) => {
   const theme = useTheme();
@@ -81,11 +80,12 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
     try {
       const success = await installPWA();
       if (success) {
-        // Track successful installation
-        if (typeof window !== 'undefined' && window.gtag) {
+        // Only fire analytics if the user has granted consent — the consent
+        // gate is enforced by the cookie banner; this is a defence in depth.
+        if (typeof window !== 'undefined' && window.gtag && getConsent('analytics')) {
           window.gtag('event', 'pwa_install', {
             event_category: 'engagement',
-            event_label: 'pwa_install_prompt'
+            event_label: 'pwa_install_prompt',
           });
         }
         handleClose();
@@ -105,23 +105,18 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
   const features = [
     {
       icon: <SpeedIcon sx={{ color: 'success.main' }} />,
-      title: 'Lightning Fast',
-      description: 'Instant loading and smooth performance'
-    },
-    {
-      icon: <OfflineIcon sx={{ color: 'info.main' }} />,
-      title: 'Works Offline',
-      description: 'Browse products even without internet'
+      title: 'Faster checkout',
+      description: 'Your cart and address are remembered on this device.'
     },
     {
       icon: <NotificationIcon sx={{ color: 'warning.main' }} />,
-      title: 'Push Notifications',
-      description: 'Get updates on orders and promotions'
+      title: 'Order updates',
+      description: 'Optional push notifications when your order ships.'
     },
     {
       icon: <MobileIcon sx={{ color: 'primary.main' }} />,
-      title: 'Mobile Optimized',
-      description: 'Perfect experience on your phone'
+      title: 'Home-screen icon',
+      description: 'Opens like a regular app, full-screen, no browser chrome.'
     }
   ];
 
@@ -151,7 +146,7 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
             Install Wick Wax Relax
           </Typography>
         </Box>
-        <IconButton onClick={handleClose} size="small">
+        <IconButton onClick={handleClose} size="small" aria-label="Close install dialog">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -159,25 +154,15 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
       <DialogContent>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Get the full Wick Wax Relax experience with our mobile app!
-          </Typography>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            {[...Array(5)].map((_, i) => (
-              <StarIcon key={i} sx={{ color: 'warning.main', fontSize: 20 }} />
-            ))}
-          </Box>
-
-          <Typography variant="body2" color="text.secondary">
-            ⭐⭐⭐⭐⭐ Rated 4.9/5 by our customers
+            Add Wick Wax Relax to your home screen for a faster checkout.
           </Typography>
         </Box>
 
         <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-          Why install our app?
+          What you get
         </Typography>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2, mb: 3 }}>
           {features.map((feature, index) => (
             <Box
               key={index}
@@ -205,24 +190,8 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Chip
-            label="No App Store Required"
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-          <Chip
-            label="Free Installation"
-            size="small"
-            color="success"
-            variant="outlined"
-          />
-          <Chip
-            label="Works Offline"
-            size="small"
-            color="info"
-            variant="outlined"
-          />
+          <Chip label="No app store required" size="small" color="primary" variant="outlined" />
+          <Chip label="Free installation" size="small" color="success" variant="outlined" />
         </Box>
       </DialogContent>
 

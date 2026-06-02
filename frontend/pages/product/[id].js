@@ -31,10 +31,10 @@ import RateReviewIcon from '@mui/icons-material/RateReview';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
+import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
 import ProductGallery from '../../components/ProductGallery';
 import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
-import SubscriptionPlans from '../../components/SubscriptionPlans';
 import TrustBadges from '../../components/TrustBadges';
 import StarRating from '../../components/StarRating';
 import ReviewList from '../../components/ReviewList';
@@ -42,12 +42,14 @@ import ReviewForm from '../../components/ReviewForm';
 import { useCart } from '../../components/CartContext';
 import { useWishlist } from '../../components/WishlistContext';
 import { useAuth } from '../../components/AuthContext';
+import { useSubscription } from '../../components/SubscriptionContext';
 
 export default function ProductDetail() {
   const router = useRouter();
   const { id } = router.query;
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { addToSubscription } = useSubscription();
   const theme = useTheme();
 
   const [product, setProduct] = useState(null);
@@ -55,6 +57,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [addingToSubscription, setAddingToSubscription] = useState(false);
+  const [subMessage, setSubMessage] = useState('');
   const [message, setMessage] = useState('');
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
@@ -76,7 +80,19 @@ export default function ProductDetail() {
 
   const fetchProduct = async () => {
     try {
-      const response = await axios.get(`/api/products/${id}`);
+      // Try UUID-based lookup first (existing format)
+      let response = await axios.get(`/api/products/${id}`).catch(() => null);
+      
+      // Fall back to slug-based lookup (new SEO-friendly URLs)
+      if (!response || !response.data || !response.data.id) {
+        response = await axios.get(`/api/products/slug/${id}`).catch(() => null);
+      }
+      
+      if (!response || !response.data || !response.data.id) {
+        setMessage('Product not found');
+        return;
+      }
+      
       setProduct(response.data);
       if (response.data.variants && response.data.variants.length > 0) {
         setSelectedVariant(response.data.variants[0].id);
@@ -156,6 +172,26 @@ export default function ProductDetail() {
     }
   };
 
+  const handleAddToSubscription = async () => {
+    if (!selectedVariant) { setSubMessage('Please select a variant'); return; }
+    const sv = product.variants.find(v => v.id === selectedVariant);
+    if (!sv) { setSubMessage('Variant not found'); return; }
+    if (!isAuthenticated) {
+      router.push('/login?redirect=' + encodeURIComponent(router.asPath));
+      return;
+    }
+    setAddingToSubscription(true);
+    try {
+      addToSubscription(product, sv, quantity);
+      setSubMessage('Added to subscription!');
+      setTimeout(() => setSubMessage(''), 3000);
+    } catch (e) {
+      setSubMessage('Error adding to subscription');
+    } finally {
+      setAddingToSubscription(false);
+    }
+  };
+
   const selectedVariantData = product?.variants?.find(v => v.id === selectedVariant);
 
   if (loading) {
@@ -177,12 +213,13 @@ export default function ProductDetail() {
 
   return (
     <>
+      <NavigationWithCategories />
       <SEOHead
         title={product ? `${product.name} — Wick Wax Relax` : 'Product — Wick Wax Relax'}
         description={product?.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}
         keywords={product ? `wax melts, candles, ${product.name}, home fragrance, UK` : 'wax melts, candles, home fragrance'}
         image={product?.image ? `https://wickwaxrelax.com${product.image}` : 'https://wickwaxrelax.com/images/hero-image.svg'}
-        url={`https://wickwaxrelax.com/product/${id}`}
+        url={`https://wickwaxrelax.com/product/${product?.slug || id}`}
         type="product"
         product={product ? {
           name: product.name,
@@ -222,195 +259,223 @@ export default function ProductDetail() {
           </Breadcrumbs>
         </Box>
 
-        {message && (
-          <Alert severity={message.includes('Error') ? 'error' : 'success'} sx={{ mb: 2 }}>
-            {message}
+        {(message || subMessage) && (
+          <Alert severity={(message || subMessage).includes('Error') ? 'error' : 'success'} sx={{ mb: 2 }}>
+            {message || subMessage}
           </Alert>
         )}
 
-        <Grid container spacing={4} sx={{ mb: 6 }}>
-          <Grid item xs={12} md={6}>
-            <ProductGallery
-              images={product.images || []}
-              productName={product.name}
-            />
-          </Grid>
+        {/* === FULL-WIDTH PRODUCT GALLERY === */}
+        <Box sx={{ width: '100%', mb: 5 }}>
+          <ProductGallery
+            images={product.images || []}
+            productName={product.name}
+          />
+        </Box>
 
-          <Grid item xs={12} md={6}>
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom sx={{
-                fontFamily: '"Playfair Display", serif',
-                fontWeight: 400,
-                fontSize: { xs: '1.75rem', md: '2.25rem' }
-              }}>
-                {product.name}
+        {/* === PRODUCT INFO — single column, centered === */}
+        <Box sx={{ maxWidth: 720, mx: 'auto' }}>
+          <Typography variant="h3" component="h1" gutterBottom sx={{
+            fontFamily: '"Playfair Display", serif',
+            fontWeight: 400,
+            fontSize: { xs: '1.875rem', md: '2.5rem' },
+            lineHeight: 1.2,
+            mb: 2
+          }}>
+            {product.name}
+          </Typography>
+
+          {/* Star rating inline near product name */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+            <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
+            {reviewStats.count > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                {reviewStats.count} {reviewStats.count === 1 ? 'review' : 'reviews'}
               </Typography>
+            )}
+          </Box>
 
-              {product.scent_profile && (
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {Object.entries(product.scent_profile).map(([key, value]) => (
-                      <Chip
-                        key={key}
-                        label={`${key}: ${value}`}
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                          borderColor: theme.palette.primary.main,
-                          color: theme.palette.primary.main,
-                          fontWeight: 500
-                        }}
-                      />
+          <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary', lineHeight: 1.9, fontSize: '1.05rem' }}>
+            {product.description}
+          </Typography>
+
+          {/* Scent profile chips — below description */}
+          {product.scent_profile && (
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {Object.entries(product.scent_profile).map(([key, value]) => (
+                  <Chip
+                    key={key}
+                    label={`${key}: ${value}`}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
+                      fontWeight: 500,
+                      mb: 0.5
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Variant selector + price + stock */}
+          {product.variants && product.variants.length > 0 && (
+            <Box sx={{ mb: 4 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Variant</InputLabel>
+                <Select
+                  value={selectedVariant}
+                  onChange={(e) => setSelectedVariant(e.target.value)}
+                  label="Variant"
+                >
+                  {product.variants.map((variant) => (
+                    <MenuItem key={variant.id} value={variant.id}>
+                      {variant.name} — £{variant.price}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {selectedVariantData && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="h4" color="primary" sx={{ fontWeight: 600, fontSize: '1.75rem' }}>
+                    £{selectedVariantData.price}
+                  </Typography>
+                  <Typography variant="body2" color={selectedVariantData.inventory_quantity <= 5 ? 'warning.main' : 'text.secondary'}>
+                    {selectedVariantData.inventory_quantity > 0
+                      ? `${selectedVariantData.inventory_quantity} in stock`
+                      : 'Out of stock'}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {/* CTA buttons — full-width Add to Cart, Subscribe alongside */}
+          <Box sx={{ mb: 5 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+              <FormControl sx={{ minWidth: 90 }}>
+                <InputLabel id="quantity-label">Qty</InputLabel>
+                <Select
+                  labelId="quantity-label"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  label="Qty"
+                  aria-describedby="quantity-helper"
+                >
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <MenuItem key={num} value={num}>{num}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={handleAddToCart}
+                disabled={addingToCart || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
+                sx={{
+                  py: 1.75,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  borderRadius: 3,
+                  backgroundColor: theme.palette.primary.main,
+                  '&:hover': { backgroundColor: theme.palette.primary.dark },
+                  '&:disabled': { backgroundColor: theme.palette.grey[300] }
+                }}
+                aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to cart`}
+              >
+                {addingToCart ? 'Adding...' : 'Add to Cart'}
+              </Button>
+
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={handleAddToSubscription}
+                disabled={addingToSubscription || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
+                sx={{
+                  py: 1.75,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  borderRadius: 3,
+                  backgroundColor: theme.palette.secondary.main,
+                  color: theme.palette.secondary.contrastText,
+                  '&:hover': { backgroundColor: theme.palette.secondary.dark },
+                  '&:disabled': { backgroundColor: theme.palette.grey[300], color: theme.palette.grey[600] }
+                }}
+                aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to subscription`}
+              >
+                {addingToSubscription ? '...' : 'Subscribe & Save — Set & Save'}
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Accordions — below the purchase decision */}
+          <Box sx={{ mb: 4 }}>
+            <Accordion
+              expanded={expandedAccordion === 'details'}
+              onChange={() => setExpandedAccordion(expandedAccordion === 'details' ? false : 'details')}
+              elevation={0}
+              sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' }, mb: 1 }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography fontWeight={600}>Product Details</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {selectedVariantData && selectedVariantData.attributes ? (
+                  <Box component="dl" sx={{ m: 0 }}>
+                    {Object.entries(selectedVariantData.attributes).map(([key, value]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                        <Typography component="dt" variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{key}</Typography>
+                        <Typography component="dd" variant="body2" sx={{ textAlign: 'right', maxWidth: '60%' }}>{value}</Typography>
+                      </Box>
                     ))}
                   </Box>
-                </Box>
-              )}
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No additional details available.</Typography>
+                )}
+              </AccordionDetails>
+            </Accordion>
 
-              <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary', lineHeight: 1.8 }}>
-                {product.description}
-              </Typography>
+            <Accordion
+              elevation={0}
+              sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' }, mb: 1 }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography fontWeight={600}>How to Use</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                  Place one wax melt cube in your wax warmer. Allow the fragrance to fill the room. Replace when scent fades, typically after 8-12 hours of use. Keep away from direct sunlight and heat sources.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
 
-              {product.variants && product.variants.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>Variant</InputLabel>
-                    <Select
-                      value={selectedVariant}
-                      onChange={(e) => setSelectedVariant(e.target.value)}
-                      label="Variant"
-                    >
-                      {product.variants.map((variant) => (
-                        <MenuItem key={variant.id} value={variant.id}>
-                          {variant.name} — £{variant.price}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+            <Accordion
+              elevation={0}
+              sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' } }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography fontWeight={600}>Candle Care Guide</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                  For candle products: trim the wick to 5mm before each burn. Allow the wax to melt pool to the edges on first burn (2-3 hours) to prevent tunnelling. Never burn for more than 4 hours. Keep away from draughts. Discontinue use when 10mm of wax remains.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
+        </Box>
 
-                  {selectedVariantData && (
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
-                      <Typography variant="h4" color="primary" sx={{ fontWeight: 600 }}>
-                        £{selectedVariantData.price}
-                      </Typography>
-                      <Typography variant="body2" color={selectedVariantData.inventory_quantity <= 5 ? 'warning.main' : 'text.secondary'}>
-                        {selectedVariantData.inventory_quantity > 0
-                          ? `${selectedVariantData.inventory_quantity} in stock`
-                          : 'Out of stock'}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
-
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 4 }}>
-                <FormControl sx={{ minWidth: 80 }}>
-                  <InputLabel id="quantity-label">Qty</InputLabel>
-                  <Select
-                    labelId="quantity-label"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    label="Qty"
-                    aria-describedby="quantity-helper"
-                  >
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <MenuItem key={num} value={num}>{num}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={handleAddToCart}
-                  disabled={addingToCart || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
-                  sx={{
-                    flexGrow: 1,
-                    py: 1.5,
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    borderRadius: 3,
-                    backgroundColor: theme.palette.primary.main,
-                    '&:hover': { backgroundColor: theme.palette.primary.dark },
-                    '&:disabled': { backgroundColor: theme.palette.grey[300] }
-                  }}
-                  aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to cart`}
-                >
-                  {addingToCart ? 'Adding...' : 'Add to Cart'}
-                </Button>
-              </Box>
-
-              <Divider sx={{ mb: 3 }} />
-
-              {selectedVariant && (
-                <SubscriptionPlans
-                  productId={product.id}
-                  variantId={selectedVariant}
-                  variantName={selectedVariantData?.name || ''}
-                  price={selectedVariantData?.price || 0}
-                  isAuthenticated={isAuthenticated}
-                  onSubscribe={(frequency) => {
-                    if (!isAuthenticated) {
-                      router.push('/login?redirect=' + encodeURIComponent(router.asPath));
-                    }
-                  }}
-                />
-              )}
-
-              <Accordion
-                expanded={expandedAccordion === 'details'}
-                onChange={() => setExpandedAccordion(expandedAccordion === 'details' ? false : 'details')}
-                elevation={0}
-                sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' }, mb: 1 }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography fontWeight={600}>Product Details</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {selectedVariantData && selectedVariantData.attributes ? (
-                    <Box component="dl" sx={{ m: 0 }}>
-                      {Object.entries(selectedVariantData.attributes).map(([key, value]) => (
-                        <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                          <Typography component="dt" variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{key}</Typography>
-                          <Typography component="dd" variant="body2" sx={{ textAlign: 'right', maxWidth: '60%' }}>{value}</Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">No additional details available.</Typography>
-                  )}
-                </AccordionDetails>
-              </Accordion>
-
-              <Accordion
-                elevation={0}
-                sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' }, mb: 1 }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography fontWeight={600}>How to Use</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
-                    Place one wax melt cube in your wax warmer. Allow the fragrance to fill the room. Replace when scent fades, typically after 8-12 hours of use. Keep away from direct sunlight and heat sources.
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-
-              <Accordion
-                elevation={0}
-                sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' } }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography fontWeight={600}>Candle Care Guide</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
-                    For candle products: trim the wick to 5mm before each burn. Allow the wax to melt pool to the edges on first burn (2-3 hours) to prevent tunnelling. Never burn for more than 4 hours. Keep away from draughts. Discontinue use when 10mm of wax remains.
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            </Box>
-          </Grid>
-        </Grid>
+        {/* FULL-WIDTH TRUST BADGES — between product info and reviews */}
+        <Box sx={{ py: 4, my: 5, borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <TrustBadges />
+        </Box>
 
         <Box sx={{ mt: 6, mb: 6 }}>
           <Divider sx={{ mb: 4 }} />
@@ -456,8 +521,6 @@ export default function ProductDetail() {
             <ReviewList reviews={reviews} loading={reviewsLoading} />
           </Collapse>
         </Box>
-
-        <TrustBadges />
 
         {(relatedProducts.length > 0 || relatedLoading) && (
           <Box sx={{ mt: 8 }}>
@@ -561,8 +624,10 @@ export default function ProductDetail() {
         )}
       </Container>
 
-      {product && <FrequentlyBoughtTogether productId={id} />}
+      <Container maxWidth="lg" sx={{ py: 3 }}>
+        {product && <FrequentlyBoughtTogether productId={id} />}
+      </Container>
 
     </>
   );
-}
+};

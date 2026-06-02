@@ -98,7 +98,7 @@ class SubscriptionService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       const { planId, productId, variantId, shippingAddress } = subscriptionData;
 
@@ -158,7 +158,7 @@ class SubscriptionService {
         // Don't fail the subscription creation if email fails
       }
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return {
         ...subscription,
@@ -172,7 +172,7 @@ class SubscriptionService {
       };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Subscription creation error:', error);
       throw error;
     }
@@ -355,7 +355,7 @@ class SubscriptionService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Verify ownership if userId provided
       if (userId) {
@@ -425,12 +425,12 @@ class SubscriptionService {
         await this.recalculateNextOrderDate(subscriptionId, client);
       }
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return result.rows[0];
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Subscription update error:', error);
       throw error;
     }
@@ -446,7 +446,7 @@ class SubscriptionService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Verify ownership if userId provided
       if (userId) {
@@ -482,12 +482,12 @@ class SubscriptionService {
         RETURNING id, status, next_order_date, updated_at
       `, [nextOrderDate, new Date().toISOString(), subscriptionId]);
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return result.rows[0];
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Subscription resume error:', error);
       throw error;
     }
@@ -498,7 +498,7 @@ class SubscriptionService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Verify ownership if userId provided
       if (userId) {
@@ -538,12 +538,12 @@ class SubscriptionService {
         console.error('Failed to send cancellation email:', emailError);
       }
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return result.rows[0];
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Subscription cancellation error:', error);
       throw error;
     }
@@ -554,7 +554,7 @@ class SubscriptionService {
     const client = await getClient();
 
     try {
-      await client.begin();
+      await client.query('BEGIN');
 
       // Find subscriptions due for processing
       const dueSubscriptions = await client.query(`
@@ -639,7 +639,7 @@ class SubscriptionService {
         }
       }
 
-      await client.commit();
+      await client.query('COMMIT');
 
       return {
         success: true,
@@ -647,7 +647,7 @@ class SubscriptionService {
       };
 
     } catch (error) {
-      await client.rollback();
+      await client.query('ROLLBACK');
       console.error('Subscription order processing error:', error);
       throw error;
     }

@@ -3,8 +3,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const { authenticateToken, requireAdminMfa } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -13,102 +13,89 @@ const uploadsDir = path.join(__dirname, '../uploads');
 const imagesDir = path.join(uploadsDir, 'images');
 const productsDir = path.join(imagesDir, 'products');
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir);
-}
-if (!fs.existsSync(productsDir)) {
-  fs.mkdirSync(productsDir);
-}
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
+if (!fs.existsSync(productsDir)) fs.mkdirSync(productsDir, { recursive: true });
 
-// Configure multer for file uploads
+// Configure multer for file uploads. Filename is sanitised to ASCII so a
+// malicious client cannot smuggle path traversal sequences (`../`) into the
+// saved filename.
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, productsDir);
-  },
+  destination: (req, file, cb) => cb(null, productsDir),
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
-  }
+    const safeExt = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `product-${uniqueSuffix}${safeExt}`);
+  },
 });
 
-// File filter for images only
+// Block upload of any file whose claimed extension is dangerous (SVG, HTML,
+// executable, script). The list is intentionally small — anything that
+// cannot be rasterised by `sharp` is rejected.
+const BLOCKED_EXTENSIONS = new Set(['.svg', '.html', '.htm', '.js', '.mjs', '.php', '.exe', '.bat', '.sh', '.ps1']);
+
+// File filter:
+//  1. Reject anything claiming to be a known dangerous type (regardless of
+//     the client-supplied mimetype — that header is attacker-controlled).
+//  2. Allow image/* only; everything else rejected.
+//  3. The on-disk content is re-validated with sharp.metadata() after upload
+//     to defeat mimetype spoofing.
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed'), false);
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (BLOCKED_EXTENSIONS.has(ext)) {
+    return cb(new Error(`File type ${ext} is not allowed`), false);
   }
+  if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+    return cb(new Error('Only image files are allowed'), false);
+  }
+  cb(null, true);
 };
 
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  }
+    fileSize: 5 * 1024 * 1024, // 5 MB
+  },
 });
 
-// Middleware to authenticate JWT token from cookies
-function authenticateToken(req, res, next) {
-  const token = req.cookies.accessToken;
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  // SECURITY: Fail if JWT_SECRET is not configured
-  if (!process.env.JWT_SECRET) {
-    console.error('SECURITY ERROR: JWT_SECRET environment variable is not configured');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-}
-
-// Admin middleware
-function requireAdmin(req, res, next) {
-  if (!req.user || !req.user.isAdmin) {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-}
-
 // Upload single product image
-router.post('/product-image', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+router.post('/product-image', authenticateToken, requireAdminMfa, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
+    // Verify the on-disk file is actually a raster image. sharp.metadata()
+    // throws for non-image content. This blocks polyglot files (a JPEG
+    // header followed by HTML/JS) from being served as images.
+    let metadata;
+    try {
+      metadata = await sharp(req.file.path).metadata();
+    } catch (err) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'File is not a valid image' });
+    }
+    if (!['jpeg', 'png', 'webp', 'gif', 'avif'].includes(metadata.format)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: `Unsupported image format: ${metadata.format}` });
+    }
+
     const { productId, altText = '', isPrimary = false } = req.body;
 
     // Process image with Sharp for optimization
-    const originalPath = req.file.path;
     const filename = path.parse(req.file.filename).name;
     const optimizedPath = path.join(productsDir, `${filename}-optimized.jpg`);
 
-    await sharp(originalPath)
-      .resize(800, 800, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
+    await sharp(req.file.path)
+      .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(optimizedPath);
 
     // Create thumbnail
     const thumbnailPath = path.join(productsDir, `${filename}-thumb.jpg`);
-    await sharp(originalPath)
-      .resize(300, 300, {
-        fit: 'cover'
-      })
+    await sharp(req.file.path)
+      .resize(300, 300, { fit: 'cover' })
       .jpeg({ quality: 80 })
       .toFile(thumbnailPath);
 
@@ -117,15 +104,13 @@ router.post('/product-image', authenticateToken, requireAdmin, upload.single('im
     const thumbnailUrl = `/uploads/images/products/${filename}-thumb.jpg`;
 
     if (productId) {
-      // Save as product image
       const result = await query(`
         INSERT INTO product_images (product_id, image_url, alt_text, is_primary)
         VALUES (?, ?, ?, ?)
         RETURNING id
-      `, [productId, imageUrl, altText, isPrimary]);
+      `, [productId, imageUrl, altText, isPrimary === 'true' || isPrimary === true]);
 
-      // If this is the primary image, update the product's main image
-      if (isPrimary) {
+      if (isPrimary === 'true' || isPrimary === true) {
         await query(`
           UPDATE products
           SET image_url = ?, image_alt_text = ?
@@ -138,34 +123,22 @@ router.post('/product-image', authenticateToken, requireAdmin, upload.single('im
         imageUrl,
         thumbnailUrl,
         altText,
-        isPrimary
+        isPrimary,
       });
     } else {
-      // Just return the URLs for temporary storage
-      res.json({
-        imageUrl,
-        thumbnailUrl,
-        altText
-      });
+      res.json({ imageUrl, thumbnailUrl, altText });
     }
 
-    // Clean up original file
-    fs.unlinkSync(originalPath);
-
+    fs.unlinkSync(req.file.path);
   } catch (error) {
     console.error('Error uploading image:', error);
-
-    // Clean up files on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
 
 // Upload multiple product images
-router.post('/product-images', authenticateToken, requireAdmin, upload.array('images', 10), async (req, res) => {
+router.post('/product-images', authenticateToken, requireAdminMfa, upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No image files provided' });
@@ -248,7 +221,7 @@ router.post('/product-images', authenticateToken, requireAdmin, upload.array('im
 });
 
 // Delete product image
-router.delete('/product-image/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/product-image/:id', authenticateToken, requireAdminMfa, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -291,7 +264,7 @@ router.delete('/product-image/:id', authenticateToken, requireAdmin, async (req,
 });
 
 // Update image metadata
-router.put('/product-image/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/product-image/:id', authenticateToken, requireAdminMfa, async (req, res) => {
   try {
     const { id } = req.params;
     const { altText, isPrimary, displayOrder } = req.body;

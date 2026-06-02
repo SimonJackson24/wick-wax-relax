@@ -75,7 +75,7 @@ const ProductCard = ({
 
   const handleProductClick = () => {
     if (onProductClick) {
-      onProductClick(product.id);
+      onProductClick(product.slug || product.id);
     }
   };
 
