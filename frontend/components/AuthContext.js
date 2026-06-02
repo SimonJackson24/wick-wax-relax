@@ -18,18 +18,16 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     isMounted.current = true;
-    
+
     // Check if user is logged in on initial load
     const checkAuthStatus = async () => {
       try {
         // Verify token with backend
         const response = await axios.get('/api/auth/verify');
         if (response.data.user) {
-          console.log('AuthContext Debug: User verified:', response.data.user);
           setUser(response.data.user);
         }
       } catch (error) {
-        console.error('Authentication check failed:', error);
         // User is not authenticated
       } finally {
         if (isMounted.current) {
@@ -45,19 +43,123 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  /**
+   * Login.
+   * Returns one of:
+   *   { success: true, user }                      — full session (non-admin, or already-mfa'd via cookie roundtrip)
+   *   { success: false, requiresMfa: true, requiresEnrollment, mfaToken, user }
+   *                                                — admin must complete the MFA challenge
+   *   { success: false, error }                    — bad credentials
+   */
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
-      const { user } = response.data;
-      
-      console.log('AuthContext Debug: Login response user:', user);
-      setUser(user);
-      return { success: true, user };
+
+      if (response.data.requiresMfa) {
+        return {
+          success: false,
+          requiresMfa: true,
+          requiresEnrollment: !!response.data.requiresEnrollment,
+          mfaToken: response.data.mfaToken,
+          user: response.data.user,
+        };
+      }
+
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
     } catch (error) {
-      console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Login failed',
+      };
+    }
+  };
+
+  /**
+   * Begin MFA enrollment. Returns the QR data URL, otpauth URL, and secret
+   * (for manual entry). The backend has already stashed the secret on the
+   * user row in mfa_secret (but mfa_enabled is still false) — the user
+   * must prove they can produce a TOTP code from that secret.
+   */
+  const enrollMfaStart = async () => {
+    try {
+      const response = await axios.post('/api/auth/mfa/enroll-start');
+      return { success: true, ...response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to start enrollment',
+      };
+    }
+  };
+
+  /**
+   * Confirm MFA enrollment with a 6-digit code. Returns the recovery codes
+   * (which the UI must show ONCE) and the final user object.
+   */
+  const enrollMfaVerify = async (code) => {
+    try {
+      const response = await axios.post('/api/auth/mfa/enroll-verify', { code });
+      setUser(response.data.user);
+      return { success: true, recoveryCodes: response.data.recoveryCodes, user: response.data.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Invalid code',
+      };
+    }
+  };
+
+  /**
+   * Verify a TOTP code (or recovery code) for an already-enrolled admin.
+   * The mfaToken is the one returned from login().
+   */
+  const verifyMfa = async (mfaToken, { code, recoveryCode }) => {
+    try {
+      const response = await axios.post(
+        '/api/auth/mfa/verify',
+        { code, recoveryCode },
+        { headers: { 'X-MFA-Token': mfaToken } }
+      );
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Invalid code',
+      };
+    }
+  };
+
+  const getMfaStatus = async () => {
+    try {
+      const response = await axios.get('/api/auth/mfa/status');
+      return { success: true, ...response.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  };
+
+  const regenerateRecoveryCodes = async (code) => {
+    try {
+      const response = await axios.post('/api/auth/mfa/recovery-codes', { code });
+      return { success: true, recoveryCodes: response.data.recoveryCodes };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to regenerate recovery codes',
+      };
+    }
+  };
+
+  const disableMfa = async (password, code) => {
+    try {
+      const response = await axios.post('/api/auth/mfa/disable', { password, code });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to disable MFA',
       };
     }
   };
@@ -66,7 +168,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await axios.post('/api/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      // Logout error is non-fatal — we still clear local state.
     } finally {
       setUser(null);
     }
@@ -76,14 +178,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/register', userData);
       const { user } = response.data;
-      
       setUser(user);
       return { success: true, user };
     } catch (error) {
-      console.error('Registration failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Registration failed',
       };
     }
   };
@@ -94,6 +194,12 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    enrollMfaStart,
+    enrollMfaVerify,
+    verifyMfa,
+    getMfaStatus,
+    regenerateRecoveryCodes,
+    disableMfa,
     isAuthenticated: !!user,
   };
 

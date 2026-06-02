@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { 
-  Container, 
-  Typography, 
-  TextField, 
-  Button, 
-  Box, 
-  Alert, 
-  Paper, 
-  useTheme, 
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Alert,
+  Paper,
+  useTheme,
   Link as MuiLink,
   Grid,
   Divider,
@@ -19,14 +19,15 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { 
-  Visibility, 
-  VisibilityOff, 
-  Email as EmailIcon, 
+import {
+  Visibility,
+  VisibilityOff,
+  Email as EmailIcon,
   Lock as LockIcon,
   Spa as SpaIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../components/AuthContext';
+import MfaChallenge from '../../components/MfaChallenge';
 
 export default function Login() {
   const theme = useTheme();
@@ -41,6 +42,10 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // MFA challenge state. When non-null, the user has submitted their
+  // password and must complete TOTP to actually log in.
+  const [mfaChallenge, setMfaChallenge] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -92,18 +97,17 @@ export default function Login() {
 
     try {
       const response = await login(formData.email, formData.password);
-      
+
       if (response.success) {
         setMessage('Login successful! Redirecting...');
-        
+
         // Check if user is admin
         const isAdmin = response.user.isAdmin === true || response.user.isAdmin === 1;
-        
+
         // Determine redirect URL based on user role and query params
         let redirectTo;
-        
+
         if (isAdmin) {
-          // Admin user - check if there's a specific admin redirect
           const adminRedirect = router.query.redirect;
           if (adminRedirect && adminRedirect.startsWith('/admin')) {
             redirectTo = adminRedirect;
@@ -111,7 +115,6 @@ export default function Login() {
             redirectTo = '/admin';
           }
         } else {
-          // Regular user - check if there's a specific redirect
           const userRedirect = router.query.redirect;
           if (userRedirect) {
             redirectTo = userRedirect;
@@ -120,13 +123,27 @@ export default function Login() {
           }
         }
 
-        // Redirect after a short delay to show success message
         setTimeout(() => {
           router.push(redirectTo);
         }, 1000);
-      } else {
-        setMessage(response.error || 'Login failed. Please check your credentials and try again.');
+        return;
       }
+
+      if (response.requiresMfa) {
+        // Switch the page over to the MFA challenge. The login() call has
+        // already stored the mfaToken in an httpOnly cookie and returned
+        // it in the body. The MfaChallenge component will call
+        // /api/auth/mfa/verify (or /enroll-verify) with the token and the
+        // 6-digit code.
+        setMfaChallenge({
+          mfaToken: response.mfaToken,
+          requiresEnrollment: !!response.requiresEnrollment,
+        });
+        setMessage('');
+        return;
+      }
+
+      setMessage(response.error || 'Login failed. Please check your credentials and try again.');
     } catch (error) {
       console.error('Login error:', error);
       setMessage('Login failed. Please check your credentials and try again.');
@@ -134,6 +151,111 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  const handleMfaSuccess = () => {
+    // The AuthContext has already updated `user`. We can read it from the
+    // auth context, but the easier thing here is to just route based on
+    // the form data and known conventions.
+    const isAdmin = true; // by construction — only admins hit the MFA flow
+    setMessage('Login successful! Redirecting...');
+    setMfaChallenge(null);
+    setTimeout(() => {
+      const adminRedirect = router.query.redirect;
+      if (adminRedirect && adminRedirect.startsWith('/admin')) {
+        router.push(adminRedirect);
+      } else {
+        router.push(isAdmin ? '/admin' : '/account/profile');
+      }
+    }, 600);
+  };
+
+  const handleMfaCancel = () => {
+    // User backed out. Clear the challenge so they return to the
+    // credentials form. The server-side mfaToken cookie remains valid
+    // for its 5-minute TTL — that's fine, it does nothing without the
+    // accompanying mfaToken in the request body.
+    setMfaChallenge(null);
+    setFormData((f) => ({ ...f, password: '' }));
+    setMessage('MFA challenge cancelled. You can try again.');
+  };
+
+  // When in MFA challenge mode, swap the entire right-hand panel for the
+  // MfaChallenge component. The brand panel on the left stays put.
+  if (mfaChallenge) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.secondary.light} 100%)`,
+        }}
+      >
+        {/* Left side - Branding (re-used) */}
+        <Box
+          sx={{
+            flex: { md: 1 },
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            p: 4,
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            style={{ textAlign: 'center', zIndex: 2 }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <SpaIcon sx={{ fontSize: 80, color: 'white' }} />
+            </Box>
+            <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+              Wick Wax & Relax
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 2, fontWeight: 300 }}>
+              Admin sign-in
+            </Typography>
+            <Typography variant="body1" sx={{ maxWidth: 400, mx: 'auto', opacity: 0.9 }}>
+              Admin accounts require a one-time code from your
+              authenticator app in addition to your password. This protects
+              customer data if your password is ever compromised.
+            </Typography>
+          </motion.div>
+        </Box>
+
+        {/* Right side - MFA challenge */}
+        <Box
+          sx={{
+            flex: { md: 1 },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            p: 4,
+            bgcolor: { xs: 'transparent', md: 'rgba(255,255,255,0.9)' },
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{ width: '100%', maxWidth: 480, display: 'flex', justifyContent: 'center' }}
+          >
+            <MfaChallenge
+              mfaToken={mfaChallenge.mfaToken}
+              requiresEnrollment={mfaChallenge.requiresEnrollment}
+              onSuccess={handleMfaSuccess}
+              onCancel={handleMfaCancel}
+            />
+          </motion.div>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
