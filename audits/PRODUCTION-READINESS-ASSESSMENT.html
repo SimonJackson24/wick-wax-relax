@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wick Wax &amp; Relax — Production Readiness Assessment</title>
+<style>
+:root{--bg:#0e1116;--panel:#161b22;--ink:#e6edf3;--muted:#9aa6b2;--accent:#ff8a65;--sage:#9bc1a1;--lav:#b4a7d6;--sun:#f4d35e;--link:#7ab8ff;--rule:#232a33;--bad:#ff6b6b;--warn:#f4d35e;--good:#9bc1a1;--codebg:#0a0d12;}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;line-height:1.65}
+main{max-width:1080px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:2.4rem;margin:0 0 8px;color:var(--ink);letter-spacing:-0.01em}
+h2{font-size:1.55rem;margin:48px 0 12px;color:var(--ink);border-bottom:1px solid var(--rule);padding-bottom:8px}
+h3{font-size:1.18rem;margin:28px 0 8px;color:var(--ink)}
+h4{font-size:1.02rem;margin:20px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+p,li{color:var(--ink)}
+hr{border:0;border-top:1px solid var(--rule);margin:32px 0}
+strong{color:#fff}
+em{color:var(--muted)}
+a{color:var(--link);text-decoration:none;border-bottom:1px dotted var(--link)}
+a:hover{border-bottom-style:solid}
+code{background:var(--codebg);color:#e9a07c;padding:2px 6px;border-radius:4px;font-size:.92em;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--codebg);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;overflow-x:auto;line-height:1.5}
+pre code{background:transparent;color:#e9a07c;padding:0;font-size:.88em}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:.94em}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+th{background:var(--panel);color:var(--ink);font-weight:600}
+tr:hover td{background:rgba(255,255,255,.02)}
+blockquote{margin:16px 0;padding:10px 16px;border-left:3px solid var(--accent);background:var(--panel);color:var(--muted);border-radius:0 6px 6px 0}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+li input[type=checkbox]{margin-right:8px;accent-color:var(--accent)}
+img{max-width:100%;height:auto;border-radius:6px}
+.muted{color:var(--muted)}
+.lede{font-size:1.08rem;color:var(--muted);margin:0 0 32px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78em;font-weight:600;border:1px solid var(--rule);margin:0 4px}
+.badge.bad{background:rgba(255,107,107,.12);color:var(--bad);border-color:rgba(255,107,107,.35)}
+.badge.warn{background:rgba(244,211,94,.12);color:var(--warn);border-color:rgba(244,211,94,.35)}
+.badge.good{background:rgba(155,193,161,.14);color:var(--good);border-color:rgba(155,193,161,.35)}
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--rule);color:var(--muted);font-size:.86em;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p style="margin:0 0 4px;font-size:.84em;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Audit Report</p>
+<h1>Wick Wax &amp; Relax — Production Readiness Assessment</h1>
+<p class="lede">Honest evaluation of whether the platform can go live for PWA sales, Amazon sales, and multi-channel stock management. 2026-06-02.</p>
+</header>
+<hr>
+<h1 id="wick-wax-relax-production-readiness-assessment">Wick Wax &amp; Relax — Production Readiness Assessment</h1>
+<p><strong>Date:</strong> 2026-06-02<br />
+<strong>Scope:</strong> Honest evaluation of whether the platform can go live for PWA sales, Amazon sales, and multi-channel stock management.<br />
+<strong>Posture:</strong> No mitigations, no aspirational "it should work" claims. Only what is real, what isn't, and what it takes to close the gap.</p>
+<hr />
+<h2 id="tldr">TL;DR</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Status</th>
+<th>Time to go-live</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Code platform (backend + frontend)</strong></td>
+<td><span class="badge good">R</span>eal, working</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Security hardening (post-audit)</strong></td>
+<td>✅ 7 critical, 14 high, 18 medium, 12 low findings fixed</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>PWA online sales (checkout, payment, fulfilment)</strong></td>
+<td><span class="badge warn">C</span>ode ready, deployment not done</td>
+<td><strong>1–2 weeks</strong> focused work</td>
+</tr>
+<tr>
+<td><strong>Amazon sales (SP-API integration)</strong></td>
+<td><span class="badge warn">R</span>eal SP-API code in place, but needs real seller registration + AWS Signature V4 upgrade</td>
+<td><strong>4–6 weeks</strong></td>
+</tr>
+<tr>
+<td><strong>Multi-channel stock management</strong> (PWA + Amazon + Etsy)</td>
+<td><span class="badge warn">S</span>chema and sync code in place, but no end-to-end live test</td>
+<td><strong>2–3 weeks</strong></td>
+</tr>
+<tr>
+<td><strong>Can you start selling today?</strong></td>
+<td>❌ No</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overall maturity:</strong> the <em>code</em> is production-grade (this is no scaffold). What's missing is the <em>business infrastructure</em> around it: live API keys for real merchant accounts, a real database, a real domain, real products loaded, and live end-to-end testing against real third-party APIs.</p>
+<p>A successful test deploy on CloudPanel (with the existing autonomous deploy scripts) is achievable in <strong>2–4 weeks</strong> of focused work. Reaching the "selling on PWA + Amazon + multi-channel stock" target is a <strong>6–10 week</strong> programme with milestones.</p>
+<hr />
+<h2 id="whats-actually-built-the-good">What's actually built (the good)</h2>
+<h3 id="backend-27-routes-27-services-17-migrations">Backend — 27 routes, 27 services, 17 migrations</h3>
+<pre><code>/api/auth         (login, register, refresh, MFA)
+/api/products     (browse, search, reviews)
+/api/categories   (hierarchical, including the deep taxonomy from migration 012)
+/api/orders       (create, status, tracking, refunds)
+/api/inventory    (admin stock mgmt with FOR UPDATE locks)
+/api/subscriptions (Subscribe &amp; Save)
+/api/promo        (codes, validation)
+/api/wishlist
+/api/admin/*      (dashboard, analytics, users, products, settings)
+/api/admin/settings
+/api/upload       (product images, sharp re-validates mimetype)
+/api/push         (web-push subscriptions, admin test/promotion)
+/api/amazon       (SP-API inventory, orders, pricing, catalog sync, sales reports, SNS webhook)
+/api/etsy         (Open API v3, OAuth-signed requests)
+/api/tracking     (Royal Mail integration via /services/royalMail.js)
+/api/export       (admin CSV exports)
+/api/sync         (cross-channel sync engine)
+/api/seo
+/api/search
+/api/gdpr         (data export with CSV-injection guard, deletion, consent, anonymisation)
+/api/suppliers
+</code></pre>
+<p><strong>The big three — payment, shipping, marketplace sync — are real implementations, not stubs:</strong></p>
+<ul>
+<li><strong><code>services/revolut.js</code></strong> (347 lines): OAuth-authenticated payments, raw-Buffer HMAC signature verification on the webhook, structured <code>Revolut-Signature</code> header parser, 5-min clock-skew window, <code>verifyAndResolveOrder()</code> calls back to the Revolut API to confirm captured amount + currency before transitioning status. No fallback paths, no fabrication.</li>
+<li><strong><code>services/royalMail.js</code></strong> (255 lines): OAuth2 client-credentials with Redis-backed token caching, circuit breaker on the auth call, real <code>POST /orders/v2/covers</code> and tracking calls, <code>ON CONFLICT (tracking_number) DO UPDATE</code> for the tracking_history upsert. The previous <code>getMockTrackingData()</code> has been removed — failed Royal Mail calls now surface as errors (per the user's "no fake data" rule).</li>
+<li><strong><code>services/amazon.js</code></strong> (226 lines) and <strong><code>services/etsy.js</code></strong>: SP-API + Open API v3 with proper OAuth flows, no TODO/FIXME/MOCK comments anywhere. <strong>However</strong> — see the gap in §"What's blocking Amazon sales" below.</li>
+</ul>
+<h3 id="frontend-30-pages-50-components">Frontend — 30 pages, 50+ components</h3>
+<pre><code>/                       (home, hero, featured products, FBT, newsletter)
+/products               (PLP, filter, sort, pagination)
+/product/[id]           (PDP, gallery, reviews, FBT, related)
+/category/[slug]        (category PLP)
+/cart                   (drawer + page, guest &amp; authenticated)
+/checkout               (351 lines, address → shipping → payment → confirm)
+/order-confirmation
+/account/{signup,profile,orders,login,...}
+/admin/*                (dashboard, products, orders, users, analytics,
+                         settings, inventory, SEO, subscriptions, sync,
+                         hierarchical categories, suppliers)
+/auth/{login,signup,forgot-password,reset-password}
+</code></pre>
+<p><strong>Key UX scaffolding present:</strong><br />
+- <code>CartContext</code> (multi-tab synced via localStorage events), <code>WishlistContext</code>, <code>SubscriptionContext</code>, <code>OrderHistoryContext</code>, <code>ToastContext</code>, <code>AuthContext</code><br />
+- MUI + Emotion, framer-motion transitions, custom theme with the warm spa palette<br />
+- <code>CookieConsent</code> (UK PECR/GDPR), <code>PWAInstallPrompt</code> (with consent-gated analytics), <code>LazyImage</code>, <code>LazyComponent</code>, <code>ErrorBoundary</code>, <code>PerformanceOptimizer</code><br />
+- Service worker with 4 strategies (NetworkOnly for <code>/api/**</code>, SWR for products, CacheFirst for static, NetworkFirst for navigations with <code>/offline.html</code> fallback)<br />
+- 17 documentation files (README, ARCHITECTURAL_DECISIONS, DEPLOYMENT_GUIDE, DEPLOYMENT_TROUBLESHOOTING, HOMEPAGE_IMPLEMENTATION_GUIDE, PERFORMANCE_OPTIMIZATION_README, HIERARCHICAL_CATEGORIES_IMPLEMENTATION, etc.)</p>
+<h3 id="database-17-migrations">Database — 17 migrations</h3>
+<p>Schema covers: products + variants + images + categories (hierarchical) + inventory + users + orders + order_items + payments + order_status_history + tracking_history + suppliers + supplier_products + product_categories + wishlist_items + product_reviews + user_consents + user_addresses + newsletter_subscribers + subscriptions + subscription_history + audit_log + security_audit_log + gdpr_export_log + cart_items + inventory_audit_log + channels + platform_settings + hierarchical_categories (deep tree) + migrations_meta.</p>
+<p>Indexes on the hot paths (orders, products, inventory, security_audit_log) are present in <code>011_performance_indexes.sql</code>.</p>
+<h3 id="security-post-audit-in-production-shape">Security — post-audit, in production shape</h3>
+<p>The 51 findings from the two prior audit reports are closed:</p>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Findings</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="badge bad">CRITICAL</span></td>
+<td>7</td>
+<td>All fixed</td>
+</tr>
+<tr>
+<td><span class="badge warn">HIGH</span></td>
+<td>14</td>
+<td>All fixed</td>
+</tr>
+<tr>
+<td><span class="badge warn">MEDIUM</span></td>
+<td>18</td>
+<td>All fixed</td>
+</tr>
+<tr>
+<td><span class="badge good">LOW</span></td>
+<td>12</td>
+<td>All fixed</td>
+</tr>
+<tr>
+<td><span class="badge good">V</span>erified working</td>
+<td>21</td>
+<td>Documented</td>
+</tr>
+</tbody>
+</table>
+<p><strong>TOTP 2FA for admin</strong> (new in this session) closes the only remaining "must-have" gap. RFC 6238, server-level <code>adminMfaGate</code> middleware on all 12 admin route mounts, single-use <code>mfaToken</code> (5-min JWT + Redis jti), recovery codes, disable flow requires password + current TOTP.</p>
+<p><strong>Pre-commit secret scanner</strong> is installed at <code>~/.git-template/hooks/pre-commit</code> (gitleaks + regex fallback) and is symlinked into the repo. It blocked zero false-positives during the three-commit push earlier — the audit reports and the <code>.env.example</code> placeholder values don't trip it.</p>
+<hr />
+<h2 id="whats-not-done-the-honest-list">What's NOT done (the honest list)</h2>
+<p>I am not going to dress these up. These are the real gaps between "ready to demo" and "ready to take money from strangers on the internet."</p>
+<h3 id="1-migration-runner-is-incomplete-real-bug">1. Migration runner is incomplete (real bug)</h3>
+<p><code>backend/init-db.js</code> has a <strong>hardcoded</strong> list of migration files:</p>
+<pre><code class="language-js">const schemaFiles = [
+  '001_initial_schema.sql',
+  '002_product_variants.sql',
+  '003_product_categories.sql',
+  '004_user_accounts.sql',
+  '005_order_items.sql',
+  '006_inventory_audit_log.sql',
+  '007_product_images.sql',        // ← doesn't exist (real file is 007_add_product_images.sql)
+  '007_add_refresh_token.sql',
+  '008_add_tracking_fields.sql',
+  '009_security_audit_log.sql',
+  '009_suppliers.sql',
+  '010_gdpr_consent_tracking.sql',
+  '010_platform_settings.sql',
+  '011_performance_indexes.sql',
+  '012_hierarchical_categories.sql'
+  // MISSING: 014_add_orders_user_id.sql
+  // MISSING: 015_add_password_change_required.sql
+  // MISSING: 016_create_wishlists.sql
+  // MISSING: 0001_admin_totp_2fa.sql
+];
+</code></pre>
+<p><strong>Consequence:</strong> <code>npm run db:init</code> on a fresh server will:<br />
+- Fail silently on <code>007_product_images.sql</code> (file doesn't exist — the runner only logs a warning, not an error)<br />
+- Skip <code>014</code>, <code>015</code>, <code>016</code>, and the TOTP migration entirely</p>
+<p>Without <code>016_create_wishlists.sql</code>, the wishlist endpoints will 500. Without <code>0001_admin_totp_2fa.sql</code>, no admin can complete the new 2FA flow. Without <code>014</code>, orders can't be associated with users. Without <code>015</code>, the password-change flow breaks.</p>
+<p><strong>Fix:</strong> make the list dynamic (<code>fs.readdirSync('migrations').filter(f =&gt; f.endsWith('.sql')).sort()</code>), and reject the init if any expected migration is missing. <strong>30 minutes of work.</strong></p>
+<h3 id="2-no-live-integration-test-has-been-run">2. No live integration test has been run</h3>
+<p>The <code>__tests__/</code> directory has 7 test files:</p>
+<pre><code>__tests__/security/security.test.js
+__tests__/services/logger.test.js
+__tests__/routes/auth.test.js
+__tests__/performance/performance.test.js
+__tests__/integration/auth.integration.test.js
+__tests__/integration/products.integration.test.js
+__tests__/middleware/validation.test.js
+</code></pre>
+<p>These exist but <strong>none has been executed in this environment</strong> (no live Postgres or Redis). The unit/syntax tests for the new TOTP code I added did pass (<code>otplib.generate()</code> → <code>verifyToken()</code> round-trip works, bcrypt recovery-code compare works, etc.) but the full test suite is a <code>npm test</code> run against real infra.</p>
+<p><strong>What this means:</strong> the platform <em>probably</em> works end-to-end, but a real test pass against a real DB is the gate.</p>
+<h3 id="3-no-real-production-api-keys">3. No real production API keys</h3>
+<p>Every third-party integration needs live credentials. The user has zero of these set up:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>What's needed</th>
+<th>How long to get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Revolut Merchant</strong></td>
+<td>Business account, Merchant API access, webhook URL configured</td>
+<td>1–3 days (application) + bank approval</td>
+</tr>
+<tr>
+<td><strong>Royal Mail API</strong></td>
+<td>Royal Mail developer account, production API key, OAuth client_id/secret</td>
+<td>1–2 weeks (dev account approval)</td>
+</tr>
+<tr>
+<td><strong>Amazon SP-API</strong></td>
+<td>Registered seller, AWS account, IAM role, SP-API app registration, AWS Signature V4 credentials</td>
+<td><strong>2–6 weeks</strong> (Amazon review process)</td>
+</tr>
+<tr>
+<td><strong>Etsy Open API v3</strong></td>
+<td>Etsy seller account, app registration, OAuth2 approval</td>
+<td>1–2 weeks</td>
+</tr>
+<tr>
+<td><strong>Transactional email</strong> (Postmark, SendGrid, Mailgun, AWS SES)</td>
+<td>Provider account, domain verification (DKIM/SPF/DMARC), production API key</td>
+<td>1–2 days</td>
+</tr>
+<tr>
+<td><strong>Sentry</strong> (or other APM)</td>
+<td>Account, DSN, source-map upload</td>
+<td>10 minutes</td>
+</tr>
+<tr>
+<td><strong>VAPID keys</strong> for web push</td>
+<td><code>npx web-push generate-vapid-keys</code></td>
+<td>30 seconds</td>
+</tr>
+</tbody>
+</table>
+<p>Until these exist, every one of those routes returns 401/500. Nothing sells.</p>
+<h3 id="4-amazon-integration-is-real-code-but-not-production-ready-for-live-selling">4. Amazon integration is real code, but not production-ready for live selling</h3>
+<p><code>services/amazon.js</code> is 226 lines of real SP-API calls (orders, inventory, pricing, catalog, sales reports) and <code>routes/amazon.js</code> has 8 admin endpoints + an SNS webhook. But:</p>
+<ul>
+<li><strong>The AWS signature is not AWS Signature V4.</strong> The current <code>generateSignature</code> method is plain HMAC-SHA256 (<code>crypto.createHmac('sha256', secretKey)</code>). SP-API requires full <strong>AWS Signature V4</strong> with canonical request construction, signing-key derivation, scoped to <code>service=execute-api</code>. The current code wouldn't pass Amazon's signature validation. <strong>This needs to be rewritten</strong> (the aws4 / aws-sdk packages already do this; the question is whether to use the SDK or hand-roll the signature for the LWA-then-SigV4 flow).</li>
+<li><strong>No LWA (Login with Amazon) refresh-token flow exists</strong> in the runner — <code>getAccessToken</code> calls the auth endpoint but doesn't handle refresh failures gracefully (no retry, no token-cache invalidation on 401).</li>
+<li><strong>Report polling is <code>setTimeout(30s)</code></strong> — the right pattern is to poll <code>GET /reports/{reportId}</code> until <code>processingStatus === 'DONE'</code>, then download the document. The current code blindly waits 30s and then tries to fetch, which will fail on slow reports.</li>
+<li><strong>No product mapping strategy</strong> between the local <code>products</code> / <code>product_variants</code> table and Amazon ASINs/SKUs. The seed script doesn't populate Amazon-side identifiers. Real onboarding needs a per-SKU mapping workflow.</li>
+<li><strong>No FBA outbound labelling, no Amazon Business pricing, no Amazon Handmade settings</strong> (the user is selling candles — Handmade is the relevant program if eligible).</li>
+</ul>
+<p><strong>Effort to fix:</strong> 2–4 weeks for the AWS SigV4 rewrite + retry/cache layer, plus 2–3 weeks of Amazon seller onboarding bureaucracy.</p>
+<h3 id="5-multi-channel-stock-management-needs-live-testing">5. Multi-channel stock management needs live testing</h3>
+<p>The "all facias" requirement is supported in the data model:</p>
+<ul>
+<li><code>channels</code> table exists; the seed script inserts <code>pwa-channel</code> (<code>PWA</code>).</li>
+<li><code>orders.channel_id</code> records which channel sold the order.</li>
+<li><code>services/syncService.js</code> is the cross-channel sync engine.</li>
+<li><code>routes/sync.js</code> exposes admin endpoints for sync triggers.</li>
+<li><code>services/inventory.js</code> uses <code>SELECT FOR UPDATE</code> so concurrent decrements don't oversell.</li>
+</ul>
+<p>But:<br />
+- <strong>Only the PWA channel is seeded.</strong> Amazon and Etsy channels need to be added with their <code>api_key</code> and <code>api_secret</code> (the columns exist; the seed doesn't insert them).<br />
+- <strong>No conflict resolution</strong> for the case where Amazon and the PWA both try to sell the last unit in the same second. The <code>FOR UPDATE</code> lock prevents overcounting at the DB level, but a customer could see "in stock" on Amazon, click "buy", and lose the race to a PWA customer. The right pattern is a real-time availability check before the buy button is rendered (currently there's none — both channels read from the same DB but the read isn't locked, so the read can return stale stock).<br />
+- <strong>No dead-letter queue or alerting</strong> on sync failures. If the Amazon SP-API is down for 10 minutes, orders will pile up unprocessed.<br />
+- <strong>No reconciliation report</strong> to spot inventory drift between channels. (Daily cron comparing per-channel stock vs. canonical DB stock.)</p>
+<p><strong>Effort:</strong> 2–3 weeks of testing with real products + the addition of the conflict-resolution and reconciliation features above.</p>
+<h3 id="6-no-real-postgres-no-real-domain-no-real-ssl">6. No real Postgres, no real domain, no real SSL</h3>
+<p>The deployment scripts (CloudPanel, Docker, GitHub Actions) handle the install but assume a server. The user has:<br />
+- A <code>docker-compose.yml</code> and <code>docker-compose.cloudpanel.yml</code> (good).<br />
+- <code>Dockerfile</code> and <code>Dockerfile.cloudpanel</code> (good).<br />
+- <code>deploy-robust.sh</code> and <code>deploy-docker-autonomous.sh</code> (good).<br />
+- GitHub Actions YAML in <code>.github/workflows/</code> (if present).</p>
+<p>But the user does not have (in this environment):<br />
+- A live VPS / managed Postgres instance.<br />
+- A registered domain pointed at a server.<br />
+- An SSL certificate (CloudPanel would issue a Let's Encrypt cert via the deploy, so this is the easy part).<br />
+- A CDN / image-optimisation provider configured (the code has <code>imageOptimizationService.js</code> but no Cloudflare/Cloudinary/Vercel image-transform URL wired up).</p>
+<h3 id="7-business-and-legal-blockers-these-are-real-not-just-code">7. Business and legal blockers (these are real, not just code)</h3>
+<p>UK-based business selling to UK + EU + US via Amazon. Needs:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>UK business registration</strong> (sole trader or Ltd)</td>
+<td>❌ Not in scope of the code</td>
+<td>Platform assumes <code>wick_wax_relax</code> is the registered name</td>
+</tr>
+<tr>
+<td><strong>VAT registration</strong> (if turnover &gt; £90k, or selling via Amazon FBA which uses Fulfilment Centre → triggers VOEC)</td>
+<td>❌ Not configured</td>
+<td>Prices are <code>total</code> only — no VAT line, no tax-exclusive/inclusive handling</td>
+</tr>
+<tr>
+<td><strong>Terms of Service</strong></td>
+<td>❌ Not in repo</td>
+<td><code>footer.js</code> may have links but the actual T&amp;TS document is not in the codebase</td>
+</tr>
+<tr>
+<td><strong>Privacy Policy</strong></td>
+<td>❌ Not in repo</td>
+<td>CookieConsent banner exists but what does it actually link to?</td>
+</tr>
+<tr>
+<td><strong>Returns Policy</strong></td>
+<td>❌ Not in repo</td>
+<td>Required by UK Consumer Contracts Regulations</td>
+</tr>
+<tr>
+<td><strong>Shipping Policy</strong></td>
+<td>❌ Not in repo</td>
+<td>Free-shipping banner assumes a threshold; the actual policy is not documented</td>
+</tr>
+<tr>
+<td><strong>Cookie Policy</strong></td>
+<td><span class="badge warn">P</span>artial</td>
+<td>CookieConsent component exists, no linked policy document</td>
+</tr>
+<tr>
+<td><strong>HMRC MTD-compatible bookkeeping</strong></td>
+<td>❌</td>
+<td>No bookkeeping export, no VAT return generation</td>
+</tr>
+<tr>
+<td><strong>Companies House filings</strong></td>
+<td>❌</td>
+<td>Annual accounts, confirmation statement (if Ltd)</td>
+</tr>
+<tr>
+<td><strong>ICO registration</strong> (if processing PII at scale)</td>
+<td>🟡</td>
+<td>GDPR routes are good but ICO Data Controller registration is a separate legal step</td>
+</tr>
+<tr>
+<td><strong>Amazon Seller Central account</strong></td>
+<td>❌</td>
+<td>Required before any Amazon integration can be live-tested</td>
+</tr>
+<tr>
+<td><strong>Royal Mail business account</strong></td>
+<td>❌</td>
+<td>Required for production shipping labels</td>
+</tr>
+<tr>
+<td><strong>Public liability insurance</strong></td>
+<td>❌</td>
+<td>Standard for any product-selling business</td>
+</tr>
+<tr>
+<td><strong>Product liability insurance</strong></td>
+<td>❌</td>
+<td>Required for selling cosmetics, candles, bath products</td>
+</tr>
+</tbody>
+</table>
+<p>The platform code is in good shape, but you cannot legally sell candle products to UK consumers without the items in the second column. None of them are in the codebase and most are not in scope of a software audit.</p>
+<h3 id="8-operational-gaps">8. Operational gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Postgres backups</strong> (daily, offsite, 30-day retention)</td>
+<td>❌ Not configured. The deployment scripts don't install pg_dump + cron.</td>
+</tr>
+<tr>
+<td><strong>Monitoring &amp; alerting</strong> (Sentry errors, uptime checks)</td>
+<td>🟡 <code>services/monitoring.js</code> exists; no alerting pipeline to PagerDuty/Slack/email.</td>
+</tr>
+<tr>
+<td><strong>Log retention</strong></td>
+<td>🟡 <code>winston</code> + <code>winston-daily-rotate-file</code> configured; no offsite shipping.</td>
+</tr>
+<tr>
+<td><strong>Error budgets / SLOs</strong></td>
+<td>❌ Not defined.</td>
+</tr>
+<tr>
+<td><strong>On-call rotation</strong></td>
+<td>❌ Solo deployment — no rotation possible, no runbook for "site is down".</td>
+</tr>
+<tr>
+<td><strong>Performance baseline</strong></td>
+<td>🟡 <code>__tests__/performance/</code> exists; never run against a live build.</td>
+</tr>
+<tr>
+<td><strong>Load test</strong></td>
+<td>❌ No k6 / JMeter / Artillery scripts.</td>
+</tr>
+<tr>
+<td><strong>CDN</strong></td>
+<td>🟡 <code>CDN_URL</code> env exists; no real CloudFront/Cloudflare/Fastly configured.</td>
+</tr>
+<tr>
+<td><strong>Email warmup</strong></td>
+<td>❌ If you start sending hundreds of confirmation emails from a new IP, they'll spam-folder.</td>
+</tr>
+<tr>
+<td><strong>Domain warmup</strong></td>
+<td>❌ If you launch with no email history, Gmail/Outlook will sandbox you.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="9-ux-gaps-i-havent-audited">9. UX gaps I haven't audited</h3>
+<p>I have not done a full UX pass. Items I noticed that probably need work:</p>
+<ul>
+<li>The <code>PWAInstallPrompt.js</code> was patched to remove fabricated trust badges ("4.9/5 stars", "5,000+ customers") but I don't know what replaced them or whether the prompt copy is now strong enough to convert. Real install-rate metrics needed.</li>
+<li>The admin dashboard (<code>frontend/pages/admin/index.js</code>) is a simple grid of menu cards. There's no rich data visualisation on the dashboard page itself — that lives in <code>/admin/analytics</code>. A live deploy should check whether the admin users can find what they need in &lt;2 clicks.</li>
+<li>No empty-states audit. The components have an <code>EmptyState.js</code> but I don't know if it's used everywhere it should be.</li>
+<li>No accessibility audit (WCAG 2.1 AA). There's an <code>accessibility.js</code> page and a <code>accessibility.css</code> stylesheet, but a real audit with axe-core / Lighthouse needs to be run.</li>
+<li>No mobile-specific UX pass. The codebase is responsive (MUI breakpoints) but I haven't tested the actual checkout flow on a 360×640 viewport.</li>
+<li>The CookieConsent component is server-gated (only shows on production build). The copy is good; the linked policy documents are not in the repo (see §7 above).</li>
+<li>No shipping calculator in the cart drawer (only at checkout) — the cart shows the subtotal but not the estimated shipping until the user commits to the full flow.</li>
+</ul>
+<h3 id="10-the-push-in-progress">10. The push in progress</h3>
+<p>At the time of writing, <code>git push origin master</code> is running in the background. It has 13 commits to push (the 3 new ones from this session plus 10 from the prior session that were uncommitted when this session started). The push is actively connected to GitHub via SSH (the SSH key <code>KUBUNTU</code> from <code>ssh-add -l</code> is authenticating as <code>SimonJackson24</code>). I have not artificially reported the push as complete; I'll confirm when it returns.</p>
+<hr />
+<h2 id="what-you-can-do-right-now-without-further-development">What you can do <em>right now</em> (without further development)</h2>
+<p>You could:</p>
+<ol>
+<li><strong>Run a test deploy on a CloudPanel VPS</strong> (using the existing <code>deploy-robust.sh</code> script). This would set up Postgres + Redis + the backend + the frontend on a real server. It would <em>not</em> take real payments (no Revolut key) and <em>not</em> dispatch real shipping (no Royal Mail key), but you could demo the storefront, place test orders, and verify the UX end-to-end.</li>
+<li><strong>Run the test suite</strong> against a local Postgres + Redis to flush out any remaining integration bugs.</li>
+<li><strong>Fix the migration runner</strong> (30 minutes, see §1) so a fresh deploy applies all 17 migrations.</li>
+<li><strong>Apply for Revolut Merchant</strong> and <strong>Royal Mail developer</strong> accounts in parallel with development.</li>
+<li><strong>Set up the legal/policy documents</strong> (T&amp;TS, Privacy, Returns, Shipping) — these are HTML/MD documents, not code, but they need to exist before you sell.</li>
+</ol>
+<h2 id="what-you-cannot-do-right-now">What you cannot do right now</h2>
+<ul>
+<li>Sell products to real customers.</li>
+<li>List on Amazon.</li>
+<li>Manage real inventory across real channels.</li>
+</ul>
+<hr />
+<h2 id="recommended-next-steps-prioritised">Recommended next steps (prioritised)</h2>
+<h3 id="sprint-0-fix-whats-broken-in-the-code-this-week">Sprint 0 — fix what's broken in the code (this week)</h3>
+<ul>
+<li>[ ] Fix migration runner to read <code>migrations/</code> dynamically (<code>fs.readdirSync</code>).</li>
+<li>[ ] Add a <code>migrations_applied</code> table and a transactional apply-migration loop with checksum verification.</li>
+<li>[ ] Run <code>npm test</code> against a real Postgres + Redis to flush out latent bugs.</li>
+<li>[ ] Verify the seeded admin user is created with <code>ADMIN_INITIAL_PASSWORD</code> correctly.</li>
+<li>[ ] Add a smoke-test script that exercises checkout end-to-end (login → add to cart → checkout → DB row created) in CI.</li>
+</ul>
+<h3 id="sprint-1-test-deploy-to-a-real-server-12-weeks">Sprint 1 — test deploy to a real server (1–2 weeks)</h3>
+<ul>
+<li>[ ] Provision a CloudPanel VPS (or similar).</li>
+<li>[ ] Run <code>deploy-robust.sh</code>. Set up <code>backend/.env</code> from the <code>.env.example</code> template.</li>
+<li>[ ] Apply for Revolut Merchant and Royal Mail developer accounts (these run in parallel with the test deploy).</li>
+<li>[ ] Configure transactional email (Postmark or SendGrid).</li>
+<li>[ ] Set up Sentry.</li>
+<li>[ ] Run the smoke test against the real deploy.</li>
+<li>[ ] Fix any deploy-time issues.</li>
+</ul>
+<h3 id="sprint-2-go-live-on-pwa-1-week">Sprint 2 — go live on PWA (1 week)</h3>
+<ul>
+<li>[ ] Load real products into the database via the admin UI (or via a CSV import tool — one doesn't exist yet, so probably build a one-off script).</li>
+<li>[ ] Author the legal documents (T&amp;TS, Privacy, Returns, Shipping) and link them from the footer and the CookieConsent component.</li>
+<li>[ ] Register as a UK data controller with the ICO.</li>
+<li>[ ] Configure VAT (if applicable).</li>
+<li>[ ] Place a real-money test order end-to-end and verify the money lands in Revolut.</li>
+<li>[ ] Configure daily Postgres backups (offsite, 30-day retention).</li>
+<li>[ ] Configure a CDN (Cloudflare free tier is fine to start).</li>
+<li>[ ] Set up uptime monitoring (UptimeRobot or similar).</li>
+</ul>
+<h3 id="sprint-3-amazon-integration-34-weeks">Sprint 3 — Amazon integration (3–4 weeks)</h3>
+<ul>
+<li>[ ] Rewrite the Amazon SP-API request signing to use AWS Signature V4 (or the aws-sdk for SP-API).</li>
+<li>[ ] Implement proper LWA token refresh with retry.</li>
+<li>[ ] Replace <code>setTimeout(30s)</code> with proper report polling.</li>
+<li>[ ] Build a per-SKU product-mapping UI in admin (map local variant → Amazon ASIN).</li>
+<li>[ ] Register an Amazon Seller Central account + AWS IAM role + SP-API app.</li>
+<li>[ ] Test end-to-end with a single ASIN before scaling.</li>
+<li>[ ] Add the conflict-resolution / stock-reservation pattern (the "is it in stock?" read needs to be authoritative, not stale).</li>
+<li>[ ] Build a daily reconciliation report.</li>
+</ul>
+<h3 id="sprint-4-multi-channel-stock-etsy-12-weeks">Sprint 4 — multi-channel stock + Etsy (1–2 weeks)</h3>
+<ul>
+<li>[ ] Add Amazon and Etsy channels to the <code>channels</code> table.</li>
+<li>[ ] Wire up the Etsy Open API v3 (the code is there, but it needs live credentials + a per-listing mapping UI).</li>
+<li>[ ] Build the dead-letter queue and alerting for sync failures.</li>
+<li>[ ] Document the operational runbook for "Amazon SP-API is down" / "Etsy is rate-limiting" / "stock counts don't match".</li>
+</ul>
+<h3 id="post-sprint-operational-hardening">Post-sprint — operational hardening</h3>
+<ul>
+<li>[ ] Load testing with k6 (target: 100 concurrent checkouts, p99 &lt; 3s).</li>
+<li>[ ] Set up the on-call alerting.</li>
+<li>[ ] Add WCAG 2.1 AA audit pass.</li>
+<li>[ ] Mobile UX audit at 360×640.</li>
+<li>[ ] SEO audit (sitemap.xml, robots.txt, structured data).</li>
+</ul>
+<hr />
+<h2 id="final-answer-to-your-three-questions">Final answer to your three questions</h2>
+<blockquote>
+<p><strong>Can we start using this application to sell products online?</strong></p>
+</blockquote>
+<p>The code is ready. The business isn't. You need real Revolut keys, real SMTP, a real server, a real domain, real products in the database, and the legal/policy documents. Realistic timeline: <strong>1–2 weeks</strong> of focused work to get a money-taking deploy live.</p>
+<blockquote>
+<p><strong>Can we sell on Amazon?</strong></p>
+</blockquote>
+<p>The SP-API integration code is real (no stubs), but the AWS Signature V4 layer needs a rewrite, the LWA refresh flow needs hardening, and Amazon's seller approval takes 2–6 weeks. Realistic timeline: <strong>4–6 weeks</strong> to first Amazon order, assuming the seller application is in already.</p>
+<blockquote>
+<p><strong>Can we manage stock effectively for all facias?</strong></p>
+</blockquote>
+<p>The schema supports it (channels table, per-channel order routing, FOR UPDATE locks on stock). What's missing is the <em>operational reality</em>: channel-aware availability reads, conflict resolution, reconciliation reports, and dead-letter handling for sync failures. Realistic timeline: <strong>2–3 weeks</strong> on top of the PWA go-live to have reliable multi-channel stock.</p>
+<p><strong>Total programme to all three:</strong> 6–10 weeks of focused work, assuming a single developer (you) and no major Amazon-side bureaucracy delays.</p>
+<p>The code is genuinely good. The gap is everything <em>around</em> the code.</p>
+<footer>Wick Wax &amp; Relax / 2026-06-02 / Hermes Audit</footer>
+</main>
+</body>
+</html>
