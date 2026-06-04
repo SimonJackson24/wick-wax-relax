@@ -1,7 +1,7 @@
 -- Create GDPR consent tracking table
 CREATE TABLE user_consents (
-  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-  user_id TEXT NOT NULL,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL,
   consent_type TEXT NOT NULL CHECK (consent_type IN ('marketing', 'analytics', 'third_party', 'data_processing')),
   consent_given BOOLEAN NOT NULL,
   consent_version TEXT NOT NULL,
@@ -12,28 +12,30 @@ CREATE TABLE user_consents (
 );
 
 -- Add GDPR-related columns to users table
-ALTER TABLE users ADD COLUMN marketing_consent BOOLEAN DEFAULT 0;
+-- NB: in Postgres, boolean columns must be DEFAULT FALSE (not 0) — Postgres is
+-- strict about implicit type coercion.
+ALTER TABLE users ADD COLUMN marketing_consent BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN marketing_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN marketing_consent_version TEXT;
 
-ALTER TABLE users ADD COLUMN analytics_consent BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN analytics_consent BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN analytics_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN analytics_consent_version TEXT;
 
-ALTER TABLE users ADD COLUMN third_party_consent BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN third_party_consent BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN third_party_consent_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN third_party_consent_version TEXT;
 
-ALTER TABLE users ADD COLUMN data_processing_consent BOOLEAN DEFAULT 1; -- Default to true for existing users
+ALTER TABLE users ADD COLUMN data_processing_consent BOOLEAN DEFAULT TRUE; -- Default to true for existing users
 ALTER TABLE users ADD COLUMN data_processing_consent_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN data_processing_consent_version TEXT DEFAULT '1.0';
 
-ALTER TABLE users ADD COLUMN gdpr_deleted BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN gdpr_deleted BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN gdpr_deletion_date TIMESTAMP WITH TIME ZONE;
 ALTER TABLE users ADD COLUMN gdpr_deletion_reason TEXT;
 
 -- Add GDPR anonymization flag to orders
-ALTER TABLE orders ADD COLUMN gdpr_anonymized BOOLEAN DEFAULT 0;
+ALTER TABLE orders ADD COLUMN gdpr_anonymized BOOLEAN DEFAULT FALSE;
 
 -- Create indexes for GDPR compliance
 CREATE INDEX idx_user_consents_user_id ON user_consents(user_id);
@@ -50,7 +52,7 @@ INSERT INTO user_consents (user_id, consent_type, consent_given, consent_version
 SELECT
   id,
   'data_processing',
-  1,
+  TRUE,
   '1.0'
 FROM users
 WHERE NOT EXISTS (
@@ -61,7 +63,7 @@ WHERE NOT EXISTS (
 
 -- Update existing users with default consent values
 UPDATE users SET
-  data_processing_consent = 1,
+  data_processing_consent = TRUE,
   data_processing_consent_date = CURRENT_TIMESTAMP,
   data_processing_consent_version = '1.0'
 WHERE data_processing_consent IS NULL;

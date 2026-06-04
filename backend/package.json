@@ -14,6 +14,9 @@
     "test:validation": "cross-env NODE_ENV=test jest __tests__/middleware/validation.test.js --config=jest.config.js --verbose",
     "test:clean": "rimraf coverage logs/test.log",
     "db:init": "node init-db.js init",
+    "db:migrate": "node init-db.js migrate",
+    "db:status": "node init-db.js status",
+    "db:rollback": "node init-db.js rollback",
     "db:reset": "node init-db.js reset"
   },
   "dependencies": {

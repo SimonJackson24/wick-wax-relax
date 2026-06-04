@@ -19,7 +19,7 @@ CREATE TABLE suppliers (
 CREATE TABLE supplier_products (
   id TEXT PRIMARY KEY,
   supplier_id TEXT NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
-  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   supplier_sku TEXT,
   supplier_price REAL,
   minimum_order_quantity INTEGER DEFAULT 1,
@@ -47,8 +47,8 @@ CREATE TABLE supplier_orders (
 CREATE TABLE supplier_order_items (
   id TEXT PRIMARY KEY,
   supplier_order_id TEXT NOT NULL REFERENCES supplier_orders(id) ON DELETE CASCADE,
-  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  variant_id TEXT REFERENCES product_variants(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  variant_id UUID REFERENCES product_variants(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL,
   unit_price REAL,
   total_price REAL,

@@ -9,7 +9,7 @@ ALTER TABLE orders ADD COLUMN tracking_updated_at TIMESTAMP WITH TIME ZONE;
 -- Create tracking history table
 CREATE TABLE tracking_history (
   id TEXT PRIMARY KEY,
-  order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   tracking_number TEXT NOT NULL,
   status TEXT NOT NULL,
   status_description TEXT,

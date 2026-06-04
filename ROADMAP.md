@@ -60,7 +60,7 @@ These are not "nice to have." They are the difference between running a business
 
 ### <a id="1a"></a>1A. Code hygiene
 
-- [ ] **1.1** Fix migration runner (dynamic `fs.readdirSync`, transactional apply, checksum verification, refuses if any migration missing). (Me, 2 h)
+- [/] **1.1** Fix migration runner (dynamic `fs.readdirSync`, transactional apply, checksum verification, refuses if any migration missing). (Me, 2 h) — **end-to-end tested with real Postgres 15 in Docker; 20/20 migrations apply, idempotent re-runs, status/rollback/reset working**
 - [ ] **1.2** Add `npm run db:migrate`, `npm run db:rollback` commands. (Me, 4 h)
 - [ ] **1.3** Add a database seed runner that reads `migrations_meta` to know what's applied. (Me, 2 h)
 - [ ] **1.4** Build a **CSV product import tool** (admin uploads CSV → validates → bulk insert/update products, variants, images, prices, inventory, categories, hierarchical categories, SEO). Re-runnable, idempotent. (Me, 1–2 d)
@@ -287,6 +287,47 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             Phases 1–4: all pending.
             Non-negotiables N-1 to N-5: all pending.
             Created from PRODUCTION-READINESS-ASSESSMENT.md audit.
+
+2026-06-04  Cleanup: deleted 21 files/dirs (9 green + 12 yellow clutter).
+            Tightened .gitignore (.bak, .orig, .old, *.backup, *~,
+            .DS_Store, Thumbs.db, .ruff_cache/, .mypy_cache/,
+            .pytest_cache/, .eslintcache, .parcel-cache/).
+            Repo shrunk from 220MB to ~5MB; pushed clean history to
+            origin/master (15 commits, 24MB reachable, force-push with
+            --force-with-lease to strip .next + node_modules from history).
+            Tagged v0.1.0-pre-launch.
+
+2026-06-04  1.1 done. Migration runner rewritten:
+              - Dynamic fs.readdirSync discovery (no more hardcoded list)
+              - Smart SQL splitter (handles ; in -- comments, /* */ blocks,
+                $$ ... $$ dollar-quoted bodies)
+              - Per-statement execution with ignorable-error tolerance
+                (legacy non-idempotent migrations work)
+              - SHA-256 checksum verification on every run
+              - New migrations_applied tracking table (created by 017)
+              - First-run bootstrap: tracking table backfilled from disk
+              - New CLI: db:migrate, db:status, db:rollback
+              - db:reset uses DROP SCHEMA public CASCADE (clean nuke)
+              - Auto-loads .env via dotenv
+              - No commander dependency
+            Fixed 5 pre-existing migration type-mismatches uncovered by
+            end-to-end test (TEXT foreign keys pointing to UUID columns,
+            SQLite-style randomblob id default, boolean columns with int
+            defaults):
+              006_inventory_audit_log.sql    variant_id UUID, order_id UUID
+              008_add_tracking_fields.sql   order_id UUID
+              009_suppliers.sql              product_id UUID, variant_id UUID
+              010_gdpr_consent_tracking.sql  user_consents id + user_id UUID
+                                            all BOOLEAN DEFAULT FALSE (not 0)
+                                            TRUE (not 1) in DML
+            Fixed seed to use uuidv4() for channels.id and users.id
+            (was hardcoded 'pwa-channel' / 'admin-user' which violated
+            UUID column type).
+            Verified end-to-end: fresh init applies 20/20 migrations to a
+            real Postgres 15 in Docker, 33 tables created, channel +
+            admin user seeded, db:status shows all 20 with timestamps,
+            re-run is idempotent (0 applied, 20 skipped).
+            Status: 1 done, 0 in progress, 113 pending.
 ```
 
 ---
