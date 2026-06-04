@@ -51,6 +51,22 @@ backend/uploads/
 *.sln
 *.sw?
 
+# Backup / scratch files
+*.bak
+*.orig
+*.old
+*.backup
+*~
+.DS_Store
+Thumbs.db
+
+# Linter / formatter caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.eslintcache
+.parcel-cache/
+
 # Build directories
 dist/
 build/
