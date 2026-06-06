@@ -338,7 +338,8 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             Commands declared in backend/init-db.js:13-20 docstring
             and implemented in the same file.
             Audit-and-Credit Phase A complete.
-            Status: 2 done, 0 in progress, 112 pending.
+            Status: 2 done, 0 in progress, 117 pending.
+            (Note: 114 numbered tasks + 5 N- non-negotiables = 119 total.)
             Full report: audits/AUDIT-AND-CREDIT-REPORT.{md,html}.
             13 pre-roadmap features documented as "ROADMAP GAPS":
             (A) CSRF middleware, (B) PII sanitizer middleware,
@@ -372,7 +373,8 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             backend/package.json:21 adds `db:seed` npm script.
             End-to-end test deferred to user (1.1 used Postgres
             in Docker; same approach works here).
-            Status: 3 done, 0 in progress, 111 pending.
+            Status: 3 done, 0 in progress, 116 pending.
+            (Note: 114 numbered tasks + 5 N- non-negotiables = 119 total.)
 ```
 
 ---
