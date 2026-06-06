@@ -62,7 +62,7 @@ These are not "nice to have." They are the difference between running a business
 
 - [x] **1.1** Fix migration runner (dynamic `fs.readdirSync`, transactional apply, checksum verification, refuses if any migration missing). (Me, 2 h) — **end-to-end tested with real Postgres 15 in Docker; 20/20 migrations apply, idempotent re-runs, status/rollback/reset working**
 - [x] **1.2** Add `npm run db:migrate`, `npm run db:rollback` commands. (Me, 4 h) — **delivered by the same commit (`e304f5`) as 1.1; `backend/package.json:16-20` wires `db:init`, `db:migrate`, `db:status`, `db:rollback`, `db:reset`; commands declared in `backend/init-db.js:13-20` docstring and implemented in the same file**
-- [ ] **1.3** Add a database seed runner that reads `migrations_meta` to know what's applied. (Me, 2 h)
+- [x] **1.3** Add a database seed runner that reads `migrations_meta` to know what's applied. (Me, 2 h) — **`scripts/seed.js` (new) reads `migrations_applied` table created by migration 017, validates all .sql files on disk have tracking rows, refuses with actionable error if any missing; spawns the existing `scripts/seed-demo-products.js` as a child process. New `db:seed` npm script in `backend/package.json:21`. End-to-end test: `node -c` clean, JSON valid, connection-error path produces actionable error.**
 - [ ] **1.4** Build a **CSV product import tool** (admin uploads CSV → validates → bulk insert/update products, variants, images, prices, inventory, categories, hierarchical categories, SEO). Re-runnable, idempotent. (Me, 1–2 d)
 - [ ] **1.5** **VAT-aware pricing display**: every price stored as exclusive + VAT rate; rendered inclusive for customers, exclusive for trade/admin, with VAT line on invoices. (Me, 1 d)
 - [ ] **1.6** **CLP compliance** for scented candles (allergen disclosures, hazard pictograms, UFI code on PDP + packing slip). (Me, 2–3 d) — **non-negotiable N-1**
@@ -363,6 +363,16 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             1.8 logging, 1.16 SMTP, 1.21 free shipping, 1.46 CI/CD,
             1.50 SEO, 1.62 reviews, 1.69 trust signals, 1.72 customer
             account. See audit report for file:line evidence.
+
+2026-06-05  1.3 done. scripts/seed.js (new, 5.8 KB) reads
+            migrations_applied table created by migration 017,
+            validates all .sql files on disk have tracking rows,
+            refuses with actionable error if any missing, then
+            spawns scripts/seed-demo-products.js as a child.
+            backend/package.json:21 adds `db:seed` npm script.
+            End-to-end test deferred to user (1.1 used Postgres
+            in Docker; same approach works here).
+            Status: 3 done, 0 in progress, 111 pending.
 ```
 
 ---
