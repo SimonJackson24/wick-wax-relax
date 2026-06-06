@@ -17,7 +17,8 @@
     "db:migrate": "node init-db.js migrate",
     "db:status": "node init-db.js status",
     "db:rollback": "node init-db.js rollback",
-    "db:reset": "node init-db.js reset"
+    "db:reset": "node init-db.js reset",
+    "db:seed": "node ../scripts/seed.js"
   },
   "dependencies": {
     "@sentry/node": "^8.45.0",
