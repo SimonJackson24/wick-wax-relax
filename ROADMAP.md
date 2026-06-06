@@ -60,8 +60,8 @@ These are not "nice to have." They are the difference between running a business
 
 ### <a id="1a"></a>1A. Code hygiene
 
-- [/] **1.1** Fix migration runner (dynamic `fs.readdirSync`, transactional apply, checksum verification, refuses if any migration missing). (Me, 2 h) — **end-to-end tested with real Postgres 15 in Docker; 20/20 migrations apply, idempotent re-runs, status/rollback/reset working**
-- [ ] **1.2** Add `npm run db:migrate`, `npm run db:rollback` commands. (Me, 4 h)
+- [x] **1.1** Fix migration runner (dynamic `fs.readdirSync`, transactional apply, checksum verification, refuses if any migration missing). (Me, 2 h) — **end-to-end tested with real Postgres 15 in Docker; 20/20 migrations apply, idempotent re-runs, status/rollback/reset working**
+- [x] **1.2** Add `npm run db:migrate`, `npm run db:rollback` commands. (Me, 4 h) — **delivered by the same commit (`e304f5`) as 1.1; `backend/package.json:16-20` wires `db:init`, `db:migrate`, `db:status`, `db:rollback`, `db:reset`; commands declared in `backend/init-db.js:13-20` docstring and implemented in the same file**
 - [ ] **1.3** Add a database seed runner that reads `migrations_meta` to know what's applied. (Me, 2 h)
 - [ ] **1.4** Build a **CSV product import tool** (admin uploads CSV → validates → bulk insert/update products, variants, images, prices, inventory, categories, hierarchical categories, SEO). Re-runnable, idempotent. (Me, 1–2 d)
 - [ ] **1.5** **VAT-aware pricing display**: every price stored as exclusive + VAT rate; rendered inclusive for customers, exclusive for trade/admin, with VAT line on invoices. (Me, 1 d)
@@ -328,6 +328,41 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             admin user seeded, db:status shows all 20 with timestamps,
             re-run is idempotent (0 applied, 20 skipped).
             Status: 1 done, 0 in progress, 113 pending.
+
+2026-06-05  1.2 done (delivered by the same commit `e304f5` as 1.1;
+            missed in the 1.1 update log). Also updated 1.1's checkbox
+            from [/] to [x] since the update log already says "1.1 done"
+            but the checkbox was not flipped.
+            npm scripts wired in backend/package.json:16-20:
+              db:init, db:migrate, db:status, db:rollback, db:reset.
+            Commands declared in backend/init-db.js:13-20 docstring
+            and implemented in the same file.
+            Audit-and-Credit Phase A complete.
+            Status: 2 done, 0 in progress, 112 pending.
+            Full report: audits/AUDIT-AND-CREDIT-REPORT.{md,html}.
+            13 pre-roadmap features documented as "ROADMAP GAPS":
+            (A) CSRF middleware, (B) PII sanitizer middleware,
+            (C) idempotency middleware, (D) admin TOTP 2FA, (E) cart page,
+            (F) guest checkout, (G) wishlist, (H) save for later,
+            (I) subscribe and save, (J) frequently bought together,
+            (K) ProductGallery, (L) PDP cross-sell sections, (M) trust
+            signals (TrustBadges + FreeShippingBanner).
+            Three options for handling GAPS:
+              G1: add as new tasks 1.76-1.88, all [x] (most truthful)
+              G2: add only security items A-D as 1.76-1.79
+              G3: leave historical-only, audit report is source of truth
+            Awaiting user decision. Recommended default: G3 for now,
+            G1 once you decide to expand the plan.
+            Also identified as ENTIRELY MISSING (per audit, not yet
+            credited or worked): 1.4 CSV import, 1.5 VAT, 1.6 CLP,
+            1.7 error pages, 1.36 backups, 1.37 PITR, 1.47 rollback
+            procedure doc, 1.50 SEO completion (JSON-LD/OG), 1.62
+            verified-buyer flow, 1.69 live trust signals, 1.72 saved
+            addresses/payment methods, 1.73 gift cards, 1.74 gift wrapping.
+            Identified as PARTIAL (base built, full task not met):
+            1.8 logging, 1.16 SMTP, 1.21 free shipping, 1.46 CI/CD,
+            1.50 SEO, 1.62 reviews, 1.69 trust signals, 1.72 customer
+            account. See audit report for file:line evidence.
 ```
 
 ---
