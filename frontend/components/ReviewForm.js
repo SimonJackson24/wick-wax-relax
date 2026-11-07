@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, TextField, Typography, Alert, CircularProgress, Link, useTheme } from '@mui/material';
 import axios from 'axios';
 import StarRating from './StarRating';
 
 const ReviewForm = ({ productId, onReviewSubmitted }) => {
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const theme = useTheme();
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
@@ -22,10 +24,20 @@ const ReviewForm = ({ productId, onReviewSubmitted }) => {
     setSubmitting(true);
     setError('');
     try {
+      // Photo goes first through the dedicated upload endpoint; the
+      // review then references our normalised storage path.
+      let photoUrl;
+      if (photo) {
+        const fd = new FormData();
+        fd.append('photo', photo);
+        const uploadRes = await axios.post(`/api/products/${productId}/reviews/photo`, fd);
+        photoUrl = uploadRes.data.photoUrl;
+      }
       await axios.post(`/api/products/${productId}/reviews`, {
         rating,
         title: title.trim() || undefined,
         review_text: reviewText.trim() || undefined,
+        photo_url: photoUrl || undefined,
       });
       setSubmitted(true);
       onReviewSubmitted?.();
@@ -60,6 +72,31 @@ const ReviewForm = ({ productId, onReviewSubmitted }) => {
       borderRadius: 2,
       backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)',
     }}>
+      <label htmlFor="wwr-review-photo">
+        <input
+          id="wwr-review-photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files && e.target.files[0];
+          if (!f) return;
+          if (f.size > 4 * 1024 * 1024) { setError('Photo must be under 4MB'); return; }
+          setError('');
+          setPhoto(f);
+          setPhotoPreview(URL.createObjectURL(f));
+        }}
+        />
+      </label>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
+        <Button component="span" variant="outlined" size="small" onClick={(e) => { if (photo) { e.preventDefault(); setPhoto(null); setPhotoPreview(null); } }}>
+          {photo ? 'Remove photo' : 'Add a photo'}
+        </Button>
+        {photoPreview && (
+          <Box component="img" src={photoPreview} alt="Review photo preview" sx={{ height: 56, borderRadius: 1, border: '1px solid rgba(0,0,0,0.12)' }} />
+        )}
+      </Box>
+
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>Write a Review</Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

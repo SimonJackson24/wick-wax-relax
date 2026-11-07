@@ -1,5 +1,9 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs');
 const { query } = require('../config/database');
 const { param, body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../middleware/auth');
@@ -80,6 +84,7 @@ router.get('/:id/reviews', [
         r.title,
         r.review_text,
         r.verified_purchase,
+        r.photo_url,
         r.helpful_count,
         r.created_at,
         COALESCE(u.first_name || ' ' || u.last_name, 'Verified Customer') AS reviewer_name
@@ -105,11 +110,68 @@ router.get('/:id/reviews', [
   }
 });
 
+// Customer review photos: one image per review, strict validation —
+// same shape as the admin product-image pipeline (blocked extensions,
+// image/* mimetype, sharp re-verification on disk) but capped tighter.
+const reviewPhotoDir = path.join(__dirname, '../uploads/reviews');
+if (!fs.existsSync(reviewPhotoDir)) {
+  fs.mkdirSync(reviewPhotoDir, { recursive: true });
+}
+const REVIEW_PHOTO_BLOCKED = new Set(['.svg', '.html', '.htm', '.js', '.php', '.exe', '.bat', '.sh', '.ps1']);
+const reviewPhotoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, reviewPhotoDir),
+    filename: (req, file, cb) => {
+      const safeExt = path.extname(file.originalname || '').toLowerCase().replace(/[^a-z0-9.]/g, '');
+      cb(null, `review-${req.user.userId}-${Date.now()}${safeExt}`);
+    },
+  }),
+  limits: { fileSize: 4 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const err = new Error(REVIEW_PHOTO_BLOCKED.has(ext) ? 'File type not allowed' : 'Only image files are allowed');
+    err.status = 400;
+    if (REVIEW_PHOTO_BLOCKED.has(ext) || !file.mimetype || !file.mimetype.startsWith('image/')) {
+      return cb(err, false);
+    }
+    cb(null, true);
+  },
+});
+
+router.post('/:id/reviews/photo', authenticateToken, reviewSubmissionLimiter, (req, res) => {
+  reviewPhotoUpload.single('photo')(req, res, async (err) => {
+    if (err) {
+      const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
+      return res.status(status).json({ error: err.message || 'Upload failed' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No photo provided' });
+    }
+    try {
+      // Re-verify on-disk content is a real raster image (defeats
+      // mimetype spoofing), then normalise to a web-safe JPEG.
+      const metadata = await sharp(req.file.path).metadata();
+      if (!['jpeg', 'png', 'webp', 'gif', 'avif'].includes(metadata.format)) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'File is not a valid image' });
+      }
+      const normalised = path.join(reviewPhotoDir, `${path.parse(req.file.filename).name}.jpg`);
+      await sharp(req.file.path).resize(1200, 1200, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toFile(normalised);
+      fs.unlinkSync(req.file.path);
+      return res.status(201).json({ photoUrl: `/uploads/reviews/${path.basename(normalised)}` });
+    } catch (e) {
+      try { fs.unlinkSync(req.file.path); } catch { /* already gone */ }
+      return res.status(400).json({ error: 'File is not a valid image' });
+    }
+  });
+});
+
 router.post('/:id/reviews', authenticateToken, reviewSubmissionLimiter, [
   param('id').isUUID(),
   body('rating').isInt({ min: 1, max: 5 }),
   body('title').optional().isString().isLength({ max: 200 }),
   body('comment').optional().isString().isLength({ max: 2000 }),
+  body('photo_url').optional().isString().matches(/^\/uploads\/reviews\/[a-zA-Z0-9._-]+\.jpg$/),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -118,7 +180,7 @@ router.post('/:id/reviews', authenticateToken, reviewSubmissionLimiter, [
     }
 
     const { id: productId } = req.params;
-    const { rating, title, comment } = req.body;
+    const { rating, title, comment, photo_url: photoUrl } = req.body;
 
     const productCheck = await query('SELECT id FROM products WHERE id = $1', [productId]);
     if (productCheck.rows.length === 0) {
@@ -142,16 +204,17 @@ router.post('/:id/reviews', authenticateToken, reviewSubmissionLimiter, [
     verifiedPurchase = orderCheck.rows.length > 0;
 
     const upsertResult = await query(`
-      INSERT INTO reviews (product_id, user_id, rating, title, review_text, verified_purchase)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO reviews (product_id, user_id, rating, title, review_text, verified_purchase, photo_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (product_id, user_id) DO UPDATE SET
         rating = EXCLUDED.rating,
         title = EXCLUDED.title,
         review_text = EXCLUDED.review_text,
+        photo_url = COALESCE(EXCLUDED.photo_url, reviews.photo_url),
         verified_purchase = GREATEST(reviews.verified_purchase, EXCLUDED.verified_purchase),
         updated_at = NOW()
-      RETURNING id, rating, title, review_text, verified_purchase, helpful_count, created_at, updated_at
-    `, [productId, userId, rating, title || null, comment || null, verifiedPurchase]);
+      RETURNING id, rating, title, review_text, verified_purchase, photo_url, helpful_count, created_at, updated_at
+    `, [productId, userId, rating, title || null, comment || null, verifiedPurchase, photoUrl || null]);
 
     res.status(201).json(upsertResult.rows[0]);
   } catch (error) {

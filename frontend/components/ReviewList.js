@@ -19,6 +19,15 @@ const ReviewCard = ({ review }) => {
       </Box>
       {review.title && <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.75 }}>{review.title}</Typography>}
       {review.review_text && <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>{review.review_text}</Typography>}
+      {review.photo_url && (
+        <Box
+          component="img"
+          src={review.photo_url}
+          alt={`Customer photo — ${review.title || 'review'}`}
+          loading="lazy"
+          sx={{ mt: 1.5, maxWidth: '100%', maxHeight: 320, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}
+        />
+      )}
       {review.helpful_count > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
           <ThumbUpOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
