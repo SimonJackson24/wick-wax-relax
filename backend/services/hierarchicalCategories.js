@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const categoryProducts = require('./categoryProducts');
 
 class HierarchicalCategoriesService {
   async getAllHierarchicalCategories() {
@@ -56,99 +57,84 @@ class HierarchicalCategoriesService {
     return Object.values(categories);
   }
 
+  // Resolve a category by slug.
+  //
+  // Two taxonomies coexist:
+  //   * `categories`          — the real shop categories products link to
+  //                             (via product_categories)
+  //   * `category_hierarchy`  — a merchandising/SEO tree (seasons,
+  //                             collections, aroma profiles) with its own
+  //                             product_category_hierarchy link table
+  // The storefront must resolve BOTH: a shopper clicking "Wax Melts" lands
+  // on a `categories` row, while the merchandising pages use the hierarchy.
+  // Previously only the hierarchy was consulted, so every real shop
+  // category 404'd.
   async getCategoryBySlug(slug) {
-    const result = await query(`
-      SELECT * FROM category_hierarchy 
+    // 1. Merchandising hierarchy (rich path/children via the SQL helper).
+    const hierarchy = await query(`
+      SELECT * FROM category_hierarchy
       WHERE slug = $1 AND is_active = TRUE
     `, [slug]);
-    if (result.rows.length === 0) {
+    if (hierarchy.rows.length > 0) {
+      const category = hierarchy.rows[0];
+      const pathResult = await query('SELECT * FROM get_category_path($1)', [category.id]);
+      category.path = pathResult.rows;
+      const childrenResult = await query(`
+        SELECT * FROM category_hierarchy
+        WHERE parent_id = $1 AND is_active = TRUE
+        ORDER BY display_order, name
+      `, [category.id]);
+      category.children = childrenResult.rows;
+      return category;
+    }
+
+    // 2. Real shop categories — build path/children from parent_id.
+    const shop = await query(`
+      SELECT c.*, parent.name AS parent_name, parent.slug AS parent_slug
+        FROM categories c
+        LEFT JOIN categories parent ON c.parent_id = parent.id
+       WHERE c.slug = $1
+    `, [slug]);
+    if (shop.rows.length === 0) {
       return null;
     }
-    const category = result.rows[0];
-    const pathResult = await query('SELECT * FROM get_category_path($1)', [category.id]);
-    category.path = pathResult.rows;
+    const category = shop.rows[0];
+
+    const path = [];
+    let current = category;
+    const seen = new Set();
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      path.unshift({
+        id: current.id,
+        name: current.name,
+        slug: current.slug,
+        path_id: current.id,
+        path_name: current.name,
+      });
+      if (!current.parent_id) break;
+      const parentRows = await query(
+        'SELECT id, name, slug, parent_id FROM categories WHERE id = $1',
+        [current.parent_id]
+      );
+      current = parentRows.rows[0] || null;
+    }
+    category.path = path;
+
     const childrenResult = await query(`
-      SELECT * FROM category_hierarchy 
-      WHERE parent_id = $1 AND is_active = TRUE 
+      SELECT * FROM categories
+      WHERE parent_id = $1
       ORDER BY display_order, name
     `, [category.id]);
     category.children = childrenResult.rows;
     return category;
   }
 
+  // Product listing lives in services/categoryProducts.js: it reads both
+  // link tables (product_categories and product_category_hierarchy) with
+  // static SQL and sorts in JavaScript.
   async getProductsByCategory(categoryId, options = {}) {
-    const { page = 1, limit = 20, sortBy = 'name', sortOrder = 'ASC' } = options;
-    const offset = (page - 1) * limit;
-    const subcategoriesResult = await query(`
-      WITH RECURSIVE subcategories AS (
-        SELECT id FROM category_hierarchy WHERE id = $1
-        UNION
-        SELECT ch.id FROM category_hierarchy ch
-        JOIN subcategories sc ON ch.parent_id = sc.id
-      )
-      SELECT id FROM subcategories
-    `, [categoryId]);
-    const categoryIds = subcategoriesResult.rows.map(row => row.id);
-    if (categoryIds.length === 0) {
-      return {
-        products: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          pages: 0
-        }
-      };
-    }
-    const placeholders = categoryIds.map((_, index) => `$${index + 2}`).join(', ');
-    const productsQuery = `
-      SELECT DISTINCT
-        p.id,
-        p.name,
-        p.description,
-        p.scent_profile,
-        p.base_price,
-        p.created_at,
-        p.updated_at
-      FROM products p
-      JOIN product_category_hierarchy pch ON p.id = pch.product_id
-      WHERE pch.category_id IN (${placeholders})
-      ORDER BY ${sortBy} ${sortOrder}
-      LIMIT $1 OFFSET $${categoryIds.length + 2}
-    `;
-    const products = await query(productsQuery, [limit, ...categoryIds, offset]);
-    const countQuery = `
-      SELECT COUNT(DISTINCT p.id) as total
-      FROM products p
-      JOIN product_category_hierarchy pch ON p.id = pch.product_id
-      WHERE pch.category_id IN (${placeholders})
-    `;
-    const countResult = await query(countQuery, categoryIds);
-    const total = parseInt(countResult.rows[0].total);
-    for (let product of products.rows) {
-      const variants = await query(`
-        SELECT
-          id,
-          sku,
-          name,
-          price,
-          inventory_quantity,
-          attributes
-        FROM product_variants
-        WHERE product_id = $1
-        ORDER BY created_at
-      `, [product.id]);
-      product.variants = variants.rows;
-    }
-    return {
-      products: products.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    };
+    return categoryProducts.getProductsByCategory(categoryId, options);
   }
 
   async createCategory(categoryData) {
