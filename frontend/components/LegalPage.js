@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Box, Typography, Container, Divider, useTheme } from '@mui/material';
-import NavigationWithCategories from './NavigationWithCategories';
+import Navigation from './Navigation';
 import Footer from './Footer';
 import SEOHead from './SEOHead';
 
@@ -11,7 +11,7 @@ import SEOHead from './SEOHead';
 const LegalPage = ({ title, description, updated, sections }) => (
   <>
     <SEOHead title={`${title} — Wick Wax Relax`} description={description} />
-    <NavigationWithCategories />
+    <Navigation />
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Typography variant="h3" component="h1" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400, mb: 1 }}>
         {title}

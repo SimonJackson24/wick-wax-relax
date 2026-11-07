@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Box, Container, Typography } from '@mui/material';
 import SEOHead from '../components/SEOHead';
 import { SITE_URL } from '../utils/siteConfig';
-import NavigationWithCategories from '../components/NavigationWithCategories';
+import Navigation from '../components/Navigation';
 import Hero from '../components/Hero';
 import FreeShippingBanner from '../components/FreeShippingBanner';
 import TrustBadges from '../components/TrustBadges';
@@ -16,7 +16,7 @@ import NewCustomerCTA from '../components/NewCustomerCTA';
 const HomePage = ({ featuredInitial }) => (
   <>
     <SEOHead title="Wick Wax Relax — Premium Home Fragrance Products" description="Hand-crafted soy wax candles, wax melts, bath bombs and reed diffusers. Ethically sourced, eco-friendly packaging, made in the UK. Free UK delivery on orders over £25." keywords="wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy, UK, hand-crafted" url={SITE_URL} type="website" />
-    <NavigationWithCategories />
+    <Navigation />
     <Hero />
     <FreeShippingBanner />
     <TrustBadges />

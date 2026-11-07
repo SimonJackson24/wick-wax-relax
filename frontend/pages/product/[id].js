@@ -37,7 +37,7 @@ import ReviewHistogram from '../../components/ReviewHistogram';
 import RecentlyViewed, { recordRecentlyViewed } from '../../components/RecentlyViewed';
 import ProductQa from '../../components/ProductQa';
 import { SITE_URL } from '../../utils/siteConfig';
-import NavigationWithCategories from '../../components/NavigationWithCategories';
+import Navigation from '../../components/Navigation';
 import ProductCard from '../../components/ProductCard';
 import ProductGallery from '../../components/ProductGallery';
 import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
@@ -233,7 +233,7 @@ export default function ProductDetail({ initialProduct }) {
 
   return (
     <>
-      <NavigationWithCategories />
+      <Navigation />
       <SEOHead
         title={product ? (product.meta_title || `${product.name} — Wick Wax Relax`) : 'Product — Wick Wax Relax'}
         description={product ? (product.meta_description || product.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.') : 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}

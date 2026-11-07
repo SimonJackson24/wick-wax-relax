@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Box, Typography, Button, Container } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import NavigationWithCategories from '../components/NavigationWithCategories';
+import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 
 // Branded 404 — real candles burn out, so do links.
@@ -13,7 +13,7 @@ const Custom404 = () => (
       description="The page you're looking for has burnt out. Browse our hand-poured candles and wax melts instead."
       noindex
     />
-    <NavigationWithCategories />
+    <Navigation />
     <Container maxWidth="sm" sx={{ py: 12, textAlign: 'center' }}>
       <Typography
         sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400, fontSize: '6rem', lineHeight: 1, color: 'primary.main' }}
