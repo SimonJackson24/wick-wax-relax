@@ -44,6 +44,26 @@ function authenticateToken(req, res, next) {
   });
 }
 
+/**
+ * optionalAuth — attaches req.user when a valid access token is present
+ * but NEVER blocks the request. Use it on routes that serve both guests
+ * and logged-in users (e.g. confirming a payment: a guest proves
+ * ownership with a confirm token, a signed-in user with their session).
+ */
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  let token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    token = req.cookies && req.cookies.accessToken;
+  }
+  if (!token || !process.env.JWT_SECRET) return next();
+
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
+    if (!err && user) req.user = user;
+    next();
+  });
+}
+
 function requireAdmin(req, res, next) {
   if (!req.user || !req.user.isAdmin) {
     if (req.user) {
@@ -114,4 +134,4 @@ async function requireAdminFresh(req, res, next) {
   }
 }
 
-module.exports = { authenticateToken, requireAdmin, requireAdminMfa, requireAdminFresh };
+module.exports = { authenticateToken, optionalAuth, requireAdmin, requireAdminMfa, requireAdminFresh };

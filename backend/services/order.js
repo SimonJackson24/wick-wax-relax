@@ -1,10 +1,54 @@
 const { query, getClient } = require('../config/database');
+const crypto = require('crypto');
 const revolutService = require('./revolut');
 const inventoryService = require('./inventory');
+const shippingService = require('./shipping');
 const royalMailService = require('./royalMail');
 const emailService = require('./emailService');
 
 class OrderService {
+  // Sign a short-lived "you created this order" token.
+  //
+  // Format: base64url(payload).base64url(HMAC-SHA-512(payload, secret)).
+  // The payload carries the order id and an expiry; the signature is
+  // verified with a constant-time comparison when the payment is confirmed.
+  // Purpose: guest checkout has no session, so without this the client
+  // could not prove the order it is paying for was the one it created.
+  signConfirmToken(orderId) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET not configured');
+    const payload = Buffer.from(
+      JSON.stringify({ orderId, purpose: 'confirm_payment', exp: Date.now() + 30 * 60 * 1000 })
+    ).toString('base64url');
+    const signature = crypto.createHmac('sha512', secret).update(payload).digest('base64url');
+    return `${payload}.${signature}`;
+  }
+
+  // Verify a confirm token and return its order id, or null when invalid.
+  verifyConfirmToken(token, expectedOrderId) {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const [payload, signature] = parts;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return null;
+
+    const expected = crypto.createHmac('sha512', secret).update(payload).digest('base64url');
+    const a = Buffer.from(signature);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+    try {
+      const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+      if (data.purpose !== 'confirm_payment') return null;
+      if (data.exp && Date.now() > data.exp) return null;
+      if (expectedOrderId && data.orderId !== expectedOrderId) return null;
+      return data.orderId;
+    } catch {
+      return null;
+    }
+  }
+
   // Create order with payment processing
   async createOrder(orderData, userId) {
     const client = await getClient();
@@ -12,7 +56,7 @@ class OrderService {
     try {
       await client.query('BEGIN');
 
-      const { items, shippingAddress, paymentMethod } = orderData;
+      const { items, shippingAddress, paymentMethod, shippingMethod: shippingMethodRequested } = orderData;
 
       // Get PWA channel ID
       const channelResult = await client.query(
@@ -28,11 +72,13 @@ class OrderService {
 
       // Calculate total and validate items
       let total = 0;
+      let totalWeightGrams = 0;
+      let hasKnownWeight = true;
       const orderItems = [];
 
       for (const item of items) {
         const variantResult = await client.query(
-          'SELECT pv.id, pv.price, pv.inventory_quantity, p.name as product_name FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.id = ?',
+          'SELECT pv.id, pv.price, pv.inventory_quantity, p.name as product_name, p.weight_grams FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.id = ?',
           [item.variantId]
         );
 
@@ -49,6 +95,14 @@ class OrderService {
         const itemTotal = variant.price * item.quantity;
         total += itemTotal;
 
+        // Weight drives which shipping band applies. Products without a
+        // weight fall back to the flat (open-ended) rates.
+        if (variant.weight_grams != null) {
+          totalWeightGrams += Number(variant.weight_grams) * item.quantity;
+        } else {
+          hasKnownWeight = false;
+        }
+
         orderItems.push({
           variantId: variant.id,
           quantity: item.quantity,
@@ -57,10 +111,41 @@ class OrderService {
         });
       }
 
+      const subtotal = total;
+
+      // Shipping — the amount the customer actually pays to get the
+      // order delivered. Free over the rate's free_over_amount (which
+      // carries the admin free-shipping threshold).
+      const zone = shippingService.zoneForCountry(shippingAddress.country || 'GB');
+      const shipping = await shippingService.calculateShipping({
+        zone,
+        weightGrams: hasKnownWeight ? totalWeightGrams : null,
+        subtotal,
+      });
+      const shippingCost = shipping.available ? shipping.cost : 0;
+      const shippingMethod = shipping.available ? shipping.methodCode : null;
+      const shippingEstimate = shipping.options && shipping.options.length
+        ? (() => {
+            const o = shipping.options[0];
+            if (o.estimatedDaysMin == null && o.estimatedDaysMax == null) return null;
+            return o.estimatedDaysMin === o.estimatedDaysMax
+              ? `${o.estimatedDaysMin} day${o.estimatedDaysMin === 1 ? '' : 's'}`
+              : `${o.estimatedDaysMin}-${o.estimatedDaysMax} days`;
+          })()
+        : null;
+
+      total = subtotal + shippingCost;
+
       // Create order with user association for fraud prevention and order history
       const orderResult = await client.query(
-        'INSERT INTO orders (channel_id, user_id, external_id, status, total) VALUES (?, ?, ?, ?, ?) RETURNING id',
-        [channelId, userId, `PWA-${Date.now()}`, 'PENDING', total]
+        `INSERT INTO orders
+           (channel_id, user_id, external_id, status, total, subtotal,
+            shipping_method, shipping_cost, shipping_zone, shipping_estimated_days)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+        [
+          channelId, userId, `PWA-${Date.now()}`, 'PENDING', total, subtotal,
+          shippingMethod, shippingCost, zone, shippingEstimate,
+        ]
       );
 
       const orderId = orderResult.rows[0].id;
@@ -102,10 +187,26 @@ class OrderService {
 
       await client.query('COMMIT');
 
+      // Short-lived token proving "this response came from a successful
+      // order creation for THIS order". Lets the client confirm the
+      // payment afterwards without being logged in (guest checkout) —
+      // without it, /confirm-payment would need a session that guest
+      // buyers don't have.
+      const confirmToken = this.signConfirmToken(orderId);
+
       return {
         orderId,
         total,
+        subtotal,
+        shipping: {
+          method: shippingMethod,
+          cost: shippingCost,
+          zone,
+          estimate: shippingEstimate,
+          options: shipping.options || [],
+        },
         status: 'PENDING',
+        confirmToken,
         paymentIntent: {
           id: paymentIntent.paymentIntentId,
           clientSecret: paymentIntent.clientSecret

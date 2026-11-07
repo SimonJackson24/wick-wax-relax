@@ -27,6 +27,7 @@ import {
   CloudSync as SyncIcon,
   Api as ApiIcon,
   Webhook as WebhookIcon,
+  LocalShipping as ShippingIcon,
   Category as CategoryIcon,
   Store as StoreIcon,
 } from '@mui/icons-material';
@@ -102,6 +103,11 @@ const AdminLayout = ({ children }) => {
       text: 'Webhooks',
       icon: <WebhookIcon />,
       path: '/admin/webhooks',
+    },
+    {
+      text: 'Shipping Rates',
+      icon: <ShippingIcon />,
+      path: '/admin/shipping-rates',
     },
   ];
 

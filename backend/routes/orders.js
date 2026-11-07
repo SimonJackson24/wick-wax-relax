@@ -4,7 +4,7 @@ const { body, param, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const orderService = require('../services/order');
 const revolutService = require('../services/revolut');
-const { authenticateToken, requireAdminMfa } = require('../middleware/auth');
+const { authenticateToken, optionalAuth, requireAdminMfa } = require('../middleware/auth');
 const { logAdminAccess } = require('../middleware/adminAudit');
 
 const router = express.Router();
@@ -24,7 +24,8 @@ router.post('/', authenticateToken, orderCreationLimiter, [
   body('items.*.variantId').isUUID(),
   body('items.*.quantity').isInt({ min: 1 }),
   body('shippingAddress').isObject(),
-  body('paymentMethod').isIn(['APPLE_PAY', 'GOOGLE_PAY', 'KLARNA', 'CLEARPAY'])
+  body('paymentMethod').isIn(['APPLE_PAY', 'GOOGLE_PAY', 'KLARNA', 'CLEARPAY']),
+  body('shippingMethod').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -32,11 +33,11 @@ router.post('/', authenticateToken, orderCreationLimiter, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { items, shippingAddress, paymentMethod, shippingMethod: chosenShipping } = req.body;
     const userId = req.user.userId;
 
     const result = await orderService.createOrder(
-      { items, shippingAddress, paymentMethod },
+      { items, shippingAddress, paymentMethod, shippingMethod: chosenShipping },
       userId
     );
 
@@ -60,7 +61,8 @@ router.post('/guest', [
   body('shippingAddress.city').isString().isLength({ min: 1 }),
   body('shippingAddress.postalCode').isString().isLength({ min: 1 }),
   body('shippingAddress.country').optional().isString(),
-  body('paymentMethod').isIn(['APPLE_PAY', 'GOOGLE_PAY', 'KLARNA', 'CLEARPAY'])
+  body('paymentMethod').isIn(['APPLE_PAY', 'GOOGLE_PAY', 'KLARNA', 'CLEARPAY']),
+  body('shippingMethod').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -68,10 +70,10 @@ router.post('/guest', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { items, shippingAddress, paymentMethod, shippingMethod: chosenShipping } = req.body;
 
     const result = await orderService.createOrder(
-      { items, shippingAddress, paymentMethod },
+      { items, shippingAddress, paymentMethod, shippingMethod: chosenShipping },
       null // guest — no user_id
     );
 
@@ -174,10 +176,17 @@ router.patch('/:id/status', authenticateToken, requireAdminMfa, [
   }
 });
 
-// Confirm payment
-router.post('/:id/confirm-payment', authenticateToken, [
+// Confirm payment.
+//
+// Two ways to prove the caller owns this order:
+//   1. the confirmToken issued at order creation (works for guest checkout)
+//   2. an authenticated session belonging to the order's user
+// A payment intent id alone is NOT enough — it must match the intent we
+// stored for THIS order.
+router.post('/:id/confirm-payment', optionalAuth, [
   param('id').isUUID(),
-  body('paymentIntentId').isString()
+  body('paymentIntentId').isString(),
+  body('confirmToken').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -186,7 +195,27 @@ router.post('/:id/confirm-payment', authenticateToken, [
     }
 
     const { id } = req.params;
-    const { paymentIntentId } = req.body;
+    const { paymentIntentId, confirmToken } = req.body;
+
+    const authorisedByToken = orderService.verifyConfirmToken(confirmToken, id);
+    let authorisedBySession = false;
+    if (!authorisedByToken && req.user) {
+      const owner = await query('SELECT user_id FROM orders WHERE id = ?', [id]);
+      authorisedBySession = owner.rows.length > 0 &&
+        owner.rows[0].user_id === req.user.userId;
+    }
+    if (!authorisedByToken && !authorisedBySession) {
+      return res.status(403).json({ error: 'Not authorised to confirm payment for this order' });
+    }
+
+    // The payment intent must be the one we created for this order.
+    const intent = await query(
+      'SELECT id FROM payments WHERE order_id = ? AND revolut_payment_id = ?',
+      [id, paymentIntentId]
+    );
+    if (intent.rows.length === 0) {
+      return res.status(400).json({ error: 'Payment intent does not match this order' });
+    }
 
     // Confirm payment with Revolut
     const paymentResult = await revolutService.confirmPayment(paymentIntentId, null);

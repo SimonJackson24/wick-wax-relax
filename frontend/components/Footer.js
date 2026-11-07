@@ -14,11 +14,26 @@ const Footer = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const footerLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'Products', href: '#products' },
-    { name: 'Categories', href: '#categories' },
-    { name: 'About Us', href: '#about' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'Home', href: '/' },
+    { name: 'Shop All', href: '/products' },
+    { name: 'Wax Melts', href: '/category/wax-melts' },
+    { name: 'Candles', href: '/category/candles' },
+    { name: 'Bath Bombs', href: '/category/bath-bombs' },
+    { name: 'Diffusers', href: '/category/diffusers' },
+    { name: 'Subscribe & Save', href: '/subscriptions' },
+    { name: 'My Account', href: '/account/profile' },
+    { name: 'Order History', href: '/account/orders' },
+  ];
+
+  // Legal/policy links — these must be reachable from every page (the
+  // UK consumer-law pages: returns, privacy, terms, shipping, cookies).
+  const legalLinks = [
+    { name: 'Terms & Conditions', href: '/terms' },
+    { name: 'Privacy Policy', href: '/privacy' },
+    { name: 'Returns & Refunds', href: '/returns' },
+    { name: 'Shipping Policy', href: '/shipping' },
+    { name: 'Cookie Policy', href: '/cookies' },
+    { name: 'Accessibility', href: '/accessibility' },
   ];
 
   const socialLinks = [
@@ -281,6 +296,34 @@ const Footer = () => {
             </Box>
           </Grid>
         </Grid>
+
+        {/* Legal / policy links */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          viewport={{ once: true }}
+          sx={{ mt: 4, textAlign: 'center' }}
+        >
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, md: 3 }, justifyContent: 'center' }}>
+            {legalLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                underline="hover"
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.75)',
+                  fontSize: { xs: '0.82rem', md: '0.88rem' },
+                  textDecoration: 'none',
+                  '&:hover': { color: theme.palette.secondary.light }
+                }}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </Box>
+        </Box>
 
         {/* Copyright */}
         <Box

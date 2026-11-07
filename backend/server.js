@@ -213,11 +213,18 @@ app.use('/api/upload', adminMfaGate, require('./routes/upload'));
 app.use('/api/push', require('./routes/push'));
 app.use('/api/amazon', adminMfaGate, require('./routes/amazon'));
 app.use('/api/etsy', adminMfaGate, require('./routes/etsy'));
-app.use('/api/tracking', adminMfaGate, require('./routes/tracking'));
+// Customer order tracking (enter email + order number) is storefront-facing;
+// admin mutations inside the file carry requireAdminMfa.
+app.use('/api/tracking', require('./routes/tracking'));
 app.use('/api/export', adminMfaGate, require('./routes/export'));
 app.use('/api/sync', adminMfaGate, require('./routes/sync'));
 app.use('/api/seo', adminMfaGate, require('./routes/seo'));
-app.use('/api/search', adminMfaGate, require('./routes/search'));
+// Search is a storefront feature (listing, typeahead, category pages) —
+// mounted public. Its /admin/* endpoints are guarded inside the route file.
+app.use('/api/search', require('./routes/search'));
+// Shipping: public rate lookup + estimate for shoppers; the /admin/rates
+// CRUD inside the file carries requireAdminMfa.
+app.use('/api/shipping', require('./routes/shipping'));
 app.use('/api/gdpr', require('./routes/gdpr'));
 
 // Real health check. Pings DB and Redis. Returns 503 if any dependency is

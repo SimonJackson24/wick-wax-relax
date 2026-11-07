@@ -1,8 +1,14 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const searchService = require('../services/searchService');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Search is a SHOPFRONT feature: the product listing page, the typeahead
+// and the category pages call these endpoints as anonymous shoppers. The
+// route is therefore mounted WITHOUT the admin MFA gate (see server.js);
+// the /admin/* endpoints below carry their own admin guard instead.
 
 router.get('/products', [
   query('q').optional().trim(),
@@ -247,7 +253,7 @@ router.get('/category/:categorySlug', [
   }
 });
 
-router.get('/admin/products', [
+router.get('/admin/products', authenticateToken, requireAdmin, [
   query('q').optional().trim(),
   query('category').optional().trim(),
   query('minPrice').optional({ nullable: true, checkFalsy: true }).isFloat({ min: 0 }).default(null),
@@ -292,7 +298,7 @@ router.get('/admin/products', [
   }
 });
 
-router.get('/admin/analytics', [
+router.get('/admin/analytics', authenticateToken, requireAdmin, [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
   query('limit').optional().isInt({ min: 1, max: 100 })
@@ -334,7 +340,7 @@ router.get('/health', (req, res) => {
   res.json({ status: 'Search service healthy', timestamp: new Date().toISOString(), version: '1.0.0' });
 });
 
-router.post('/admin/clear-cache', async (req, res) => {
+router.post('/admin/clear-cache', authenticateToken, requireAdmin, async (req, res) => {
   try {
     console.log('Admin action: Search cache cleared');
     res.json({ success: true, message: 'Search cache cleared successfully' });
@@ -344,7 +350,7 @@ router.post('/admin/clear-cache', async (req, res) => {
   }
 });
 
-router.post('/admin/reindex', async (req, res) => {
+router.post('/admin/reindex', authenticateToken, requireAdmin, async (req, res) => {
   try {
     console.log('Admin action: Search reindexing started');
     setTimeout(() => {
