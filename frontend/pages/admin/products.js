@@ -50,6 +50,7 @@ import {
   QrCode as QrCodeIcon,
 } from '@mui/icons-material';
 import ClpLabelKit from '../../components/admin/ClpLabelKit';
+import { parseClpSheet } from '../../utils/clpParser';
 import AdminLayout from '../../components/AdminLayout';
 import AdminProtectedRoute from '../../components/AdminProtectedRoute';
 import axios from 'axios';
@@ -66,6 +67,26 @@ const AdminProducts = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [labelProduct, setLabelProduct] = useState(null);
+  const [clpPaste, setClpPaste] = useState('');
+  const [clpParseSummary, setClpParseSummary] = useState(null);
+
+  // Paste-to-fill: extract CLP elements from supplier datasheet text and
+  // merge them into the form. Extracted values replace the CLP fields —
+  // always eyeball the summary against the sheet before saving.
+  const handleClpParse = () => {
+    const { values, summary } = parseClpSheet(clpPaste);
+    setClpParseSummary(summary);
+    if (values) {
+      setProductForm((prev) => ({
+        ...prev,
+        clp_signal_word: values.clp_signal_word || prev.clp_signal_word,
+        clp_hazard_pictograms: values.clp_hazard_pictograms.length ? values.clp_hazard_pictograms.join(', ') : prev.clp_hazard_pictograms,
+        clp_hazard_statements: values.clp_hazard_statements.length ? values.clp_hazard_statements.join(', ') : prev.clp_hazard_statements,
+        clp_precautionary_statements: values.clp_precautionary_statements.length ? values.clp_precautionary_statements.join(', ') : prev.clp_precautionary_statements,
+        clp_allergens: values.clp_allergens || prev.clp_allergens,
+      }));
+    }
+  };
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -640,6 +661,43 @@ const AdminProducts = () => {
                 </Grid>
                 {!productForm.clp_exempt && (
                 <>
+                {/* Paste-to-fill: supplier CLP datasheet text → auto-fill.
+                    Verify the extracted summary against the sheet, and
+                    check you pasted the band matching the fragrance load. */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Paste CLP datasheet text"
+                    value={clpPaste}
+                    onChange={(e) => setClpPaste(e.target.value)}
+                    multiline
+                    rows={3}
+                    helperText="Copy the relevant concentration-band section from the supplier sheet, paste here, click Extract"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleClpParse}
+                    sx={{ mb: clpParseSummary ? 0 : 2 }}
+                  >
+                    Extract CLP Data
+                  </Button>
+                </Grid>
+                {clpParseSummary && (
+                  <Grid item xs={12}>
+                    {clpParseSummary.error ? (
+                      <Alert severity="error" sx={{ mb: 2 }}>{clpParseSummary.error}</Alert>
+                    ) : (
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        Extracted — verify against the sheet:<br />
+                        Signal word: <strong>{clpParseSummary.signalWord}</strong> · Pictograms: <strong>{clpParseSummary.pictograms}</strong><br />
+                        H: <strong>{clpParseSummary.hazardStatements}</strong> · P: <strong>{clpParseSummary.precautionaryStatements}</strong><br />
+                        Allergens: <strong>{clpParseSummary.allergens}</strong>
+                      </Alert>
+                    )}
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
