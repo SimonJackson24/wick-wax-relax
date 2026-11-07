@@ -119,6 +119,7 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
         maxPrice: searchParams.maxPrice || filters.priceRange?.[1] || '',
         scentProfile: (searchParams.scentProfile || filters.scentProfile || []).join(','),
         inStock: searchParams.inStock || filters.inStock || '',
+        minRating: filters.minRating || '',
         sortBy: searchParams.sortBy || sortBy,
         sortOrder: searchParams.sortOrder || sortOrder,
         page: searchParams.page || pagination.page,
@@ -135,7 +136,7 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, filters.priceRange, filters.scentProfile, filters.inStock, sortBy, sortOrder, pagination.page, pagination.limit]);
+  }, [searchQuery, filters.priceRange, filters.scentProfile, filters.inStock, filters.minRating, sortBy, sortOrder, pagination.page, pagination.limit]);
 
   const handleProductClick = useCallback((productId) => {
     router.push(`/product/${productId}`);

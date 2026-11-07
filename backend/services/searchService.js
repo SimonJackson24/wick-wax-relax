@@ -8,6 +8,7 @@ class SearchService {
       category = '',
       minPrice = null,
       maxPrice = null,
+      minRating = null,
       scentProfile = [],
       inStock = null,
       sortBy = 'relevance',
@@ -61,6 +62,20 @@ class SearchService {
     if (maxPrice !== null) {
       whereClause += ` AND pv.price <= ?`;
       params.push(maxPrice);
+      paramIndex++;
+    }
+
+    // Minimum average rating (PLP rating facet): subquery on reviews so
+    // products with no reviews are excluded when a floor is set — the
+    // honest Amazon behaviour ("4★ & up" implies rated).
+    if (minRating !== null) {
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM reviews r
+        WHERE r.product_id = p.id
+        GROUP BY r.product_id
+        HAVING AVG(r.rating) >= ?
+      )`;
+      params.push(minRating);
       paramIndex++;
     }
 
@@ -466,6 +481,7 @@ class SearchService {
       category = '',
       minPrice = null,
       maxPrice = null,
+      minRating = null,
       scentProfile = [],
       inStock = null
     } = searchParams;
@@ -578,6 +594,7 @@ class SearchService {
       category = '',
       minPrice = null,
       maxPrice = null,
+      minRating = null,
       scentProfile = [],
       inStock = null
     } = searchParams;

@@ -55,6 +55,7 @@ const HierarchicalSearchFilters = ({
     priceRange: filters.priceRange || [0, 100],
     scentProfile: filters.scentProfile || [],
     inStock: filters.inStock || null,
+    minRating: filters.minRating || null,
     attributes: filters.attributes || {},
     ...filters
   });
@@ -74,6 +75,8 @@ const HierarchicalSearchFilters = ({
       priceRange: filters.priceRange || [availableFilters.priceRange.min, availableFilters.priceRange.max],
       scentProfile: filters.scentProfile || [],
       inStock: filters.inStock || null,
+      minRating: filters.minRating || null,
+    minRating: filters.minRating || null,
       attributes: filters.attributes || {},
       ...filters
     });
@@ -175,6 +178,7 @@ const HierarchicalSearchFilters = ({
       priceRange: [availableFilters.priceRange.min, availableFilters.priceRange.max],
       scentProfile: [],
       inStock: null,
+      minRating: null,
       attributes: {}
     };
 
@@ -213,6 +217,7 @@ const HierarchicalSearchFilters = ({
     if (selectedFilters.categories.length > 0) count += selectedFilters.categories.length;
     if (selectedFilters.scentProfile.length > 0) count++;
     if (selectedFilters.inStock !== null) count++;
+    if (selectedFilters.minRating !== null) count++;
     if (Object.keys(selectedFilters.attributes).length > 0) {
       count += Object.values(selectedFilters.attributes).flat().length;
     }
@@ -360,6 +365,24 @@ const HierarchicalSearchFilters = ({
           }
           label="In Stock Only"
         />
+
+        {/* Rating facet - "N stars & up" chips; unrated products excluded
+            when a floor is set (matches the backend HAVING clause) */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Rating</Typography>
+          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+            {[4.5, 4, 3].map((r) => (
+              <Chip
+                key={r}
+                size="small"
+                label={r + '★ & up'}
+                color={selectedFilters.minRating === r ? 'primary' : 'default'}
+                variant={selectedFilters.minRating === r ? 'filled' : 'outlined'}
+                onClick={() => handleFilterChange('minRating', selectedFilters.minRating === r ? null : r)}
+              />
+            ))}
+          </Box>
+        </Box>
 
         {/* Clear Filters - Compact */}
         {hasActiveFilters() && (
