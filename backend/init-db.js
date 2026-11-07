@@ -513,8 +513,8 @@ class MigrationRunner {
       const adminPassword = await bcrypt.hash(adminPlainPassword, 10);
 
       await client.query(
-        `INSERT INTO users (id, email, password_hash, first_name, last_name, password_change_required)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO users (id, email, password_hash, first_name, last_name, is_admin, password_change_required)
+         VALUES ($1, $2, $3, $4, $5, TRUE, $6)
          ON CONFLICT (email) DO NOTHING`,
         [uuidv4(), 'admin@wickwaxrelax.co.uk', adminPassword, 'Admin', 'User', true]
       );
