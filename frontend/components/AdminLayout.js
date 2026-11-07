@@ -26,6 +26,7 @@ import {
   Logout as LogoutIcon,
   CloudSync as SyncIcon,
   Api as ApiIcon,
+  Webhook as WebhookIcon,
   Category as CategoryIcon,
   Store as StoreIcon,
 } from '@mui/icons-material';
@@ -96,6 +97,11 @@ const AdminLayout = ({ children }) => {
       text: 'API Explorer',
       icon: <ApiIcon />,
       path: '/admin/api-explorer',
+    },
+    {
+      text: 'Webhooks',
+      icon: <WebhookIcon />,
+      path: '/admin/webhooks',
     },
   ];
 

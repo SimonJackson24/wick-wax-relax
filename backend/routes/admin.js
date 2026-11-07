@@ -533,7 +533,79 @@ router.post('/products/bulk', authenticateToken, requireAdmin, [
   }
 });
 
+// ===== WEBHOOK CONSOLE (admin completeness) =====
+// Delivery audit trail written by routes/webhooks.js (migration 027).
+
+// List deliveries, newest first. Page/limit are parsed integers bound
+// as parameters; the SQL text is static.
+router.get('/webhooks', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const offset = (page - 1) * limit;
+
+    const result = await query(
+      `SELECT id, source, event_type, status, signature_valid, error, created_at, processed_at
+         FROM webhook_deliveries
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    const total = await query('SELECT COUNT(*)::int AS n FROM webhook_deliveries');
+
+    res.json({
+      deliveries: result.rows,
+      pagination: { page, limit, total: total.rows[0].n },
+    });
+  } catch (error) {
+    console.error('Error listing webhook deliveries:', error);
+    res.status(500).json({ error: 'Failed to list deliveries' });
+  }
+});
+
+// Replay: re-dispatch a stored delivery through the same processing
+// path (signature already validated at receipt; replay re-runs business
+// logic — handlers are idempotent via the idempotency middleware scope).
+router.post('/webhooks/:id/replay', authenticateToken, requireAdmin, [
+  param('id').isUUID()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const delivery = await query(
+      'SELECT id, source, event_type, payload FROM webhook_deliveries WHERE id = $1',
+      [req.params.id]
+    );
+    if (delivery.rows.length === 0) {
+      return res.status(404).json({ error: 'Delivery not found' });
+    }
+    const row = delivery.rows[0];
+    if (row.source !== 'revolut') {
+      return res.status(400).json({ error: `Replay not supported for source ${row.source}` });
+    }
+
+    const revolutService = require('../services/revolut');
+    await revolutService.handleWebhookEvent(row.event_type, row.payload);
+
+    await query(
+      `INSERT INTO webhook_deliveries (source, event_type, payload, status, signature_valid)
+       VALUES ($1, $2, $3::jsonb, 'PROCESSED', TRUE)`,
+      ['revolut', `${row.event_type} (replay of ${row.id})`, JSON.stringify(row.payload)]
+    );
+
+    res.json({ success: true, replayed: row.id });
+  } catch (error) {
+    console.error('Error replaying webhook:', error);
+    res.status(500).json({ error: 'Replay failed: ' + error.message });
+  }
+});
+
 // ===== CATEGORY MANAGEMENT ROUTES =====
+
+
 
 // Get all categories
 router.get('/categories', authenticateToken, requireAdmin, async (req, res) => {

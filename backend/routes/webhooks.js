@@ -2,6 +2,31 @@ const express = require('express');
 const revolutService = require('../services/revolut');
 const { idempotency } = require('../middleware/idempotency');
 const { logger } = require('../services/logger');
+const { query } = require('../config/database');
+
+// Delivery audit log (migration 027): every inbound webhook is recorded
+// BEFORE verification — rejected and failed deliveries are exactly what
+// the admin console needs to see.
+async function recordDelivery(source, eventType, rawBody) {
+  let payload;
+  try {
+    payload = JSON.parse(rawBody.toString('utf8'));
+  } catch {
+    payload = { _raw: rawBody.toString('utf8').slice(0, 2000) };
+  }
+  const result = await query(
+    'INSERT INTO webhook_deliveries (source, event_type, payload, status) VALUES ($1, $2, $3::jsonb, $4) RETURNING id',
+    [source, eventType || null, JSON.stringify(payload), 'RECEIVED']
+  );
+  return result.rows[0].id;
+}
+
+async function finishDelivery(deliveryId, status, error, signatureValid) {
+  await query(
+    'UPDATE webhook_deliveries SET status = $1, error = $2, signature_valid = $3, processed_at = NOW() WHERE id = $4',
+    [status, error || null, signatureValid, deliveryId]
+  ).catch(() => { /* logging must never break the webhook path */ });
+}
 
 const router = express.Router();
 
@@ -22,6 +47,7 @@ router.post(
   idempotency({ scope: 'revolut' }),
   express.raw({ type: '*/*', limit: '100kb' }),
   async (req, res) => {
+    let deliveryId = null;
     try {
       const signatureHeader = req.headers['revolut-signature'];
       const timestampHeader = req.headers['revolut-request-timestamp'];
@@ -37,9 +63,12 @@ router.post(
         return res.status(500).json({ error: 'Webhook misconfigured' });
       }
 
+      deliveryId = await recordDelivery('revolut', null, rawBody);
+
       // Verify the HMAC over the raw bytes.
       if (!revolutService.verifyWebhookSignature(signature, rawBody, timestamp)) {
         logger.error('Revolut webhook: invalid signature');
+        await finishDelivery(deliveryId, 'REJECTED', 'Invalid signature', false);
         return res.status(400).json({ error: 'Invalid signature' });
       }
 
@@ -49,14 +78,18 @@ router.post(
       const { type, data } = payload;
 
       if (!type || typeof type !== 'string') {
+        await finishDelivery(deliveryId, 'REJECTED', 'Missing event type', true);
         return res.status(400).json({ error: 'Missing event type' });
       }
 
+      await query('UPDATE webhook_deliveries SET event_type = $1 WHERE id = $2', [type, deliveryId]).catch(() => {});
       await revolutService.handleWebhookEvent(type, data);
+      await finishDelivery(deliveryId, 'PROCESSED', null, true);
 
       res.status(200).json({ received: true });
     } catch (error) {
       logger.error('Revolut webhook processing error', { error: error.message });
+      if (deliveryId) await finishDelivery(deliveryId, 'FAILED', error.message, null);
       res.status(500).json({ error: 'Webhook processing failed' });
     }
   }
