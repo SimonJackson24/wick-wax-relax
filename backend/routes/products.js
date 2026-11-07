@@ -44,6 +44,20 @@ router.get('/:id/reviews', [
 
     const { average_rating: averageRating, review_count: reviewCount } = statsResult.rows[0];
 
+    // Rating distribution for the PDP histogram (5→1). Every bucket is
+    // returned so the bars always add up to review_count.
+    const distributionResult = await query(`
+      SELECT r.rating, COUNT(r.id)::int AS count
+      FROM reviews r
+      WHERE r.product_id = $1
+      GROUP BY r.rating
+    `, [id]);
+    const distributionMap = Object.fromEntries(distributionResult.rows.map((row) => [row.rating, row.count]));
+    const distribution = [5, 4, 3, 2, 1].map((star) => ({
+      rating: star,
+      count: distributionMap[star] || 0,
+    }));
+
     const reviewsResult = await query(`
       SELECT
         r.id,
@@ -67,6 +81,7 @@ router.get('/:id/reviews', [
       reviews: reviewsResult.rows,
       averageRating: parseFloat(averageRating.toFixed(1)),
       reviewCount,
+      distribution,
       page,
       totalPages,
     });
@@ -212,6 +227,7 @@ router.get('/featured', async (req, res) => {
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.rrp,
         p.created_at,
         p.is_featured
       FROM products p

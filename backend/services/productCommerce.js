@@ -31,6 +31,7 @@ async function applyCommerceFields(productId, data) {
             clp_responsible_name = ?,
             clp_exempt = ?,
             fragrance_load_percent = ?,
+            rrp = ?,
             updated_at = NOW()
       WHERE id = ?`,
     [
@@ -49,6 +50,7 @@ async function applyCommerceFields(productId, data) {
       commerce.clp_responsible_name,
       data.clp_exempt === true,
       commerce.fragrance_load_percent,
+      commerce.rrp,
       productId,
     ]
   );

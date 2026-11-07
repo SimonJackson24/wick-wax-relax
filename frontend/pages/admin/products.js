@@ -192,7 +192,8 @@ const AdminProducts = () => {
         ufi_code: product.ufi_code || '',
         clp_responsible_name: product.clp_responsible_name || '',
         clp_exempt: product.clp_exempt === true,
-        fragrance_load_percent: product.fragrance_load_percent ?? ''
+        fragrance_load_percent: product.fragrance_load_percent ?? '',
+        rrp: product.rrp ?? ''
       });
     } else {
       setEditingProduct(null);
@@ -217,7 +218,8 @@ const AdminProducts = () => {
         ufi_code: '',
         clp_responsible_name: '',
         clp_exempt: false,
-        fragrance_load_percent: ''
+        fragrance_load_percent: '',
+        rrp: ''
       });
     }
     setDialogOpen(true);
@@ -263,7 +265,8 @@ const AdminProducts = () => {
         clp_hazard_statements: toList(productForm.clp_hazard_statements),
         clp_precautionary_statements: toList(productForm.clp_precautionary_statements),
         clp_exempt: productForm.clp_exempt === true,
-        fragrance_load_percent: productForm.fragrance_load_percent === '' ? null : parseFloat(productForm.fragrance_load_percent)
+        fragrance_load_percent: productForm.fragrance_load_percent === '' ? null : parseFloat(productForm.fragrance_load_percent),
+        rrp: productForm.rrp === '' ? null : parseFloat(productForm.rrp)
       };
 
       if (editingProduct) {
@@ -619,6 +622,18 @@ const AdminProducts = () => {
                     value={productForm.weight_grams}
                     onChange={(e) => setProductForm({ ...productForm, weight_grams: e.target.value })}
                     helperText="For shipping rates"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="RRP (optional)"
+                    type="number"
+                    value={productForm.rrp ?? ''}
+                    onChange={(e) => setProductForm({ ...productForm, rrp: e.target.value })}
+                    helperText={productForm.rrp && productForm.base_price && parseFloat(productForm.rrp) > parseFloat(productForm.base_price)
+                      ? `Buy box shows: £${productForm.base_price} £${productForm.rrp} strikethrough — Save ${Math.round((1 - parseFloat(productForm.base_price) / parseFloat(productForm.rrp)) * 100)}%`
+                      : 'Must be above the price — shows as strikethrough + Save %'}
                   />
                 </Grid>
 

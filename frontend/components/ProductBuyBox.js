@@ -1,0 +1,241 @@
+import React from 'react';
+import {
+  Box,
+  Typography,
+  Chip,
+  Button,
+  IconButton,
+  Divider,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+
+// The bespoke buy box — Amazon's information architecture (price framing,
+// per-unit, stock urgency, variant picker, quantity, primary CTA) wearing
+// Wick Wax & Relax's skin: soft lavender wash, serif price, brand-purple
+// CTA, warm amber urgency. Deliberately NOT Amazon's grey-outlined box.
+
+const gbp = (value) =>
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
+
+const ProductBuyBox = ({
+  product,
+  variants = [],
+  selectedVariantId,
+  onVariantChange,
+  quantity,
+  onQuantityChange,
+  onAddToCart,
+  addingToCart,
+  message,
+}) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const selected = variants.find((v) => v.id === selectedVariantId) || null;
+  const price = selected ? Number(selected.price) : Number(product.base_price);
+  const rrp = product.rrp ? Number(product.rrp) : null;
+  const savePct = rrp && rrp > price ? Math.round((1 - price / rrp) * 100) : null;
+
+  // Stock urgency: the selected variant's inventory (or the total when
+  // the product has no variants).
+  const stock = selected
+    ? (selected.inventory_quantity ?? 0)
+    : variants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0);
+  const lowStock = stock > 0 && stock <= 5;
+  const outOfStock = stock <= 0;
+
+  // Per-unit price: Amazon-style "£9.99 / 100g" line under the price.
+  const weight = product.weight_grams ? Number(product.weight_grams) : null;
+  const per100g = weight ? (price / weight) * 100 : null;
+
+  return (
+    <>
+      <Box
+        sx={{
+          // Boutique card, not Amazon's grey rail
+          bgcolor: 'rgba(200, 182, 219, 0.12)',
+          border: `1px solid ${theme.palette.primary.light}`,
+          borderRadius: '16px',
+          p: { xs: 2.5, md: 3 },
+          position: { md: 'sticky' },
+          top: { md: 90 },
+        }}
+      >
+        {/* Price block — serif, calm, with RRP framing */}
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, flexWrap: 'wrap' }}>
+          <Typography
+            sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, fontSize: '2rem', lineHeight: 1 }}
+          >
+            {gbp(price)}
+          </Typography>
+          {rrp && savePct && (
+            <>
+              <Typography
+                variant="body1"
+                sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
+              >
+                {gbp(rrp)}
+              </Typography>
+              <Chip
+                size="small"
+                label={`Save ${savePct}%`}
+                sx={{
+                  bgcolor: 'rgba(156, 39, 176, 0.08)',
+                  color: theme.palette.primary.dark,
+                  fontWeight: 700,
+                }}
+              />
+            </>
+          )}
+        </Box>
+        {per100g && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            ({gbp(per100g)} per 100g)
+          </Typography>
+        )}
+
+        {/* Stock urgency — warm amber, only when genuinely low */}
+        {outOfStock ? (
+          <Typography sx={{ mt: 1.5, fontWeight: 600 }} color="error">
+            Out of stock — check back soon
+          </Typography>
+        ) : lowStock ? (
+          <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <LocalFireDepartmentIcon sx={{ fontSize: 18, color: '#ed6c02' }} />
+            <Typography variant="body2" sx={{ color: '#ed6c02', fontWeight: 600 }}>
+              Only {stock} left — selling fast
+            </Typography>
+          </Box>
+        ) : (
+          <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
+            In stock
+          </Typography>
+        )}
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* Variant picker — scent tiles, not a dropdown */}
+        {variants.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              {product.scent_profile?.primary || 'Option'}
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {variants.map((v) => {
+                const active = v.id === selectedVariantId;
+                return (
+                  <Button
+                    key={v.id}
+                    size="small"
+                    disabled={(v.inventory_quantity ?? 0) <= 0}
+                    onClick={() => onVariantChange(v.id)}
+                    variant={active ? 'contained' : 'outlined'}
+                    sx={{
+                      borderRadius: '10px',
+                      textTransform: 'none',
+                      borderColor: active ? undefined : theme.palette.primary.light,
+                      bgcolor: active ? undefined : 'transparent',
+                    }}
+                  >
+                    {v.name}
+                  </Button>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+
+        {/* Quantity + ATC */}
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: '10px',
+            }}
+          >
+            <IconButton size="small" onClick={() => onQuantityChange(Math.max(1, quantity - 1))} aria-label="Decrease quantity">
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+            <Typography sx={{ width: 32, textAlign: 'center', fontWeight: 600 }}>{quantity}</Typography>
+            <IconButton size="small" onClick={() => onQuantityChange(quantity + 1)} aria-label="Increase quantity">
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Box>
+          <Button
+            fullWidth
+            variant="contained"
+            disabled={outOfStock || addingToCart}
+            onClick={onAddToCart}
+            startIcon={<ShoppingBasketIcon />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              py: 1.25,
+              fontSize: '1rem',
+            }}
+          >
+            {addingToCart ? 'Adding…' : outOfStock ? 'Sold out' : 'Add to Basket'}
+          </Button>
+        </Box>
+
+        {message && (
+          <Typography variant="body2" sx={{ mt: 1.5, color: theme.palette.success.dark }}>
+            {message}
+          </Typography>
+        )}
+      </Box>
+
+      {/* Mobile sticky purchase bar — thumb-reach checkout, Amazon-style,
+          brand-skinned */}
+      {isMobile && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: theme.zIndex.appBar,
+            p: 1.5,
+            pb: 2,
+            bgcolor: 'background.paper',
+            borderTop: `1px solid ${theme.palette.divider}`,
+            boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ minWidth: 72 }}>
+            <Typography sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, fontSize: '1.15rem', lineHeight: 1 }}>
+              {gbp(price)}
+            </Typography>
+            {lowStock && !outOfStock && (
+              <Typography variant="caption" sx={{ color: '#ed6c02', fontWeight: 600 }}>
+                Only {stock} left
+              </Typography>
+            )}
+          </Box>
+          <Button
+            fullWidth
+            variant="contained"
+            disabled={outOfStock || addingToCart}
+            onClick={onAddToCart}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, py: 1 }}
+          >
+            {outOfStock ? 'Sold out' : 'Add to Basket'}
+          </Button>
+        </Box>
+      )}
+    </>
+  );
+};
+
+export default ProductBuyBox;

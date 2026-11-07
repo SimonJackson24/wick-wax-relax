@@ -32,6 +32,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
 import ClpDisclosure from '../../components/ClpDisclosure';
+import ProductBuyBox from '../../components/ProductBuyBox';
 import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
@@ -46,7 +47,7 @@ import { useWishlist } from '../../components/WishlistContext';
 import { useAuth } from '../../components/AuthContext';
 import { useSubscription } from '../../components/SubscriptionContext';
 
-export default function ProductDetail() {
+export default function ProductDetail({ initialProduct }) {
   const router = useRouter();
   const { id } = router.query;
   const { addToCart } = useCart();
@@ -54,10 +55,14 @@ export default function ProductDetail() {
   const { addToSubscription } = useSubscription();
   const theme = useTheme();
 
-  const [product, setProduct] = useState(null);
+  // SSR: getServerSideProps may have fetched the product server-side, so
+  // the first render (what Google and link previews see) carries the full
+  // product, title, meta and JSON-LD. The client effect still runs on
+  // mount — a cheap refetch that keeps client-side navigation correct.
+  const [product, setProduct] = useState(initialProduct || null);
   const [selectedVariant, setSelectedVariant] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialProduct);
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToSubscription, setAddingToSubscription] = useState(false);
   const [subMessage, setSubMessage] = useState('');
@@ -267,16 +272,17 @@ export default function ProductDetail() {
           </Alert>
         )}
 
-        {/* === FULL-WIDTH PRODUCT GALLERY === */}
-        <Box sx={{ width: '100%', mb: 5 }}>
-          <ProductGallery
-            images={product.images || []}
-            productName={product.name}
-          />
-        </Box>
+        {/* === Two-column: gallery + info left, sticky buy box right === */}
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={7}>
+            <Box sx={{ width: '100%', mb: 4 }}>
+              <ProductGallery
+                images={product.images || []}
+                productName={product.name}
+              />
+            </Box>
 
-        {/* === PRODUCT INFO — single column, centered === */}
-        <Box sx={{ maxWidth: 720, mx: 'auto' }}>
+            <Box sx={{ maxWidth: 720 }}>
           <Typography variant="h3" component="h1" gutterBottom sx={{
             fontFamily: '"Playfair Display", serif',
             fontWeight: 400,
@@ -323,99 +329,46 @@ export default function ProductDetail() {
             </Box>
           )}
 
-          {/* Variant selector + price + stock */}
-          {product.variants && product.variants.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Variant</InputLabel>
-                <Select
-                  value={selectedVariant}
-                  onChange={(e) => setSelectedVariant(e.target.value)}
-                  label="Variant"
-                >
-                  {product.variants.map((variant) => (
-                    <MenuItem key={variant.id} value={variant.id}>
-                      {variant.name} — £{variant.price}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {selectedVariantData && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="h4" color="primary" sx={{ fontWeight: 600, fontSize: '1.75rem' }}>
-                    £{selectedVariantData.price}
-                  </Typography>
-                  <Typography variant="body2" color={selectedVariantData.inventory_quantity <= 5 ? 'warning.main' : 'text.secondary'}>
-                    {selectedVariantData.inventory_quantity > 0
-                      ? `${selectedVariantData.inventory_quantity} in stock`
-                      : 'Out of stock'}
-                  </Typography>
-                </Box>
-              )}
             </Box>
-          )}
+          </Grid>
 
-          {/* CTA buttons — full-width Add to Cart, Subscribe alongside */}
-          <Box sx={{ mb: 5 }}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-              <FormControl sx={{ minWidth: 90 }}>
-                <InputLabel id="quantity-label">Qty</InputLabel>
-                <Select
-                  labelId="quantity-label"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  label="Qty"
-                  aria-describedby="quantity-helper"
-                >
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <MenuItem key={num} value={num}>{num}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+          {/* === RIGHT RAIL — the bespoke buy box === */}
+          <Grid item xs={12} md={5}>
+            <ProductBuyBox
+              product={product}
+              variants={product.variants || []}
+              selectedVariantId={selectedVariant}
+              onVariantChange={setSelectedVariant}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              onAddToCart={handleAddToCart}
+              addingToCart={addingToCart}
+              message={message}
+            />
 
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                onClick={handleAddToCart}
-                disabled={addingToCart || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
-                sx={{
-                  py: 1.75,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  borderRadius: 3,
-                  backgroundColor: theme.palette.primary.main,
-                  '&:hover': { backgroundColor: theme.palette.primary.dark },
-                  '&:disabled': { backgroundColor: theme.palette.grey[300] }
-                }}
-                aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to cart`}
-              >
-                {addingToCart ? 'Adding...' : 'Add to Cart'}
-              </Button>
-
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                onClick={handleAddToSubscription}
-                disabled={addingToSubscription || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
-                sx={{
-                  py: 1.75,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  borderRadius: 3,
-                  backgroundColor: theme.palette.secondary.main,
-                  color: theme.palette.secondary.contrastText,
-                  '&:hover': { backgroundColor: theme.palette.secondary.dark },
-                  '&:disabled': { backgroundColor: theme.palette.grey[300], color: theme.palette.grey[600] }
-                }}
-                aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to subscription`}
-              >
-                {addingToSubscription ? '...' : 'Subscribe & Save — Set & Save'}
-              </Button>
-            </Box>
-          </Box>
+            <Button
+              variant="outlined"
+              size="large"
+              fullWidth
+              onClick={handleAddToSubscription}
+              disabled={addingToSubscription || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
+              sx={{
+                mt: 2,
+                py: 1.5,
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                borderRadius: 3,
+                textTransform: 'none',
+                borderColor: theme.palette.secondary.main,
+                color: theme.palette.secondary.main,
+                '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.06)' },
+              }}
+              aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to subscription`}
+            >
+              {addingToSubscription ? '...' : 'Subscribe & Save — Set & Save'}
+            </Button>
+          </Grid>
+        </Grid>
 
           {/* Accordions — below the purchase decision */}
           <Box sx={{ mb: 4 }}>
@@ -503,7 +456,6 @@ export default function ProductDetail() {
               </AccordionDetails>
             </Accordion>
           </Box>
-        </Box>
 
         {/* FULL-WIDTH TRUST BADGES — between product info and reviews */}
         <Box sx={{ py: 4, my: 5, borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -664,3 +616,36 @@ export default function ProductDetail() {
     </>
   );
 };
+
+// Server-side render: fetch the product on the server so the PDP ships
+// as fully-formed HTML — titles, meta, JSON-LD structured data, CLP panel
+// and the buy box price are all present in the first response. This is
+// the single biggest SEO upgrade for the store (client-only rendering
+// was the top weakness in the platform audit).
+export async function getServerSideProps({ params }) {
+  const apiBase = process.env.API_URL || 'http://localhost:3001';
+  const { id } = params;
+
+  const fetchJson = async (url) => {
+    try {
+      const res = await axios.get(url, { timeout: 3000 });
+      return res.data && res.data.id ? res.data : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // UUID lookup first, slug fallback — same order as the client flow.
+  let product = await fetchJson(`${apiBase}/api/products/${id}`);
+  if (!product) {
+    product = await fetchJson(`${apiBase}/api/products/slug/${id}`);
+  }
+
+  // Not found → real 404 for the crawler. Any backend hiccup → render
+  // with no initialProduct and let the client fetch (page still works).
+  if (!product) {
+    return { notFound: true };
+  }
+
+  return { props: { initialProduct: product } };
+}
