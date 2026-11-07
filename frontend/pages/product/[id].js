@@ -35,6 +35,7 @@ import ClpDisclosure from '../../components/ClpDisclosure';
 import ProductBuyBox from '../../components/ProductBuyBox';
 import ReviewHistogram from '../../components/ReviewHistogram';
 import RecentlyViewed, { recordRecentlyViewed } from '../../components/RecentlyViewed';
+import ProductQa from '../../components/ProductQa';
 import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
@@ -623,6 +624,7 @@ export default function ProductDetail({ initialProduct }) {
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {product && <FrequentlyBoughtTogether productId={id} />}
         <RecentlyViewed excludeId={product?.id} />
+        {product && <ProductQa productId={product.id} />}
       </Container>
 
     </>
