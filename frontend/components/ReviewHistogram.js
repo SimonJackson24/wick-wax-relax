@@ -4,7 +4,7 @@ import { useTheme } from '@mui/material/styles';
 
 // Amazon-style rating breakdown — 5→1 bars with counts and percentages.
 // Data comes from the reviews endpoint's `distribution` field.
-const ReviewHistogram = ({ distribution = [], reviewCount }) => {
+const ReviewHistogram = ({ distribution = [], reviewCount, onSelectRating }) => {
   const theme = useTheme();
   const total = reviewCount !== undefined ? reviewCount : distribution.reduce((s, d) => s + d.count, 0);
   if (!total || distribution.length === 0) return null;
@@ -27,6 +27,7 @@ const ReviewHistogram = ({ distribution = [], reviewCount }) => {
             role="button"
             tabIndex={0}
             aria-label={`${rating} star: ${count} reviews, ${pct}%`}
+            onClick={onSelectRating ? () => onSelectRating(rating) : undefined}
           >
             <Typography variant="body2" sx={{ minWidth: 28, fontWeight: 500 }}>
               {rating}★

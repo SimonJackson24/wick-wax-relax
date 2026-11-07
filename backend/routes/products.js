@@ -58,6 +58,21 @@ router.get('/:id/reviews', [
       count: distributionMap[star] || 0,
     }));
 
+    // Sort: fixed literal whitelist — the incoming value only SELECTS a
+    // constant, never enters the SQL text. Optional star filter is a bound
+    // parameter.
+    const sortByRaw = String(req.query.sortBy || 'recent');
+    const orderByLiteral = sortByRaw === 'highest'
+      ? 'r.rating DESC, r.created_at DESC'
+      : sortByRaw === 'lowest'
+        ? 'r.rating ASC, r.created_at DESC'
+        : sortByRaw === 'helpful'
+          ? 'r.helpful_count DESC, r.created_at DESC'
+          : 'r.created_at DESC';
+    const ratingFilter = [1, 2, 3, 4, 5].includes(parseInt(req.query.rating, 10))
+      ? parseInt(req.query.rating, 10)
+      : null;
+
     const reviewsResult = await query(`
       SELECT
         r.id,
@@ -71,11 +86,10 @@ router.get('/:id/reviews', [
       FROM reviews r
       LEFT JOIN users u ON r.user_id = u.id
       WHERE r.product_id = $1
-      ORDER BY r.created_at DESC
+        AND ($4::int IS NULL OR r.rating = $4)
+      ORDER BY ${orderByLiteral}
       LIMIT $2 OFFSET $3
-    `, [id, limit, offset]);
-
-    const totalPages = Math.ceil(reviewCount / limit);
+    `, ratingFilter ? [id, limit, offset, ratingFilter] : [id, limit, offset, null]);
 
     res.json({
       reviews: reviewsResult.rows,

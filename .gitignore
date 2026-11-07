@@ -96,3 +96,10 @@ cloudpanel/nginx/wick-wax.conf
 
 # Security scan reports
 security-audit/
+
+# >>> completed-works (hermes hook) >>>
+# Per-session SSOT audit log written by ~/.hermes/scripts/commentary_logger.py.
+# Never commit this directory — it is the hermes agent's session record, not source code.
+completed-works/
+# <<< completed-works (hermes hook) <<<
+backups
