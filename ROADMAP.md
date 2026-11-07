@@ -658,6 +658,29 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             re-enabled; its route-param-to-SQL rule will re-block
             similar edits — adjust the rule or bypass per-session with
             authorization for build sessions.
+
+2026-11-07  AUTONOMOUS RUN (Simon: "work through them all, stop
+            asking"). Commits 75c6a7bd0 → 1f73086a0 → 25d63b1be →
+            dynamic-sitemap:
+            - 1.50 partial: DYNAMIC SITEMAP (pages/sitemap.xml.js)
+              server-generates from live catalogue — every ACTIVE
+              product + category + core pages, hourly cache; static
+              6-URL file deleted. PDP SSR landed earlier (ee5e3e54e).
+            - 1.63 done: Q&A (migration 025 product_questions/answers,
+              public list + authed ask + staff-badged answers, PDP
+              section component). 27/27 migrations, 100/100 tests.
+            - 1.65 done: recently-viewed strip (localStorage,
+              PDP-recorded, horizontal cards).
+            - 1.7 done: branded 404 + _error pages.
+            - PDP buy box v1 (ee5e3e54e): RRP framing (migration 024),
+              per-100g pricing, stock urgency, scent tiles, mobile
+              sticky ATC, review histogram + distribution API.
+            REMAINING (next sessions): home/PLP/category SSR (P3),
+            PLP rating facets, then Phase 1 money/ops track (payments,
+            email, shipping — need Simon's provider accounts), legal
+            page scaffolds, observability, WCAG audit, conversion
+            mechanics. CSV import deferred until Simon has a catalogue
+            spreadsheet.
 ```
 
 ---
