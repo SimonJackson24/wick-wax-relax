@@ -23,15 +23,16 @@ WORKDIR /app
 # Copy node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy source
+# Copy source + SQL migrations (init-db.js reads ../migrations from /app)
 COPY --from=builder /app .
+COPY migrations/ /app/migrations/
 
 # Create non-root user for security. Writable dirs first: logger.js and
 # routes/upload.js mkdir these at boot — EACCES under the non-root user
 # crash-looped the container until they were pre-created and owned.
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001 \
-    && mkdir -p /app/logs /app/uploads \
-    && chown -R nodejs:nodejs /app/logs /app/uploads
+    && mkdir -p /app/logs /app/uploads /app/uploads/images /app/uploads/images/products /app/uploads/reviews /app/temp \
+    && chown -R nodejs:nodejs /app/logs /app/uploads /app/temp
 
 USER nodejs
 
