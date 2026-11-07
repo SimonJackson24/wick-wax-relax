@@ -89,13 +89,12 @@ app.use(
   cors({
     origin: function (origin, callback) {
       const allowed = getAllowedOrigins();
-      // Same-origin / curl / server-to-server (no Origin header) is permitted
-      // only in non-production. In production, every request must come from
-      // a known browser origin so CSRF + cookie + CORS stay consistent.
-      if (!origin) {
-        if (isProduction) return callback(new Error('Origin header required'));
-        return callback(null, true);
-      }
+      // No Origin header = server-to-server callers (the Next.js SSR
+      // proxy, uptime monitors, health checks). Browsers ALWAYS send
+      // Origin on cross-site requests, so absent-Origin traffic cannot
+      // be a browser CSRF vector — allow it, and still validate any
+      // Origin that IS present.
+      if (!origin) return callback(null, true);
       if (allowed.indexOf(origin) !== -1) return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
