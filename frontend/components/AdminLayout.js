@@ -25,6 +25,7 @@ import {
   Analytics as AnalyticsIcon,
   Logout as LogoutIcon,
   CloudSync as SyncIcon,
+  Api as ApiIcon,
   Category as CategoryIcon,
   Store as StoreIcon,
 } from '@mui/icons-material';
@@ -90,6 +91,11 @@ const AdminLayout = ({ children }) => {
       text: 'Sync Management',
       icon: <SyncIcon />,
       path: '/admin/sync',
+    },
+    {
+      text: 'API Explorer',
+      icon: <ApiIcon />,
+      path: '/admin/api-explorer',
     },
   ];
 
