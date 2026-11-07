@@ -45,8 +45,11 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self'",
-              // Next.js requires 'unsafe-inline' during dev for HMR; tighten in prod.
-              isProd ? "style-src 'self' 'unsafe-inline'" : "style-src 'self' 'unsafe-inline'",
+              // Playfair Display / Roboto / Dancing Script load from Google
+              // Fonts: the stylesheet from googleapis (style-src) and the
+              // font files from gstatic (font-src). MUI also needs
+              // 'unsafe-inline' for its emotion styles.
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https://api.revolut.com https://www.google-analytics.com",

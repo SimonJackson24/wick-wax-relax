@@ -21,6 +21,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import { useCart } from './CartContext';
 import { useSubscription } from './SubscriptionContext';
 import CartDrawer from './CartDrawer';
