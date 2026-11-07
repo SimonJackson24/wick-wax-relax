@@ -26,8 +26,12 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy source
 COPY --from=builder /app .
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+# Create non-root user for security. Writable dirs first: logger.js and
+# routes/upload.js mkdir these at boot — EACCES under the non-root user
+# crash-looped the container until they were pre-created and owned.
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001 \
+    && mkdir -p /app/logs /app/uploads \
+    && chown -R nodejs:nodejs /app/logs /app/uploads
 
 USER nodejs
 
