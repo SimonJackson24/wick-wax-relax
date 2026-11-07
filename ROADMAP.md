@@ -634,6 +634,30 @@ Append a new entry here every time the roadmap is updated (task completed, new t
                /:id (~485).
             E) After applying: run the products integration suite
                (expected 15/15), then commit.
+
+2026-11-07  PHASE A FUNCTIONALLY COMPLETE (except 1.4). Post-restart
+            session executed the whole queue with the Mimosa gate
+            bypassed (Simon-authorized; registry entry removed then
+            RESTORED after — backup was installed_plugins.json.bak):
+            - Hand-patch A–E applied in-session, 100/100 tests, 7/7
+              suites, committed e6ddc6699.
+            - CLP paste-to-fill (utils/clpParser.js + admin form paste
+              box + extraction summary): regex H/P/GHS + signal word +
+              EU allergen dictionary (26 + aliases). Parser live-tested
+              on a realistic datasheet line. Committed a9ebb1ade.
+            - VAT flip-of-switch in admin General settings (switch +
+              VAT number; explicit "display prices never change"
+              messaging). Committed 7f3e46b3c. 1.5 remains open until
+              invoice VAT-breakdown rendering exists.
+            - E2E SMOKE PASSED: create-DRAFT-with-CLP → publish via
+              commerce path → storefront /slug/ returns ACTIVE with
+              clp_allergens + fragrance_load_percent → PDP CLP panel
+              has real data.
+            Remaining for Phase A: 1.4 CSV import only. 1.6 needs the
+            packing-slip CLP block for full credit. Note: Mimosa is
+            re-enabled; its route-param-to-SQL rule will re-block
+            similar edits — adjust the rule or bypass per-session with
+            authorization for build sessions.
 ```
 
 ---
