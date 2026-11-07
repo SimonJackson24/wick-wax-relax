@@ -33,6 +33,7 @@ import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
 import ClpDisclosure from '../../components/ClpDisclosure';
 import ProductBuyBox from '../../components/ProductBuyBox';
+import ReviewHistogram from '../../components/ReviewHistogram';
 import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
@@ -75,7 +76,7 @@ export default function ProductDetail({ initialProduct }) {
   const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 });
+  const [reviewStats, setReviewStats] = useState({ average: 0, count: 0, distribution: [] });
 
   useEffect(() => {
     if (id) {
@@ -140,7 +141,7 @@ export default function ProductDetail({ initialProduct }) {
     try {
       const response = await axios.get(`/api/products/${id}/reviews?limit=10`);
       setReviews(response.data.reviews || []);
-      setReviewStats({ average: response.data.averageRating || 0, count: response.data.reviewCount || 0 });
+      setReviewStats({ average: response.data.averageRating || 0, count: response.data.reviewCount || 0, distribution: response.data.distribution || [] });
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {
@@ -469,11 +470,14 @@ export default function ProductDetail({ initialProduct }) {
               <Typography variant="h4" component="h2" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400, fontSize: { xs: '1.5rem', md: '1.75rem' } }}>
                 Customer Reviews
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
-                <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
-                {reviewStats.count === 0 && (
-                  <Typography variant="body2" color="text.secondary">No reviews yet</Typography>
-                )}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, mt: 1, flexWrap: 'wrap' }}>
+                <Box>
+                  <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
+                  {reviewStats.count === 0 && (
+                    <Typography variant="body2" color="text.secondary">No reviews yet</Typography>
+                  )}
+                </Box>
+                <ReviewHistogram distribution={reviewStats.distribution} reviewCount={reviewStats.count} />
               </Box>
             </Box>
             <Button
