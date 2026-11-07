@@ -30,22 +30,22 @@ import { SITE_URL } from '../../utils/siteConfig';
 import ProductCard from '../../components/ProductCard';
 import HierarchicalSearchFilters from '../../components/HierarchicalSearchFilters';
 
-const CategoryPage = () => {
+const CategoryPage = ({ initialCategory, initialProducts, initialPagination }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
   const { slug } = router.query;
 
-  const [category, setCategory] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // SSR hydration: getServerSideProps delivers category + first page of
+  // products so crawlers get full listing HTML; the client effect still
+  // handles filter/sort changes and client-side navigation.
+  const [category, setCategory] = useState(initialCategory || null);
+  const [products, setProducts] = useState(initialProducts || []);
+  const [loading, setLoading] = useState(!initialCategory);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    pages: 0
-  });
+  const [pagination, setPagination] = useState(
+    initialPagination || { page: 1, limit: 20, total: 0, pages: 0 }
+  );
 
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('name');
@@ -56,9 +56,12 @@ const CategoryPage = () => {
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   useEffect(() => {
-    if (slug) {
+    if (slug && (!initialCategory || initialCategory.slug !== slug)) {
       fetchCategoryData();
+    } else if (initialCategory && initialCategory.slug === slug) {
+      setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const fetchCategoryData = async () => {
@@ -446,3 +449,40 @@ const CategoryPage = () => {
 };
 
 export default CategoryPage;
+
+// Server-render: category + first product page in the initial HTML.
+export async function getServerSideProps({ params }) {
+  const apiBase = process.env.API_URL || 'http://localhost:3001';
+
+  const get = async (url) => {
+    try {
+      const res = await axios.get(url, { timeout: 3000 });
+      return res.data;
+    } catch {
+      return null;
+    }
+  };
+
+  // params.slug is user-controlled: encode it so path tricks (../, //,
+  // encoded separators) stay a single inert path segment on the fixed
+  // backend origin — it can never retarget the request to another host.
+  const safeSlug = encodeURIComponent(String(params.slug));
+  const data = await get(`${apiBase}/api/categories/hierarchical/slug/${safeSlug}`);
+  const category = data && data.category ? data.category : null;
+  if (!category) {
+    return { notFound: true };
+  }
+
+  const productsData = await get(
+    `${apiBase}/api/categories/hierarchical/${category.id}/products?page=1&limit=20`
+  );
+
+  const initialProducts = productsData
+    ? (Array.isArray(productsData) ? productsData : productsData.products || [])
+    : [];
+  const initialPagination = productsData && productsData.pagination
+    ? productsData.pagination
+    : { page: 1, limit: 20, total: initialProducts.length, pages: 1 };
+
+  return { props: { initialCategory: category, initialProducts, initialPagination } };
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Grid,
@@ -27,20 +27,21 @@ import SearchBar from '../components/SearchBar';
 import HierarchicalSearchFilters from '../components/HierarchicalSearchFilters';
 import ProductCard from '../components/ProductCard';
 
-const ProductsPage = () => {
+const ProductsPage = ({ initialProducts, initialPagination }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const router = useRouter();
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // SSR hydration: the unfiltered first page arrives server-side so the
+  // listing HTML (names, prices, links) is crawlable in the first
+  // response. Any URL params (search/filters/page) still trigger the
+  // client fetch on mount — only the plain default view is skipped.
+  const [products, setProducts] = useState(initialProducts || []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    pages: 0
-  });
+  const [pagination, setPagination] = useState(
+    initialPagination || { page: 1, limit: 20, total: 0, pages: 0 }
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
@@ -74,6 +75,7 @@ const ProductsPage = () => {
   }, []);
 
   // Does NOT depend on router.query — breaks the shallow-routing re-render loop
+  const ssrFirstRun = useRef(true);
   useEffect(() => {
     // On mount, skip load if URL params already set (handled by mount effect)
     const hasUrlParams = !!router.query.q || !!router.query.categories ||
@@ -81,6 +83,14 @@ const ProductsPage = () => {
                          !!router.query.page;
     if (hasUrlParams && pagination.page === 1 && products.length === 0) {
       // initial mount load from URL — proceed
+    }
+    // First run with clean SSR data and no URL params: server already
+    // rendered this exact view — skip the redundant client fetch.
+    if (ssrFirstRun.current) {
+      ssrFirstRun.current = false;
+      if (initialProducts && !hasUrlParams) {
+        return;
+      }
     }
     loadProducts({
       query: searchQuery,
@@ -402,3 +412,24 @@ const ProductsPage = () => {
 };
 
 export default ProductsPage;
+
+// Server-render the default product listing (no filters) for crawlers.
+export async function getServerSideProps() {
+  const apiBase = process.env.API_URL || 'http://localhost:3001';
+  try {
+    const res = await axios.get(
+      `${apiBase}/api/search/products?page=1&limit=20&sortBy=name&sortOrder=ASC&includeVariants=true`,
+      { timeout: 3000 }
+    );
+    const data = res.data || {};
+    return {
+      props: {
+        initialProducts: data.products || [],
+        initialPagination: data.pagination || null,
+      },
+    };
+  } catch {
+    // Backend unreachable — render shell, client fetch will populate.
+    return { props: { initialProducts: null, initialPagination: null } };
+  }
+}

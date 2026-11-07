@@ -661,5 +661,14 @@ export async function getServerSideProps({ params }) {
     return { notFound: true };
   }
 
+  // Attach rating so SEOHead emits AggregateRating JSON-LD server-side —
+  // that's what earns star snippets in Google results.
+  try {
+    const stats = await fetchJson(`${apiBase}/api/products/${product.id}/reviews?limit=1`);
+    if (stats && stats.averageRating) {
+      product.rating = { average: stats.averageRating, count: stats.reviewCount || 0 };
+    }
+  } catch { /* rating optional */ }
+
   return { props: { initialProduct: product } };
 }
