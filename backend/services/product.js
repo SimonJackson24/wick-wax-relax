@@ -196,6 +196,7 @@ class ProductService {
   // Create new product
   async createProduct(productData) {
     const { name, description, scent_profile, base_price, categories = [], variants = [] } = productData;
+    const commerce = commerceParams(productData);
 
     // BEGIN/COMMIT through the shared pool can land on different
     // connections, leaving statements outside the transaction. Pin one
@@ -208,12 +209,27 @@ class ProductService {
 
       const slug = await this.uniqueSlug(client, productData.slug || name);
 
-      // Insert product
+      // Insert product (all values bound; column list is static)
       const productResult = await client.query(`
-        INSERT INTO products (name, slug, description, scent_profile, base_price)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO products (
+          name, slug, description, scent_profile, base_price,
+          status, vat_rate, meta_title, meta_description,
+          weight_grams, dimensions_cm,
+          clp_allergens, clp_hazard_pictograms, clp_signal_word,
+          clp_hazard_statements, clp_precautionary_statements,
+          ufi_code, clp_responsible_name, clp_exempt
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
-      `, [name, slug, description, JSON.stringify(scent_profile), base_price]);
+      `, [
+        name, slug, description, JSON.stringify(scent_profile), base_price,
+        commerce.status, commerce.vat_rate, commerce.meta_title, commerce.meta_description,
+        commerce.weight_grams, commerce.dimensions_cm,
+        commerce.clp_allergens, commerce.clp_hazard_pictograms, commerce.clp_signal_word,
+        commerce.clp_hazard_statements, commerce.clp_precautionary_statements,
+        commerce.ufi_code, commerce.clp_responsible_name,
+        productData.clp_exempt === true
+      ]);
 
       const productId = productResult.rows[0].id;
 
@@ -258,6 +274,7 @@ class ProductService {
   // Update product
   async updateProduct(id, productData) {
     const { name, description, scent_profile, base_price, categories = [], variants = [] } = productData;
+    const commerce = commerceParams(productData);
 
     // One client for the whole transaction (see createProduct).
     const client = await getClient();
@@ -407,3 +424,6 @@ class ProductService {
 }
 
 module.exports = new ProductService();
+// Also expose the commerce-field mapper for the update path in
+// services/productCommerce.js.
+module.exports.commerceParams = commerceParams;

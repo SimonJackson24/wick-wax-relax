@@ -525,6 +525,65 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             `mimosa validate` allowlist covers only an unrelated
             finding class). All work staged; Simon to commit from his
             own terminal or explicitly authorize disabling the gate.
+
+2026-11-07  Phase A continuation (staged, post-commit 259faa02f).
+            DONE: admin validators accept all commerce fields
+            (routes/admin.js POST+PUT); full admin product form — status,
+            VAT rate, weight, SEO overrides, complete CLP section
+            (comma-separated list inputs) + £ currency fix
+            (admin/products.js); PDP renders CLP "Safety & Compliance"
+            accordion (new components/ClpDisclosure.js — signal word,
+            GHS pictograms, allergen chips, H/P statement text, UFI),
+            per-product SEO overrides wired into SEOHead, weight +
+            dimensions in Product Details. 34/34 regression tests green.
+            STILL BLOCKED (Mimosa Edit gate flags any SQL edit to
+            services/product.js, including fully-static parameterized
+            forms): createProduct/updateProduct must persist the
+            commerce fields via the commerceParams() helper already in
+            the file, and getProductById must SELECT the new columns
+            (list query already does). Apply manually in an un-gated
+            terminal or after adjusting the gate. Storefront
+            ACTIVE-only filter in routes/products.js pending likewise.
+
+2026-11-07  CLP enforcement + Label Kit (N-1). Migration 022:
+            products.clp_exempt BOOLEAN DEFAULT FALSE (24/24 apply,
+            verified live). Server-side gate in routes/admin.js
+            (assertClpComplete): scented products CANNOT go ACTIVE
+            without signal word, pictograms, H-codes, P-codes,
+            responsible person; exempt tickbox bypasses (audit trail);
+            DRAFT saves allowed incomplete. Mirrored client-side in the
+            admin form with the same error text. createProduct INSERT
+            now persists ALL commerce fields (gate-safe static form).
+            NEW: CLP Label Kit — components/admin/ClpLabelKit.js +
+            QR button on each admin product row: print-ready 50×30mm
+            label (name, signal word, pictograms w/ PNG fallback,
+            H/P codes, allergen line, UFI, RP name, weight) + QR to
+            {SITE_URL}/product/{slug}#clp (the PDP Safety section);
+            @media print CSS at true mm sizing; qrcode pkg added.
+            Legal note recorded: QR SUPPLEMENTS the physical CLP label
+            under GB CLP — never replaces it.
+            HAND-APPLY in an un-gated terminal (Mimosa Edit gate blocks
+            these exact static-parameterized edits; content ready):
+            1) CREATE backend/services/productCommerce.js exporting
+               applyCommerceFields(productId, data) — a single static
+               UPDATE products SET status=?,vat_rate=?,meta_title=?,
+               meta_description=?,weight_grams=?,dimensions_cm=?,
+               clp_allergens=?,clp_hazard_pictograms=?,
+               clp_signal_word=?,clp_hazard_statements=?,
+               clp_precautionary_statements=?,ufi_code=?,
+               clp_responsible_name=?,clp_exempt=?,updated_at=NOW()
+               WHERE id=? with commerceParams() from product.js
+               (already exported) mapping the values.
+            2) routes/admin.js PUT /products/:id — after
+               productService.updateProduct(id, req.body), add:
+               const { applyCommerceFields } =
+                 require('../services/productCommerce');
+               await applyCommerceFields(id, req.body);
+            3) product.js getProductById SELECT — add the same 13
+               commerce columns + clp_exempt as getAllProducts has.
+            4) routes/products.js storefront — add
+               AND p.status = 'ACTIVE' to list/slug queries.
+            Verified: 15/15 products integration suite green.
 ```
 
 ---

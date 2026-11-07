@@ -31,6 +31,7 @@ import RateReviewIcon from '@mui/icons-material/RateReview';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
+import ClpDisclosure from '../../components/ClpDisclosure';
 import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
@@ -216,8 +217,8 @@ export default function ProductDetail() {
     <>
       <NavigationWithCategories />
       <SEOHead
-        title={product ? `${product.name} — Wick Wax Relax` : 'Product — Wick Wax Relax'}
-        description={product?.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}
+        title={product ? (product.meta_title || `${product.name} — Wick Wax Relax`) : 'Product — Wick Wax Relax'}
+        description={product ? (product.meta_description || product.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.') : 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}
         keywords={product ? `wax melts, candles, ${product.name}, home fragrance, UK` : 'wax melts, candles, home fragrance'}
         image={product?.image ? `${SITE_URL}${product.image}` : `${SITE_URL}/images/hero-image.svg`}
         url={`${SITE_URL}/product/${product?.slug || id}`}
@@ -436,12 +437,43 @@ export default function ProductDetail() {
                         <Typography component="dd" variant="body2" sx={{ textAlign: 'right', maxWidth: '60%' }}>{value}</Typography>
                       </Box>
                     ))}
+                    {product.weight_grams != null && (
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                        <Typography component="dt" variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>Weight</Typography>
+                        <Typography component="dd" variant="body2">{product.weight_grams} g</Typography>
+                      </Box>
+                    )}
+                    {product.dimensions_cm && (
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75 }}>
+                        <Typography component="dt" variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>Dimensions</Typography>
+                        <Typography component="dd" variant="body2">
+                          {product.dimensions_cm.l} × {product.dimensions_cm.w} × {product.dimensions_cm.h} cm
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">No additional details available.</Typography>
                 )}
               </AccordionDetails>
             </Accordion>
+
+            {/* CLP safety & compliance — legally required disclosure for
+                scented candles/wax melts (N-1). Renders only when the
+                product carries CLP data. */}
+            {product && (
+              <Accordion
+                elevation={0}
+                sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: '8px !important', '&:before': { display: 'none' }, mb: 1 }}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography fontWeight={600}>Safety &amp; Compliance (CLP)</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <ClpDisclosure product={product} />
+                </AccordionDetails>
+              </Accordion>
+            )}
 
             <Accordion
               elevation={0}

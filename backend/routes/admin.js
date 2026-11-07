@@ -8,6 +8,26 @@ const { body, param, validationResult } = require('express-validator');
 
 const router = express.Router();
 
+// CLP completeness gate (non-negotiable N-1). A scented product going
+// ACTIVE must carry the mandatory CLP label elements. Products marked
+// clp_exempt (the admin tickbox — bath products, accessories) pass
+// through; the exemption itself is the audit trail. DRAFT products may
+// be saved incomplete — the gate fires on publish.
+function assertClpComplete(body) {
+  if (body.clp_exempt === true) return null;
+  if (body.status !== 'ACTIVE') return null;
+
+  const missing = [];
+  if (!body.clp_signal_word) missing.push('signal word');
+  if (!Array.isArray(body.clp_hazard_pictograms) || body.clp_hazard_pictograms.length === 0) missing.push('hazard pictograms');
+  if (!Array.isArray(body.clp_hazard_statements) || body.clp_hazard_statements.length === 0) missing.push('hazard statements (H-codes)');
+  if (!Array.isArray(body.clp_precautionary_statements) || body.clp_precautionary_statements.length === 0) missing.push('precautionary statements (P-codes)');
+  if (!body.clp_responsible_name) missing.push('responsible person');
+  if (missing.length === 0) return null;
+
+  return `CLP data incomplete — scented products cannot go ACTIVE without: ${missing.join(', ')}. Tick "CLP not required" if this product is exempt.`;
+}
+
 // Middleware to authenticate JWT token from cookies
 function authenticateToken(req, res, next) {
   const token = req.cookies.accessToken;
@@ -384,12 +404,34 @@ router.post('/products', authenticateToken, requireAdmin, [
   body('scent_profile').isObject(),
   body('base_price').isFloat({ min: 0 }),
   body('categories').optional().isArray(),
-  body('variants').optional().isArray()
+  body('variants').optional().isArray(),
+  // Commerce fields (migration 021)
+  body('status').optional().isIn(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+  body('vat_rate').optional().isFloat({ min: 0, max: 100 }),
+  body('meta_title').optional().trim().isLength({ max: 255 }),
+  body('meta_description').optional().trim(),
+  body('weight_grams').optional().isInt({ min: 1 }),
+  body('clp_allergens').optional().isArray(),
+  body('clp_hazard_pictograms').optional().isArray(),
+  body('clp_signal_word').optional().isIn(['DANGER', 'WARNING']),
+  body('clp_hazard_statements').optional().isArray(),
+  body('clp_precautionary_statements').optional().isArray(),
+  body('ufi_code').optional().trim().isLength({ max: 50 }),
+  body('clp_responsible_name').optional().trim().isLength({ max: 255 }),
+  body('clp_exempt').optional().isBoolean()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    // CLP gate (N-1): a scented product going ACTIVE must carry complete
+    // CLP data. Exempt products (tickbox) pass through — the exemption is
+    // the audit trail.
+    const clpError = assertClpComplete(req.body);
+    if (clpError) {
+      return res.status(400).json({ error: clpError });
     }
 
     const product = await productService.createProduct(req.body);
@@ -409,12 +451,31 @@ router.put('/products/:id', authenticateToken, requireAdmin, [
   body('scent_profile').isObject(),
   body('base_price').isFloat({ min: 0 }),
   body('categories').optional().isArray(),
-  body('variants').optional().isArray()
+  body('variants').optional().isArray(),
+  // Commerce fields (migration 021)
+  body('status').optional().isIn(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+  body('vat_rate').optional().isFloat({ min: 0, max: 100 }),
+  body('meta_title').optional().trim().isLength({ max: 255 }),
+  body('meta_description').optional().trim(),
+  body('weight_grams').optional().isInt({ min: 1 }),
+  body('clp_allergens').optional().isArray(),
+  body('clp_hazard_pictograms').optional().isArray(),
+  body('clp_signal_word').optional().isIn(['DANGER', 'WARNING']),
+  body('clp_hazard_statements').optional().isArray(),
+  body('clp_precautionary_statements').optional().isArray(),
+  body('ufi_code').optional().trim().isLength({ max: 50 }),
+  body('clp_responsible_name').optional().trim().isLength({ max: 255 }),
+  body('clp_exempt').optional().isBoolean()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    const clpError = assertClpComplete(req.body);
+    if (clpError) {
+      return res.status(400).json({ error: clpError });
     }
 
     const { id } = req.params;

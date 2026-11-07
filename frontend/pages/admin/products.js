@@ -30,6 +30,7 @@ import {
   LinearProgress,
   Pagination,
   Checkbox,
+  FormControlLabel,
   Toolbar,
   Tooltip,
   CircularProgress,
@@ -46,7 +47,9 @@ import {
   CloudUpload as UploadIcon,
   Image as ImageIcon,
   AddPhotoAlternate as AddPhotoIcon,
+  QrCode as QrCodeIcon,
 } from '@mui/icons-material';
+import ClpLabelKit from '../../components/admin/ClpLabelKit';
 import AdminLayout from '../../components/AdminLayout';
 import AdminProtectedRoute from '../../components/AdminProtectedRoute';
 import axios from 'axios';
@@ -62,6 +65,7 @@ const AdminProducts = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [labelProduct, setLabelProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -153,7 +157,20 @@ const AdminProducts = () => {
         base_price: product.base_price,
         categories: product.categories.map(c => c.id),
         variants: product.variants,
-        images: product.images || []
+        images: product.images || [],
+        status: product.status || 'DRAFT',
+        vat_rate: product.vat_rate != null ? product.vat_rate : 20,
+        meta_title: product.meta_title || '',
+        meta_description: product.meta_description || '',
+        weight_grams: product.weight_grams != null ? product.weight_grams : '',
+        clp_allergens: (product.clp_allergens || []).join(', '),
+        clp_hazard_pictograms: (product.clp_hazard_pictograms || []).join(', '),
+        clp_signal_word: product.clp_signal_word || '',
+        clp_hazard_statements: (product.clp_hazard_statements || []).join(', '),
+        clp_precautionary_statements: (product.clp_precautionary_statements || []).join(', '),
+        ufi_code: product.ufi_code || '',
+        clp_responsible_name: product.clp_responsible_name || '',
+        clp_exempt: product.clp_exempt === true
       });
     } else {
       setEditingProduct(null);
@@ -164,7 +181,20 @@ const AdminProducts = () => {
         base_price: '',
         categories: [],
         variants: [],
-        images: []
+        images: [],
+        status: 'DRAFT',
+        vat_rate: 20,
+        meta_title: '',
+        meta_description: '',
+        weight_grams: '',
+        clp_allergens: '',
+        clp_hazard_pictograms: '',
+        clp_signal_word: '',
+        clp_hazard_statements: '',
+        clp_precautionary_statements: '',
+        ufi_code: '',
+        clp_responsible_name: '',
+        clp_exempt: false
       });
     }
     setDialogOpen(true);
@@ -175,11 +205,41 @@ const AdminProducts = () => {
     setEditingProduct(null);
   };
 
+  // Comma-separated admin inputs → arrays for JSONB columns
+  const toList = (value) => String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
   const handleSaveProduct = async () => {
     try {
+      // CLP gate mirrors the server-side check in routes/admin.js:
+      // scented products going ACTIVE need complete CLP data; the exempt
+      // tickbox bypasses (and audits) it.
+      if (!productForm.clp_exempt && productForm.status === 'ACTIVE') {
+        const missing = [];
+        if (!productForm.clp_signal_word) missing.push('signal word');
+        if (!toList(productForm.clp_hazard_pictograms).length) missing.push('hazard pictograms');
+        if (!toList(productForm.clp_hazard_statements).length) missing.push('H-codes');
+        if (!toList(productForm.clp_precautionary_statements).length) missing.push('P-codes');
+        if (!productForm.clp_responsible_name) missing.push('responsible person');
+        if (missing.length) {
+          setError(`CLP data incomplete — required to go ACTIVE: ${missing.join(', ')}. Tick "CLP not required" if this product is exempt.`);
+          return;
+        }
+      }
+
       const data = {
         ...productForm,
-        base_price: parseFloat(productForm.base_price)
+        base_price: parseFloat(productForm.base_price),
+        vat_rate: parseFloat(productForm.vat_rate),
+        weight_grams: productForm.weight_grams === '' ? null : parseInt(productForm.weight_grams, 10),
+        clp_allergens: toList(productForm.clp_allergens),
+        clp_hazard_pictograms: toList(productForm.clp_hazard_pictograms),
+        clp_signal_word: productForm.clp_signal_word || null,
+        clp_hazard_statements: toList(productForm.clp_hazard_statements),
+        clp_precautionary_statements: toList(productForm.clp_precautionary_statements),
+        clp_exempt: productForm.clp_exempt === true
       };
 
       if (editingProduct) {
@@ -428,6 +488,11 @@ const AdminProducts = () => {
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
+                      <Tooltip title="CLP Label Kit">
+                        <IconButton onClick={() => setLabelProduct(product)}>
+                          <QrCodeIcon />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Delete">
                         <IconButton onClick={() => handleDeleteProduct(product.id)}>
                           <DeleteIcon />
@@ -480,7 +545,7 @@ const AdminProducts = () => {
                     value={productForm.base_price}
                     onChange={(e) => setProductForm({ ...productForm, base_price: e.target.value })}
                     InputProps={{
-                      startAdornment: <span>$</span>,
+                      startAdornment: <span>£</span>,
                     }}
                     required
                   />
@@ -495,6 +560,147 @@ const AdminProducts = () => {
                     rows={3}
                   />
                 </Grid>
+
+                {/* Commerce: lifecycle, VAT (flip-of-switch accounting),
+                    shipping weight. £ input is what the CUSTOMER pays. */}
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      value={productForm.status}
+                      onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
+                      label="Status"
+                    >
+                      <MenuItem value="DRAFT">Draft (hidden from store)</MenuItem>
+                      <MenuItem value="ACTIVE">Active (visible)</MenuItem>
+                      <MenuItem value="ARCHIVED">Archived</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="VAT Rate (%)"
+                    type="number"
+                    value={productForm.vat_rate}
+                    onChange={(e) => setProductForm({ ...productForm, vat_rate: e.target.value })}
+                    helperText="Used when vat_registered is switched on"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Weight (g)"
+                    type="number"
+                    value={productForm.weight_grams}
+                    onChange={(e) => setProductForm({ ...productForm, weight_grams: e.target.value })}
+                    helperText="For shipping rates"
+                  />
+                </Grid>
+
+                {/* SEO overrides — fall back to name/description when empty */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="SEO Title (optional)"
+                    value={productForm.meta_title}
+                    onChange={(e) => setProductForm({ ...productForm, meta_title: e.target.value })}
+                    helperText="Overrides the page title for search engines (leave empty to use the product name)"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="SEO Meta Description (optional)"
+                    value={productForm.meta_description}
+                    onChange={(e) => setProductForm({ ...productForm, meta_description: e.target.value })}
+                    multiline
+                    rows={2}
+                    helperText="Overrides the search snippet text (~155 characters is ideal)"
+                  />
+                </Grid>
+
+                {/* CLP compliance (N-1) — legally required for scented
+                    candles/wax melts. Comma-separated lists. The exempt
+                    tickbox bypasses the requirement (bath products,
+                    accessories) — the tick IS the audit trail. */}
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={productForm.clp_exempt === true}
+                        onChange={(e) => setProductForm({ ...productForm, clp_exempt: e.target.checked })}
+                      />
+                    }
+                    label="CLP not required for this product (unscented / non-classified)"
+                  />
+                </Grid>
+                {!productForm.clp_exempt && (
+                <>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="CLP Signal Word"
+                    value={productForm.clp_signal_word}
+                    onChange={(e) => setProductForm({ ...productForm, clp_signal_word: e.target.value })}
+                    helperText="DANGER or WARNING (leave empty if not applicable)"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="UFI Code"
+                    value={productForm.ufi_code}
+                    onChange={(e) => setProductForm({ ...productForm, ufi_code: e.target.value })}
+                    helperText="Required for EU sales (format: XXXX-XXXX-XXXX-XXXX)"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="CLP Allergens"
+                    value={productForm.clp_allergens}
+                    onChange={(e) => setProductForm({ ...productForm, clp_allergens: e.target.value })}
+                    helperText="Comma-separated, e.g. Eugenol, Linalool, Coumarin"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Hazard Pictograms"
+                    value={productForm.clp_hazard_pictograms}
+                    onChange={(e) => setProductForm({ ...productForm, clp_hazard_pictograms: e.target.value })}
+                    helperText="Comma-separated GHS codes, e.g. GHS02, GHS09"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Responsible Person / Company"
+                    value={productForm.clp_responsible_name}
+                    onChange={(e) => setProductForm({ ...productForm, clp_responsible_name: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Hazard Statements (H-codes)"
+                    value={productForm.clp_hazard_statements}
+                    onChange={(e) => setProductForm({ ...productForm, clp_hazard_statements: e.target.value })}
+                    helperText="Comma-separated, e.g. H317, H411"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Precautionary Statements (P-codes)"
+                    value={productForm.clp_precautionary_statements}
+                    onChange={(e) => setProductForm({ ...productForm, clp_precautionary_statements: e.target.value })}
+                    helperText="Comma-separated, e.g. P102, P210, P280"
+                  />
+                </Grid>
+                </>
+                )}
                 <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel>Categories</InputLabel>
@@ -643,6 +849,9 @@ const AdminProducts = () => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* CLP Label Kit — print-ready 50×30mm compliance label + QR */}
+          <ClpLabelKit product={labelProduct} onClose={() => setLabelProduct(null)} />
         </Container>
       </AdminLayout>
     </AdminProtectedRoute>
