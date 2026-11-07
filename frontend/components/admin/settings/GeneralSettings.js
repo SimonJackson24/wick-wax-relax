@@ -9,6 +9,8 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 
@@ -19,6 +21,8 @@ const GeneralSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =>
     contact_email: settings.general?.contact_email?.value || '',
     support_phone: settings.general?.support_phone?.value || '',
     business_address: settings.general?.business_address?.value || '',
+    vat_registered: settings.general?.vat_registered?.value === 'true',
+    vat_registration_number: settings.general?.vat_registration_number?.value || '',
   });
 
   const [errors, setErrors] = useState({});
@@ -70,6 +74,8 @@ const GeneralSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =>
       { category: 'general', key: 'contact_email', value: formData.contact_email },
       { category: 'general', key: 'support_phone', value: formData.support_phone },
       { category: 'general', key: 'business_address', value: formData.business_address },
+      { category: 'general', key: 'vat_registered', value: formData.vat_registered ? 'true' : 'false' },
+      { category: 'general', key: 'vat_registration_number', value: formData.vat_registration_number },
     ];
 
     await onBulkUpdate(updates);
@@ -110,6 +116,47 @@ const GeneralSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =>
                     error={!!errors.site_description}
                     helperText={errors.site_description || 'Brief description for SEO and branding'}
                   />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* VAT — the flip-of-switch. Prices are always entered as what the
+            customer pays; this switch only changes how they are ACCOUNTED
+            for. OFF: no VAT lines anywhere. ON: same prices become
+            VAT-inclusive, invoices/admin show the breakdown. */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="VAT Registration" />
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.vat_registered}
+                        onChange={(e) => handleInputChange('vat_registered', e.target.checked)}
+                      />
+                    }
+                    label={formData.vat_registered ? 'VAT registered — prices are VAT-inclusive' : 'Not VAT registered — prices displayed as entered'}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="VAT Registration Number"
+                    value={formData.vat_registration_number}
+                    onChange={(e) => handleInputChange('vat_registration_number', e.target.value)}
+                    helperText="GB123456789 — leave empty until HMRC issues one. Flipping the switch with a number set starts showing the VAT breakdown on invoices."
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Alert severity="info">
+                    Turning this on does <strong>not</strong> change any displayed prices — customers
+                    see exactly the same amounts. Only the accounting interpretation changes
+                    (ex-VAT + VAT breakdown on invoices and admin reports).
+                  </Alert>
                 </Grid>
               </Grid>
             </CardContent>
