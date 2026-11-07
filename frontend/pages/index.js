@@ -6,7 +6,8 @@ import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 
 import AnnouncementBar from '../components/home/AnnouncementBar';
-import HomeHero from '../components/home/HomeHero';
+import PremiumHero from '../components/home/PremiumHero';
+import CinematicBand from '../components/home/CinematicBand';
 import MoodTiles from '../components/home/MoodTiles';
 import BestSellers from '../components/home/BestSellers';
 import EditorialSplit from '../components/home/EditorialSplit';
@@ -31,24 +32,6 @@ import SubscribeBand from '../components/home/SubscribeBand';
 const HomePage = ({ featuredInitial }) => {
   const products = featuredInitial || [];
 
-  const heroFeature = products[0]
-    ? {
-        eyebrow: 'Bestseller',
-        name: products[0].name,
-        notes: products[0].scent_profile?.primary,
-        price: `£${Number(
-          products[0].variants?.[0]?.price ?? products[0].base_price ?? 0
-        ).toFixed(2)}`,
-        href: `/product/${products[0].slug || products[0].id}`,
-      }
-    : {
-        eyebrow: 'New batch',
-        name: 'Lavender Dream',
-        notes: 'Lavender · Vetiver',
-        price: '£12.00',
-        href: '/products',
-      };
-
   return (
     <>
       <SEOHead
@@ -63,11 +46,13 @@ const HomePage = ({ featuredInitial }) => {
 
       <Navigation />
 
-      <HomeHero feature={heroFeature} />
+      <PremiumHero products={products} />
 
       <MoodTiles />
 
       <BestSellers products={products} />
+
+      <CinematicBand />
 
       <EditorialSplit />
 

@@ -12,7 +12,7 @@ import HomeProductCard from './HomeProductCard';
  * lever the old design was missing.
  */
 const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sellers' }) => (
-  <Box sx={{ py: { xs: 7, md: 11 }, backgroundColor: 'background.subtle' }}>
+  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
     <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
       <Box
         sx={{
@@ -22,7 +22,7 @@ const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sell
       >
         <Box>
           <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
-            {eyebrow}
+            02 &nbsp;—&nbsp; {eyebrow}
           </Typography>
           <Typography variant="h2">{title}</Typography>
         </Box>

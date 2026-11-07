@@ -15,7 +15,7 @@ const EditorialSplit = ({
   image = '/images/bath-scene.svg',
   reversed = false,
 }) => (
-  <Box sx={{ py: { xs: 7, md: 11 }, backgroundColor: 'background.default' }}>
+  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
     <Box
       sx={{
         maxWidth: 1440,
@@ -30,12 +30,12 @@ const EditorialSplit = ({
       <Box sx={{ order: { xs: 1, md: reversed ? 2 : 1 } }}>
         <Box
           sx={{
-            borderRadius: 1,
+            borderRadius: 2,
             overflow: 'hidden',
-            aspectRatio: { xs: '4 / 3', md: '5 / 4' },
-            bgcolor: '#F4EFE7',
-            border: '1px solid',
-            borderColor: 'divider',
+            aspectRatio: { xs: '4 / 3', md: '5 / 4.2' },
+            bgcolor: '#F1EBE1',
+            border: '1px solid rgba(28,26,31,0.07)',
+            boxShadow: '0 20px 48px rgba(28,26,31,0.12)',
           }}
         >
           <Box

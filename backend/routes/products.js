@@ -250,6 +250,7 @@ router.get('/', async (req, res) => {
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.image_url,
         p.created_at
       FROM products p
       WHERE p.status = 'ACTIVE'
@@ -304,6 +305,7 @@ router.get('/featured', async (req, res) => {
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.image_url,
         p.rrp,
         p.created_at,
         p.is_featured
@@ -356,6 +358,7 @@ router.get('/new', async (req, res) => {
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.image_url,
         p.created_at
       FROM products p
       WHERE p.status = 'ACTIVE'
@@ -427,6 +430,7 @@ router.get('/related/:id', [
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.image_url,
         p.created_at
       FROM products p
       INNER JOIN product_categories pc ON p.id = pc.product_id
@@ -482,6 +486,7 @@ router.get('/category/:categorySlug', async (req, res) => {
         p.clp_responsible_name,
         p.clp_exempt,
         p.fragrance_load_percent,
+        p.image_url,
         p.created_at
       FROM products p
       INNER JOIN product_categories pc ON p.id = pc.product_id
@@ -639,6 +644,7 @@ router.get('/slug/:slug', async (req, res) => {
         clp_responsible_name,
         clp_exempt,
         fragrance_load_percent,
+        image_url,
         created_at
       FROM products
       WHERE slug = $1 AND status = 'ACTIVE'
@@ -703,6 +709,7 @@ router.get('/:id', [
         clp_responsible_name,
         clp_exempt,
         fragrance_load_percent,
+        image_url,
         created_at
       FROM products
       WHERE id = $1 AND status = 'ACTIVE'

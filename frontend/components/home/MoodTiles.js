@@ -40,11 +40,11 @@ const MOODS = [
 ];
 
 const MoodTiles = ({ moods = MOODS }) => (
-  <Box sx={{ py: { xs: 7, md: 11 }, backgroundColor: 'background.default' }}>
+  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.subtle', borderTop: '1px solid', borderColor: 'divider' }}>
     <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
       <Box sx={{ mb: { xs: 4, md: 5 }, maxWidth: 620 }}>
         <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
-          Shop by mood
+          01 &nbsp;—&nbsp; Shop by mood
         </Typography>
         <Typography variant="h2">
           What does the room need tonight?

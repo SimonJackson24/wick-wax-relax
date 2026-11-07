@@ -161,6 +161,18 @@ const theme = createTheme({
 
   shape: { borderRadius: 6 },
 
+  // Layered, natural shadows. A single soft shadow reads flat; stacking a
+  // tight contact shadow with a wide ambient one reads as physical depth.
+  shadows: [
+    'none',
+    '0 1px 2px rgba(28,26,31,0.04), 0 2px 8px rgba(28,26,31,0.05)',
+    '0 2px 4px rgba(28,26,31,0.05), 0 8px 24px rgba(28,26,31,0.07)',
+    '0 4px 8px rgba(28,26,31,0.06), 0 16px 40px rgba(28,26,31,0.09)',
+    '0 8px 16px rgba(28,26,31,0.07), 0 32px 64px rgba(28,26,31,0.11)',
+    '0 12px 24px rgba(28,26,31,0.08), 0 48px 96px rgba(28,26,31,0.13)',
+    ...Array(19).fill('0 12px 24px rgba(28,26,31,0.08), 0 48px 96px rgba(28,26,31,0.13)'),
+  ],
+
   // Design tokens used by the auth pages (signup / forgot-password /
   // reset-password). These pages read theme.custom.* — a section that was
   // never defined, so they crashed on render (in the browser too: the
@@ -226,14 +238,27 @@ const theme = createTheme({
           border: '1px solid #E8E2D9', // hairline border, not shadow
           boxShadow: 'none',
           backgroundImage: 'none',
-          transition: 'border-color 240ms ease-out',
-          '&:hover': { borderColor: '#D8D0C6', boxShadow: 'none', transform: 'none' },
+          transition: 'border-color 240ms ease-out, box-shadow 320ms ease-out, transform 320ms cubic-bezier(0.2,0,0,1)',
+          '&:hover': {
+            borderColor: '#D8D0C6',
+            boxShadow: '0 2px 4px rgba(28,26,31,0.05), 0 12px 28px rgba(28,26,31,0.08)',
+            transform: 'translateY(-3px)',
+          },
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: { backgroundImage: 'none' },
+        elevation1: { boxShadow: '0 1px 2px rgba(28,26,31,0.04), 0 2px 8px rgba(28,26,31,0.05)' },
+        elevation2: { boxShadow: '0 2px 4px rgba(28,26,31,0.05), 0 8px 24px rgba(28,26,31,0.07)' },
+        elevation3: { boxShadow: '0 4px 8px rgba(28,26,31,0.06), 0 16px 40px rgba(28,26,31,0.09)' },
+        elevation4: { boxShadow: '0 8px 16px rgba(28,26,31,0.07), 0 32px 64px rgba(28,26,31,0.11)' },
+        elevation6: { boxShadow: '0 12px 24px rgba(28,26,31,0.08), 0 48px 96px rgba(28,26,31,0.13)' },
+        elevation8: { boxShadow: '0 16px 32px rgba(28,26,31,0.09), 0 64px 120px rgba(28,26,31,0.15)' },
+        elevation12: { boxShadow: '0 24px 48px rgba(28,26,31,0.10), 0 80px 160px rgba(28,26,31,0.16)' },
+        elevation16: { boxShadow: '0 32px 64px rgba(28,26,31,0.11), 0 96px 200px rgba(28,26,31,0.17)' },
+        elevation24: { boxShadow: '0 48px 96px rgba(28,26,31,0.12), 0 120px 240px rgba(28,26,31,0.18)' },
       },
     },
     MuiChip: {

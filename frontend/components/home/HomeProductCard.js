@@ -60,8 +60,12 @@ const HomeProductCard = ({ product }) => {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        transition: 'border-color 240ms ease-out',
-        '&:hover': { borderColor: '#C8B6DB' },
+        transition: 'border-color 240ms ease-out, box-shadow 320ms ease-out, transform 320ms cubic-bezier(0.2,0,0,1)',
+        '&:hover': {
+          borderColor: 'rgba(28,26,31,0.10)',
+          boxShadow: '0 2px 4px rgba(28,26,31,0.05), 0 14px 32px rgba(28,26,31,0.09)',
+          transform: 'translateY(-4px)',
+        },
         '&:hover .quick-add': { opacity: 1, transform: 'translateY(0)' },
       }}
     >
