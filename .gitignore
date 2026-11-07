@@ -103,3 +103,8 @@ security-audit/
 completed-works/
 # <<< completed-works (hermes hook) <<<
 backups
+
+# Mimosa scanner private state — never commit
+.mimosa/
+**/.mimosa/
+.video_agent/
