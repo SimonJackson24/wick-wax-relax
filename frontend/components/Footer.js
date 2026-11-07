@@ -1,358 +1,196 @@
 import React from 'react';
-import { Box, Container, Typography, Grid, Link, IconButton, useTheme, useMediaQuery } from '@mui/material';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
+import Link from 'next/link';
+import { Box, Container, Typography, Grid, Link as MuiLink, IconButton, TextField, Button } from '@mui/material';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-const Footer = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+// Rebuilt for "The Ritual" design system. The previous Footer existed but
+// was never imported by any page — the homepage rendered its own inline
+// footer instead, which is why the legal pages (Terms, Privacy, Returns,
+// Shipping, Cookies) were unreachable and why the whole site had no
+// navigation footer at all.
 
-  const footerLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Shop All', href: '/products' },
-    { name: 'Wax Melts', href: '/category/wax-melts' },
-    { name: 'Candles', href: '/category/candles' },
-    { name: 'Bath Bombs', href: '/category/bath-bombs' },
-    { name: 'Diffusers', href: '/category/diffusers' },
-    { name: 'Subscribe & Save', href: '/subscriptions' },
-    { name: 'My Account', href: '/account/profile' },
-    { name: 'Order History', href: '/account/orders' },
-  ];
+const SHOP_LINKS = [
+  { name: 'Shop all', href: '/products' },
+  { name: 'Candles', href: '/category/candles' },
+  { name: 'Wax melts', href: '/category/wax-melts' },
+  { name: 'Bath bombs', href: '/category/bath-bombs' },
+  { name: 'Diffusers', href: '/category/diffusers' },
+  { name: 'Subscribe & save', href: '/subscriptions' },
+  { name: 'Gift cards', href: '/products' },
+];
 
-  // Legal/policy links — these must be reachable from every page (the
-  // UK consumer-law pages: returns, privacy, terms, shipping, cookies).
-  const legalLinks = [
-    { name: 'Terms & Conditions', href: '/terms' },
-    { name: 'Privacy Policy', href: '/privacy' },
-    { name: 'Returns & Refunds', href: '/returns' },
-    { name: 'Shipping Policy', href: '/shipping' },
-    { name: 'Cookie Policy', href: '/cookies' },
-    { name: 'Accessibility', href: '/accessibility' },
-  ];
+const HELP_LINKS = [
+  { name: 'Contact us', href: '/contact' },
+  { name: 'Order tracking', href: '/account/orders' },
+  { name: 'Delivery & shipping', href: '/shipping' },
+  { name: 'Returns & refunds', href: '/returns' },
+  { name: 'Frequently asked', href: '/faq' },
+  { name: 'Accessibility', href: '/accessibility' },
+];
 
-  const socialLinks = [
-    { name: 'Facebook', icon: <FacebookIcon />, href: 'https://facebook.com/wickwaxrelax' },
-    { name: 'Instagram', icon: <InstagramIcon />, href: 'https://instagram.com/wickwaxrelax' },
-    { name: 'Twitter', icon: <TwitterIcon />, href: 'https://twitter.com/wickwaxrelax' },
-  ];
+const POLICY_LINKS = [
+  { name: 'Terms & Conditions', href: '/terms' },
+  { name: 'Privacy Policy', href: '/privacy' },
+  { name: 'Cookie Policy', href: '/cookies' },
+  { name: 'Modern slavery statement', href: '/terms' },
+];
 
-  return (
-    <Box
-      component="footer"
-      sx={{
-        backgroundColor: theme.palette.primary.main,
-        color: '#ffffff',
-        py: { xs: 8, md: 12, lg: 16 },
-        mt: 'auto',
-        position: 'relative',
-        overflow: 'hidden'
-      }}
+const SOCIALS = [
+  { icon: <InstagramIcon sx={{ fontSize: 18 }} />, href: 'https://instagram.com/wickwaxrelax', label: 'Instagram' },
+  { icon: <FacebookIcon sx={{ fontSize: 18 }} />, href: 'https://facebook.com/wickwaxrelax', label: 'Facebook' },
+  { icon: <MusicNoteIcon sx={{ fontSize: 18 }} />, href: 'https://tiktok.com/@wickwaxrelax', label: 'TikTok' },
+];
+
+const Column = ({ title, links }) => (
+  <Box>
+    <Typography
+      variant="overline"
+      sx={{ color: 'rgba(244,239,231,0.55)', display: 'block', mb: 2.5 }}
     >
-      {/* Background decoration */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '100%',
-          backgroundImage: `
-            radial-gradient(circle at 20% 80%, ${theme.palette.secondary.main}08 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, ${theme.palette.secondary.main}08 0%, transparent 50%)
-          `,
-          zIndex: 1,
-        }}
-      />
-
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-        <Grid container spacing={{ xs: 4, md: 6, lg: 8 }}>
-          {/* Company Info */}
-          <Grid item xs={12} md={4}>
-            <Box
-              component={motion.div}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                <Box
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: '50%',
-                    backgroundColor: theme.palette.secondary.main,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mr: 2,
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    color: theme.palette.primary.main
-                  }}
-                >
-                  W
-                </Box>
-                <Typography
-                  variant="h5"
-                  component="h3"
-                  sx={{
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    fontSize: { xs: '1.4rem', md: '1.6rem' }
-                  }}
-                >
-                  Wick Wax & Relax
-                </Typography>
-              </Box>
-
-              <Typography
-                variant="body2"
-                sx={{
-                  mb: 4,
-                  lineHeight: 1.7,
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: { xs: '0.95rem', md: '1rem' }
-                }}
-              >
-                Your premier destination for premium soy wax melts and candles.
-                We specialize in creating handcrafted products designed to transform
-                your space into a sanctuary of relaxation.
-              </Typography>
-            </Box>
-          </Grid>
-
-          {/* Quick Links */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Box
-              component={motion.div}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              viewport={{ once: true }}
-            >
-              <Typography
-                variant="h6"
-                component="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 4,
-                  fontSize: { xs: '1.2rem', md: '1.3rem' },
-                  color: '#ffffff',
-                  position: 'relative',
-                  display: 'inline-block',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: -8,
-                    left: 0,
-                    width: '50px',
-                    height: '3px',
-                    backgroundColor: theme.palette.secondary.main,
-                    borderRadius: '2px',
-                  }
-                }}
-              >
-                Quick Links
-              </Typography>
-
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {footerLinks.map((link, index) => (
-                  <Link
-                    key={index}
-                    href={link.href}
-                    underline="none"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      transition: 'all 0.3s ease',
-                      fontSize: { xs: '0.95rem', md: '1rem' },
-                      fontWeight: 500,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      '&:hover': {
-                        color: theme.palette.secondary.main,
-                        transform: 'translateX(8px)',
-                      }
-                    }}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Contact Info */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Box
-              component={motion.div}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
-              <Typography
-                variant="h6"
-                component="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 4,
-                  fontSize: { xs: '1.2rem', md: '1.3rem' },
-                  color: '#ffffff',
-                  position: 'relative',
-                  display: 'inline-block',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: -8,
-                    left: 0,
-                    width: '50px',
-                    height: '3px',
-                    backgroundColor: theme.palette.secondary.main,
-                    borderRadius: '2px',
-                  }
-                }}
-              >
-                Contact Us
-              </Typography>
-
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <LocationOnIcon sx={{ color: theme.palette.secondary.main, mr: 2, mt: 0.5, fontSize: '1.2rem' }} />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      lineHeight: 1.6,
-                      fontSize: { xs: '0.9rem', md: '0.95rem' }
-                    }}
-                  >
-                    123 Relaxation Street<br />
-                    Serenity City, SC 12345
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PhoneIcon sx={{ color: theme.palette.secondary.main, mr: 2, fontSize: '1.2rem' }} />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      fontSize: { xs: '0.9rem', md: '0.95rem' }
-                    }}
-                  >
-                    (123) 456-7890
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <EmailIcon sx={{ color: theme.palette.secondary.main, mr: 2, fontSize: '1.2rem' }} />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      fontSize: { xs: '0.9rem', md: '0.95rem' }
-                    }}
-                  >
-                    info@wickwaxrelax.co.uk
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Social Media Links */}
-              <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
-                {socialLinks.map((social, index) => (
-                  <IconButton
-                    key={index}
-                    component="a"
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.name}
-                    sx={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#ffffff',
-                      transition: 'all 0.3s ease',
-                      width: { xs: 40, md: 44 },
-                      height: { xs: 40, md: 44 },
-                      '&:hover': {
-                        backgroundColor: theme.palette.secondary.main,
-                        color: theme.palette.primary.main,
-                        transform: 'translateY(-3px)',
-                        boxShadow: `0 8px 20px ${theme.palette.secondary.main}40`,
-                      }
-                    }}
-                  >
-                    {social.icon}
-                  </IconButton>
-                ))}
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Legal / policy links */}
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          sx={{ mt: 4, textAlign: 'center' }}
-        >
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, md: 3 }, justifyContent: 'center' }}>
-            {legalLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                underline="hover"
-                sx={{
-                  color: 'rgba(255, 255, 255, 0.75)',
-                  fontSize: { xs: '0.82rem', md: '0.88rem' },
-                  textDecoration: 'none',
-                  '&:hover': { color: theme.palette.secondary.light }
-                }}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </Box>
-        </Box>
-
-        {/* Copyright */}
-        <Box
-          component={motion.div}
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          viewport={{ once: true }}
+      {title}
+    </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+      {links.map((link) => (
+        <MuiLink
+          key={link.name}
+          component={Link}
+          href={link.href}
+          underline="none"
           sx={{
-            mt: { xs: 6, md: 8, lg: 10 },
-            pt: { xs: 4, md: 5, lg: 6 },
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            textAlign: 'center'
+            color: 'rgba(244,239,231,0.82)',
+            fontSize: '0.9375rem',
+            fontWeight: 500,
+            width: 'fit-content',
+            transition: 'color 200ms ease-out',
+            '&:hover': { color: '#E6C88A' },
           }}
         >
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: { xs: '0.85rem', md: '0.9rem' },
-              fontWeight: 400
-            }}
-          >
-            &copy; {new Date().getFullYear()} Wick Wax & Relax. All rights reserved.
-          </Typography>
-        </Box>
-      </Container>
+          {link.name}
+        </MuiLink>
+      ))}
     </Box>
-  );
-};
+  </Box>
+);
+
+const Footer = () => (
+  <Box component="footer" sx={{ backgroundColor: '#3D2B3D', color: '#F4EFE7', pt: { xs: 7, md: 10 }, pb: 4 }}>
+    <Container maxWidth={false} sx={{ maxWidth: 1440, px: { xs: 2, md: 4 } }}>
+      <Grid container spacing={{ xs: 5, md: 8 }}>
+        {/* Brand + newsletter */}
+        <Grid item xs={12} md={5}>
+          <Typography
+            sx={{ fontFamily: '"Playfair Display", serif', fontSize: '1.75rem', fontWeight: 500, mb: 1.5 }}
+          >
+            Wick Wax &amp; Relax
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(244,239,231,0.72)', maxWidth: 380, mb: 3 }}>
+            Hand-poured soy candles, wax melts and bath bombs made in small
+            batches in Sussex. Plastic-free, vegan, and honestly labelled.
+          </Typography>
+          <Box sx={{ mb: 3, maxWidth: 400 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'rgba(244,239,231,0.9)' }}>
+              10% off your first order
+            </Typography>
+            <Box
+              component="form"
+              onSubmit={(e) => e.preventDefault()}
+              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+            >
+              <TextField
+                type="email"
+                required
+                placeholder="Your email address"
+                aria-label="Email address"
+                size="small"
+                sx={{
+                  flex: '1 1 180px',
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    color: '#F4EFE7',
+                    '& fieldset': { borderColor: 'rgba(244,239,231,0.28)' },
+                    '&:hover fieldset': { borderColor: 'rgba(244,239,231,0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#E6C88A' },
+                  },
+                  '& input::placeholder': { color: 'rgba(244,239,231,0.5)', opacity: 1 },
+                }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                size="small"
+                endIcon={<ArrowForwardIcon sx={{ fontSize: '1rem !important' }} />}
+                sx={{
+                  backgroundColor: '#E6C88A',
+                  color: '#2A1D2A',
+                  '&:hover': { backgroundColor: '#D9B85F' },
+                }}
+              >
+                Subscribe
+              </Button>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {SOCIALS.map((social) => (
+              <IconButton
+                key={social.label}
+                component="a"
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                sx={{
+                  border: '1px solid rgba(244,239,231,0.25)',
+                  color: 'rgba(244,239,231,0.85)',
+                  borderRadius: '50%',
+                  width: 36, height: 36,
+                  '&:hover': { borderColor: '#E6C88A', color: '#E6C88A', backgroundColor: 'transparent' },
+                }}
+              >
+                {social.icon}
+              </IconButton>
+            ))}
+          </Box>
+        </Grid>
+
+        <Grid item xs={6} sm={4} md={2}>
+          <Column title="Shop" links={SHOP_LINKS} />
+        </Grid>
+        <Grid item xs={6} sm={4} md={2}>
+          <Column title="Help" links={HELP_LINKS} />
+        </Grid>
+        <Grid item xs={12} sm={4} md={3}>
+          <Column title="Legal" links={POLICY_LINKS} />
+          <Typography variant="caption" sx={{ display: 'block', mt: 3, color: 'rgba(244,239,231,0.55)' }}>
+            Wick Wax &amp; Relax, [registered address], [company number]
+            <br />
+            VAT [GB000000000] · Made in the UK
+          </Typography>
+        </Grid>
+      </Grid>
+
+      <Box
+        sx={{
+          mt: { xs: 5, md: 7 },
+          pt: 3,
+          borderTop: '1px solid rgba(244,239,231,0.14)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.55)' }}>
+          © {new Date().getFullYear()} Wick Wax &amp; Relax. All rights reserved.
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.55)' }}>
+          Free UK delivery over £25 · 30-day returns
+        </Typography>
+      </Box>
+    </Container>
+  </Box>
+);
 
 export default Footer;

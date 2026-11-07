@@ -237,12 +237,15 @@ class SearchService {
   }
 
   // Get search suggestions/autocomplete
-  async getSearchSuggestions(query, limit = 10) {
-    if (!query || query.length < 2) {
+  // NOTE: the parameter was previously called `query`, which SHADOWED the
+  // imported database `query` function — every call inside resolved to the
+  // search string ("query is not a function"). Renamed to `searchTerm`.
+  async getSearchSuggestions(searchTerm, limit = 10) {
+    if (!searchTerm || searchTerm.length < 2) {
       return { suggestions: [], categories: [], products: [] };
     }
 
-    const searchPattern = `${query}%`;
+    const searchPattern = `${searchTerm}%`;
 
     // Get product name suggestions
     const productSuggestions = await query(`
@@ -383,10 +386,13 @@ class SearchService {
   }
 
   // Log search analytics (for future use)
-  async logSearch(query, resultsCount, filters = {}, userId = null, sessionId = null) {
+  // `query` was renamed to `searchTerm` here too — the old parameter name
+  // shadowed the imported database `query` function (same bug as
+  // getSearchSuggestions).
+  async logSearch(searchTerm, resultsCount, filters = {}, userId = null, sessionId = null) {
     // This would typically insert into a search_analytics table
     console.log('Search logged:', {
-      query,
+      searchTerm,
       resultsCount,
       filters,
       userId,

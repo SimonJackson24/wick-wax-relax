@@ -1,44 +1,92 @@
 import React from 'react';
 import axios from 'axios';
-import { Box, Container, Typography } from '@mui/material';
 import SEOHead from '../components/SEOHead';
 import { SITE_URL } from '../utils/siteConfig';
 import Navigation from '../components/Navigation';
-import Hero from '../components/Hero';
-import FreeShippingBanner from '../components/FreeShippingBanner';
-import TrustBadges from '../components/TrustBadges';
-import FeaturedProducts from '../components/FeaturedProducts';
-import CategoryShowcase from '../components/CategoryShowcase';
-import SeasonalPromo from '../components/SeasonalPromo';
-import Testimonials from '../components/Testimonials';
-import NewCustomerCTA from '../components/NewCustomerCTA';
+import Footer from '../components/Footer';
 
-const HomePage = ({ featuredInitial }) => (
-  <>
-    <SEOHead title="Wick Wax Relax — Premium Home Fragrance Products" description="Hand-crafted soy wax candles, wax melts, bath bombs and reed diffusers. Ethically sourced, eco-friendly packaging, made in the UK. Free UK delivery on orders over £25." keywords="wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy, UK, hand-crafted" url={SITE_URL} type="website" />
-    <Navigation />
-    <Hero />
-    <FreeShippingBanner />
-    <TrustBadges />
-    <FeaturedProducts initialProducts={featuredInitial} />
-    <CategoryShowcase />
-    <SeasonalPromo />
-    <Testimonials />
-    <NewCustomerCTA />
-    <Box component="footer" sx={{ py: 6, bgcolor: 'background.paper' }}>
-      <Container maxWidth="lg">
-        <Typography variant="body2" color="text.secondary" align="center">© 2024 Wick Wax & Relax. All rights reserved.</Typography>
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}><a href="/accessibility" style={{ color: 'inherit' }}>Accessibility Statement</a></Typography>
-      </Container>
-    </Box>
-  </>
-);
+import AnnouncementBar from '../components/home/AnnouncementBar';
+import HomeHero from '../components/home/HomeHero';
+import MoodTiles from '../components/home/MoodTiles';
+import BestSellers from '../components/home/BestSellers';
+import EditorialSplit from '../components/home/EditorialSplit';
+import TransparencyStrip from '../components/home/TransparencyStrip';
+import ReviewsBand from '../components/home/ReviewsBand';
+import SubscribeBand from '../components/home/SubscribeBand';
+
+/**
+ * "The Ritual" homepage — editorial, gallery-led, Amazon's conversion
+ * spine in Wick Wax & Relax's own skin.
+ *
+ * Section order is deliberate:
+ *   1. trust strip (above fold)
+ *   2. one statement + price/quick-add visible without scrolling
+ *   3. mood tiles (sell by occasion, not product type — the differentiator)
+ *   4. best sellers with prices, ratings, urgency, quick-add (conversion)
+ *   5. editorial story (justifies the premium)
+ *   6. transparency strip (compliance as a marketing asset)
+ *   7. reviews band (the one dark moment — social proof)
+ *   8. subscription (recurring revenue)
+ */
+const HomePage = ({ featuredInitial }) => {
+  const products = featuredInitial || [];
+
+  const heroFeature = products[0]
+    ? {
+        eyebrow: 'Bestseller',
+        name: products[0].name,
+        notes: products[0].scent_profile?.primary,
+        price: `£${Number(
+          products[0].variants?.[0]?.price ?? products[0].base_price ?? 0
+        ).toFixed(2)}`,
+        href: `/product/${products[0].slug || products[0].id}`,
+      }
+    : {
+        eyebrow: 'New batch',
+        name: 'Lavender Dream',
+        notes: 'Lavender · Vetiver',
+        price: '£12.00',
+        href: '/products',
+      };
+
+  return (
+    <>
+      <SEOHead
+        title="Wick Wax Relax — Hand-Poured Soy Candles & Wax Melts"
+        description="Hand-poured soy candles, wax melts and bath bombs made in small batches in Sussex. Vegan, plastic-free, EU CLP-labelled and allergen-declared. Free UK delivery over £25."
+        keywords="wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy, UK, hand-crafted"
+        url={SITE_URL}
+        type="website"
+      />
+
+      <AnnouncementBar />
+
+      <Navigation />
+
+      <HomeHero feature={heroFeature} />
+
+      <MoodTiles />
+
+      <BestSellers products={products} />
+
+      <EditorialSplit />
+
+      <TransparencyStrip />
+
+      <ReviewsBand />
+
+      <SubscribeBand />
+
+      <Footer />
+    </>
+  );
+};
 
 export default HomePage;
 
-// Server-render the home page's featured products so the storefront's
-// most important page ships real product HTML (names, prices, links) in
-// the first response — the last page of the SSR sweep.
+// Server-render the home page's featured products so the storefront's most
+// important page ships real product HTML (names, prices, links) in the
+// first response.
 export async function getServerSideProps() {
   const apiBase = process.env.API_URL || 'http://localhost:3001';
   try {
