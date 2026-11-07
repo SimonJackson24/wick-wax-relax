@@ -56,6 +56,15 @@ const AdminSEO = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const loadSEOSettings = async () => {
+    try {
+      const response = await axios.get('/api/seo/settings');
+      setSeoSettings(response.data.settings);
+    } catch (err) {
+      console.error('Error loading SEO settings:', err);
+    }
+  };
+
   const tabProps = [
     {
       label: 'Dashboard',
@@ -105,15 +114,6 @@ const AdminSEO = () => {
       setError('Failed to load SEO data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadSEOSettings = async () => {
-    try {
-      const response = await axios.get('/api/seo/settings');
-      setSeoSettings(response.data.settings);
-    } catch (err) {
-      console.error('Error loading SEO settings:', err);
     }
   };
 

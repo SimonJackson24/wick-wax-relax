@@ -30,6 +30,16 @@ const theme = createTheme({
       dark: '#A86853',
       contrastText: '#FFFFFF',
     },
+    // `accent` is referenced 14 times across the app (auth pages, admin
+    // panels) but was never defined in the palette — every one of those
+    // renders threw "Cannot read properties of undefined (reading 'main')".
+    // Mirrors `tertiary` so both names resolve to the same warm clay.
+    accent: {
+      main: '#C9846B',
+      light: '#DCA08B',
+      dark: '#A86853',
+      contrastText: '#FFFFFF',
+    },
     success: { main: '#4A7C59' },
     warning: { main: '#C9846B' },
     error: { main: '#B3261E' },
@@ -150,6 +160,32 @@ const theme = createTheme({
   },
 
   shape: { borderRadius: 6 },
+
+  // Design tokens used by the auth pages (signup / forgot-password /
+  // reset-password). These pages read theme.custom.* — a section that was
+  // never defined, so they crashed on render (in the browser too: the
+  // pages were broken, they just weren't server-rendered so the build
+  // never complained). Restored here, matching the new design language.
+  custom: {
+    shape: {
+      borderRadius: {
+        sm: 4,
+        md: 8,
+        lg: 12,
+        xl: 16,
+        pill: 999,
+      },
+    },
+    typography: {
+      h1: { fontWeight: 500 },
+      h2: { fontWeight: 500 },
+      h3: { fontWeight: 500 },
+      h4: { fontWeight: 500 },
+      h5: { fontWeight: 500 },
+      h6: { fontWeight: 600 },
+      button: { fontWeight: 600 },
+    },
+  },
 
   components: {
     MuiButton: {
