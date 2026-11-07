@@ -34,6 +34,7 @@ import SEOHead from '../../components/SEOHead';
 import ClpDisclosure from '../../components/ClpDisclosure';
 import ProductBuyBox from '../../components/ProductBuyBox';
 import ReviewHistogram from '../../components/ReviewHistogram';
+import RecentlyViewed, { recordRecentlyViewed } from '../../components/RecentlyViewed';
 import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
@@ -79,6 +80,11 @@ export default function ProductDetail({ initialProduct }) {
   const [reviewStats, setReviewStats] = useState({ average: 0, count: 0, distribution: [] });
 
   useEffect(() => {
+    if (initialProduct) recordRecentlyViewed(initialProduct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (id) {
       fetchProduct();
       fetchRelatedProducts();
@@ -102,6 +108,7 @@ export default function ProductDetail({ initialProduct }) {
       }
       
       setProduct(response.data);
+      recordRecentlyViewed(response.data);
       if (response.data.variants && response.data.variants.length > 0) {
         setSelectedVariant(response.data.variants[0].id);
       }
@@ -615,6 +622,7 @@ export default function ProductDetail({ initialProduct }) {
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         {product && <FrequentlyBoughtTogether productId={id} />}
+        <RecentlyViewed excludeId={product?.id} />
       </Container>
 
     </>
