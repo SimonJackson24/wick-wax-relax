@@ -482,6 +482,10 @@ router.put('/products/:id', authenticateToken, requireAdmin, [
 
     const { id } = req.params;
     const product = await productService.updateProduct(id, req.body);
+    // Commerce fields (migration 021/022/023) persist after the core-row
+    // update: status, VAT, SEO, CLP, shipping, exemption, fragrance load.
+    const { applyCommerceFields } = require('../services/productCommerce');
+    await applyCommerceFields(id, req.body);
     res.json(product);
   } catch (error) {
     console.error('Error updating product:', error);

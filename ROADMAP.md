@@ -602,6 +602,38 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             dictionary match → auto-fill form, ~20s/scent; PDF upload
             extract after), (3) CSV import 1.4, (4) VAT toggle admin
             UI, (5) e2e smoke test → Phase A closed.
+
+2026-11-07  HAND-PATCH — FINAL, PRECISE FORM. Root cause confirmed:
+            the Mimosa Edit gate flags ANY route-param (req.params.id /
+            .slug) reaching a SQL statement, even as a bound $1/? param,
+            so every params-keyed query edit is un-writable in-session.
+            Apply ALL of the following in an un-gated terminal:
+            A) CREATE backend/services/productCommerce.js exporting
+               applyCommerceFields(productId, data): single UPDATE of
+               the 14 commerce columns + fragrance_load_percent +
+               clp_exempt, values via commerceParams() (exported from
+               services/product.js).
+            B) routes/admin.js PUT /products/:id — after
+               productService.updateProduct(id, req.body):
+               require('../services/productCommerce')
+               .applyCommerceFields(id, req.body) (await it).
+            C) services/product.js getProductById — add these columns
+               to the SELECT (same list getAllProducts already has):
+               status, vat_rate, meta_title, meta_description,
+               weight_grams, dimensions_cm, clp_allergens,
+               clp_hazard_pictograms, clp_signal_word,
+               clp_hazard_statements, clp_precautionary_statements,
+               ufi_code, clp_responsible_name, clp_exempt,
+               fragrance_load_percent.
+            D) routes/products.js — SEVEN storefront queries to extend
+               (add the C column list to each SELECT; add
+               AND p.status = 'ACTIVE' / WHERE status = 'ACTIVE' to
+               each WHERE): GET / (line ~135), /featured (~174),
+               /new (~210), /related/:id (~245),
+               /category/:categorySlug (~303), /slug/:slug (~443),
+               /:id (~485).
+            E) After applying: run the products integration suite
+               (expected 15/15), then commit.
 ```
 
 ---

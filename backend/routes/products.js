@@ -133,6 +133,8 @@ router.post('/:id/reviews', authenticateToken, reviewSubmissionLimiter, [
 
 router.get('/', async (req, res) => {
   try {
+    // Storefront: ACTIVE products only; commerce fields power the PDP's
+    // CLP panel, SEO overrides, and weight/dimension display.
     const products = await query(`
       SELECT
         p.id,
@@ -141,8 +143,24 @@ router.get('/', async (req, res) => {
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
+        p.clp_exempt,
+        p.fragrance_load_percent,
         p.created_at
       FROM products p
+      WHERE p.status = 'ACTIVE'
       ORDER BY p.created_at DESC
     `);
 
@@ -179,10 +197,25 @@ router.get('/featured', async (req, res) => {
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
+        p.clp_exempt,
+        p.fragrance_load_percent,
         p.created_at,
         p.is_featured
       FROM products p
-      WHERE p.is_featured = true
+      WHERE p.is_featured = true AND p.status = 'ACTIVE'
       ORDER BY p.created_at DESC
       LIMIT 8
     `);
@@ -215,8 +248,24 @@ router.get('/new', async (req, res) => {
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
+        p.clp_exempt,
+        p.fragrance_load_percent,
         p.created_at
       FROM products p
+      WHERE p.status = 'ACTIVE'
       ORDER BY p.created_at DESC
       LIMIT 8
     `);
@@ -270,11 +319,27 @@ router.get('/related/:id', [
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
+        p.clp_exempt,
+        p.fragrance_load_percent,
         p.created_at
       FROM products p
       INNER JOIN product_categories pc ON p.id = pc.product_id
       WHERE pc.category_id = ANY($1)
         AND p.id != $2
+        AND p.status = 'ACTIVE'
       ORDER BY p.created_at DESC
       LIMIT 8
     `, [categoryIds, id]);
@@ -309,11 +374,26 @@ router.get('/category/:categorySlug', async (req, res) => {
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
+        p.clp_exempt,
+        p.fragrance_load_percent,
         p.created_at
       FROM products p
       INNER JOIN product_categories pc ON p.id = pc.product_id
       INNER JOIN categories c ON pc.category_id = c.id
-      WHERE c.slug = $1
+      WHERE c.slug = $1 AND p.status = 'ACTIVE'
       ORDER BY p.created_at DESC
     `, [categorySlug]);
 
@@ -451,9 +531,24 @@ router.get('/slug/:slug', async (req, res) => {
         description,
         scent_profile,
         base_price,
+        status,
+        vat_rate,
+        meta_title,
+        meta_description,
+        weight_grams,
+        dimensions_cm,
+        clp_allergens,
+        clp_hazard_pictograms,
+        clp_signal_word,
+        clp_hazard_statements,
+        clp_precautionary_statements,
+        ufi_code,
+        clp_responsible_name,
+        clp_exempt,
+        fragrance_load_percent,
         created_at
       FROM products
-      WHERE slug = $1
+      WHERE slug = $1 AND status = 'ACTIVE'
     `, [slug]);
 
     if (product.rows.length === 0) {
@@ -500,9 +595,24 @@ router.get('/:id', [
         description,
         scent_profile,
         base_price,
+        status,
+        vat_rate,
+        meta_title,
+        meta_description,
+        weight_grams,
+        dimensions_cm,
+        clp_allergens,
+        clp_hazard_pictograms,
+        clp_signal_word,
+        clp_hazard_statements,
+        clp_precautionary_statements,
+        ufi_code,
+        clp_responsible_name,
+        clp_exempt,
+        fragrance_load_percent,
         created_at
       FROM products
-      WHERE id = $1
+      WHERE id = $1 AND status = 'ACTIVE'
     `, [id]);
 
     if (product.rows.length === 0) {
