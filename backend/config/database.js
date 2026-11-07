@@ -24,7 +24,12 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: buildSslConfig(),
+  // SSL is opt-in via DB_SSL=true. Managed DBs that require TLS (RDS,
+  // Supabase, etc.) set it; internal/container Postgres (Coolify,
+  // docker-compose) doesn't support SSL and forcing it in production
+  // failed every connection with "server does not support SSL
+  // connections".
+  ssl: process.env.DB_SSL === 'true' ? buildSslConfig() : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
