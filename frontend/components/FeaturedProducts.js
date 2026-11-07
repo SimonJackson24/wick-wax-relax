@@ -13,14 +13,20 @@ import { motion } from 'framer-motion';
 import ProductCard from './ProductCard';
 import axios from 'axios';
 
-const FeaturedProducts = () => {
+const FeaturedProducts = ({ initialProducts }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // SSR hydration: the home page's getServerSideProps can deliver the
+  // featured products so they're in the first HTML response (crawlable);
+  // without it (direct client nav) the fetch runs as before.
+  const [products, setProducts] = useState(initialProducts || []);
+  const [loading, setLoading] = useState(!initialProducts);
 
   useEffect(() => {
-    fetchFeaturedProducts();
+    if (!initialProducts) {
+      fetchFeaturedProducts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchFeaturedProducts = async () => {

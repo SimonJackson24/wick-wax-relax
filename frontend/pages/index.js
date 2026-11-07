@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { Box, Container, Typography } from '@mui/material';
 import SEOHead from '../components/SEOHead';
 import { SITE_URL } from '../utils/siteConfig';
@@ -12,14 +13,14 @@ import SeasonalPromo from '../components/SeasonalPromo';
 import Testimonials from '../components/Testimonials';
 import NewCustomerCTA from '../components/NewCustomerCTA';
 
-const HomePage = () => (
+const HomePage = ({ featuredInitial }) => (
   <>
     <SEOHead title="Wick Wax Relax — Premium Home Fragrance Products" description="Hand-crafted soy wax candles, wax melts, bath bombs and reed diffusers. Ethically sourced, eco-friendly packaging, made in the UK. Free UK delivery on orders over £25." keywords="wax melts, candles, home fragrance, essential oils, soy wax, aromatherapy, UK, hand-crafted" url={SITE_URL} type="website" />
     <NavigationWithCategories />
     <Hero />
     <FreeShippingBanner />
     <TrustBadges />
-    <FeaturedProducts />
+    <FeaturedProducts initialProducts={featuredInitial} />
     <CategoryShowcase />
     <SeasonalPromo />
     <Testimonials />
@@ -34,3 +35,17 @@ const HomePage = () => (
 );
 
 export default HomePage;
+
+// Server-render the home page's featured products so the storefront's
+// most important page ships real product HTML (names, prices, links) in
+// the first response — the last page of the SSR sweep.
+export async function getServerSideProps() {
+  const apiBase = process.env.API_URL || 'http://localhost:3001';
+  try {
+    const res = await axios.get(`${apiBase}/api/products/featured`, { timeout: 3000 });
+    return { props: { featuredInitial: (res.data && res.data.products) || [] } };
+  } catch {
+    // Backend briefly unreachable: render the shell; client fetch fills in.
+    return { props: { featuredInitial: null } };
+  }
+}
