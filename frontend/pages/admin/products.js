@@ -170,7 +170,8 @@ const AdminProducts = () => {
         clp_precautionary_statements: (product.clp_precautionary_statements || []).join(', '),
         ufi_code: product.ufi_code || '',
         clp_responsible_name: product.clp_responsible_name || '',
-        clp_exempt: product.clp_exempt === true
+        clp_exempt: product.clp_exempt === true,
+        fragrance_load_percent: product.fragrance_load_percent ?? ''
       });
     } else {
       setEditingProduct(null);
@@ -194,7 +195,8 @@ const AdminProducts = () => {
         clp_precautionary_statements: '',
         ufi_code: '',
         clp_responsible_name: '',
-        clp_exempt: false
+        clp_exempt: false,
+        fragrance_load_percent: ''
       });
     }
     setDialogOpen(true);
@@ -239,7 +241,8 @@ const AdminProducts = () => {
         clp_signal_word: productForm.clp_signal_word || null,
         clp_hazard_statements: toList(productForm.clp_hazard_statements),
         clp_precautionary_statements: toList(productForm.clp_precautionary_statements),
-        clp_exempt: productForm.clp_exempt === true
+        clp_exempt: productForm.clp_exempt === true,
+        fragrance_load_percent: productForm.fragrance_load_percent === '' ? null : parseFloat(productForm.fragrance_load_percent)
       };
 
       if (editingProduct) {
@@ -637,6 +640,16 @@ const AdminProducts = () => {
                 </Grid>
                 {!productForm.clp_exempt && (
                 <>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Fragrance Oil Load (%)"
+                    type="number"
+                    value={productForm.fragrance_load_percent ?? ''}
+                    onChange={(e) => setProductForm({ ...productForm, fragrance_load_percent: e.target.value })}
+                    helperText="Which concentration band of the supplier CLP sheet applies — e.g. 10 means enter the 10% line's classification"
+                  />
+                </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth

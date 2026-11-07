@@ -584,6 +584,24 @@ Append a new entry here every time the roadmap is updated (task completed, new t
             4) routes/products.js storefront — add
                AND p.status = 'ACTIVE' to list/slug queries.
             Verified: 15/15 products integration suite green.
+
+2026-11-07  Fragrance load (migration 023): products.
+            fragrance_load_percent NUMERIC(5,2) (25/25 apply, verified
+            live). Not a CLP label element — it selects WHICH supplier
+            datasheet concentration band applies (and candle vs melt
+            vs diffuser lines differ). Admin field sits atop the CLP
+            section with band guidance; persisted via commerceParams +
+            createProduct INSERT; Label Kit prints it as a "· N% FO"
+            batch reference after the RP name. Validators on both
+            admin POST/PUT (0.01–100). Add fragrance_load_percent to
+            the hand-apply patch's productCommerce/getProductById/
+            storefront column lists.
+            QUEUED next session: (1) Simon applies 5-item hand-patch,
+            (2) CLP paste-to-fill (paste supplier datasheet text →
+            regex extract H/P/GHS codes + signal word + EU allergen
+            dictionary match → auto-fill form, ~20s/scent; PDF upload
+            extract after), (3) CSV import 1.4, (4) VAT toggle admin
+            UI, (5) e2e smoke test → Phase A closed.
 ```
 
 ---

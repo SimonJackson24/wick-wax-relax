@@ -135,6 +135,7 @@ const ClpLabelKit = ({ product, onClose }) => {
               <Typography sx={{ fontSize: '8.5px', lineHeight: 1.3, maxWidth: '70%' }}>
                 {product.clp_responsible_name}
                 {product.weight_grams ? ` · ${product.weight_grams}g` : ''}
+                {product.fragrance_load_percent ? ` · ${product.fragrance_load_percent}% FO` : ''}
               </Typography>
               {qrDataUrl && (
                 <Box component="img" src={qrDataUrl} alt="Product safety info QR" sx={{ width: 52, height: 52 }} />

@@ -20,6 +20,9 @@ function commerceParams(data) {
     clp_precautionary_statements: JSON.stringify(data.clp_precautionary_statements || []),
     ufi_code: data.ufi_code || null,
     clp_responsible_name: data.clp_responsible_name || null,
+    fragrance_load_percent: data.fragrance_load_percent !== undefined && data.fragrance_load_percent !== null && data.fragrance_load_percent !== ''
+      ? parseFloat(data.fragrance_load_percent)
+      : null,
   };
 }
 
@@ -217,9 +220,10 @@ class ProductService {
           weight_grams, dimensions_cm,
           clp_allergens, clp_hazard_pictograms, clp_signal_word,
           clp_hazard_statements, clp_precautionary_statements,
-          ufi_code, clp_responsible_name, clp_exempt
+          ufi_code, clp_responsible_name, clp_exempt,
+          fragrance_load_percent
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
       `, [
         name, slug, description, JSON.stringify(scent_profile), base_price,
@@ -228,7 +232,8 @@ class ProductService {
         commerce.clp_allergens, commerce.clp_hazard_pictograms, commerce.clp_signal_word,
         commerce.clp_hazard_statements, commerce.clp_precautionary_statements,
         commerce.ufi_code, commerce.clp_responsible_name,
-        productData.clp_exempt === true
+        productData.clp_exempt === true,
+        commerce.fragrance_load_percent
       ]);
 
       const productId = productResult.rows[0].id;

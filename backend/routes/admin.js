@@ -418,7 +418,8 @@ router.post('/products', authenticateToken, requireAdmin, [
   body('clp_precautionary_statements').optional().isArray(),
   body('ufi_code').optional().trim().isLength({ max: 50 }),
   body('clp_responsible_name').optional().trim().isLength({ max: 255 }),
-  body('clp_exempt').optional().isBoolean()
+  body('clp_exempt').optional().isBoolean(),
+  body('fragrance_load_percent').optional().isFloat({ min: 0.01, max: 100 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -465,7 +466,8 @@ router.put('/products/:id', authenticateToken, requireAdmin, [
   body('clp_precautionary_statements').optional().isArray(),
   body('ufi_code').optional().trim().isLength({ max: 50 }),
   body('clp_responsible_name').optional().trim().isLength({ max: 255 }),
-  body('clp_exempt').optional().isBoolean()
+  body('clp_exempt').optional().isBoolean(),
+  body('fragrance_load_percent').optional().isFloat({ min: 0.01, max: 100 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
