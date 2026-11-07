@@ -22,6 +22,7 @@ import {
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import SEOHead from '../components/SEOHead';
+import { SITE_URL } from '../utils/siteConfig';
 import SearchBar from '../components/SearchBar';
 import HierarchicalSearchFilters from '../components/HierarchicalSearchFilters';
 import ProductCard from '../components/ProductCard';
@@ -254,7 +255,7 @@ const ProductsPage = () => {
         title="Shop Wax Melts, Candles & Home Fragrance — Wick Wax Relax"
         description="Browse our full range of hand-crafted soy wax melts, candles, bath bombs and reed diffusers. Eco-friendly, plastic-free packaging. Free UK delivery over £25."
         keywords="wax melts, candles, home fragrance, soy wax, bath bombs, diffusers, UK"
-        url="https://wickwaxrelax.com/products"
+        url={`${SITE_URL}/products`}
         type="website"
       />
       <Container maxWidth="xl" sx={{ py: 4 }}>

@@ -169,6 +169,20 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// Body-parser errors (malformed JSON, oversized payload) must surface as
+// 4xx, not fall through to the generic 500 handler. Without this, a
+// truncated JSON body produced a 500 "Something went wrong" — misleading
+// for clients and noisy in monitoring.
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Malformed JSON in request body' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body too large' });
+  }
+  next(err);
+});
+
 app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   // Disable execution / sniffing of arbitrary types in the uploads folder.
@@ -209,7 +223,7 @@ app.use('/api/gdpr', require('./routes/gdpr'));
 
 // Real health check. Pings DB and Redis. Returns 503 if any dependency is
 // unreachable so load balancers stop routing traffic to broken instances.
-const { isReady: redisReady } = require('./config/redis');
+const { getRedis } = require('./config/redis');
 app.get('/api/health', async (req, res) => {
   const checks = { db: 'unknown', redis: 'unknown' };
   let healthy = true;
@@ -222,8 +236,21 @@ app.get('/api/health', async (req, res) => {
     healthy = false;
   }
   try {
-    if (redisReady()) checks.redis = 'up';
-    else { checks.redis = 'down'; healthy = false; }
+    // Actively PING Redis rather than reading a state flag: the client is
+    // created lazily, so before any other code touches Redis the flag says
+    // "down" even when the server is perfectly healthy. The race timeout
+    // keeps /api/health fast when Redis is unreachable.
+    const redis = getRedis();
+    const pong = await Promise.race([
+      redis.ping(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500)),
+    ]);
+    if (pong === 'PONG') {
+      checks.redis = 'up';
+    } else {
+      checks.redis = 'down';
+      healthy = false;
+    }
   } catch (e) {
     checks.redis = `down: ${e.message}`;
     healthy = false;

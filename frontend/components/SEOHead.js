@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { SITE_URL } from '../utils/siteConfig';
 
 const SEOHead = ({
   title,
@@ -15,7 +16,7 @@ const SEOHead = ({
   canonical
 }) => {
   const router = useRouter();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = SITE_URL;
   const siteName = 'Wick Wax Relax';
 
   const pageTitle = title || `${siteName} - Premium Home Fragrance Products`;

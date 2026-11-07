@@ -6,4 +6,4 @@ Allow: /
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://wickwaxrelax.com/sitemap.xml
+Sitemap: https://www.wickwaxrelax.co.uk/sitemap.xml

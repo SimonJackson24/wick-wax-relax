@@ -68,73 +68,25 @@ const cleanupTestDb = async () => {
   }
 };
 
-// Initialize test database schema
+// Initialize test database schema using the REAL migration runner.
+//
+// The previous version hand-wrote a mini-schema here (TEXT ids, REAL
+// prices, hardcoded 'pwa-channel' string PK) that drifted from the actual
+// migrations (UUID ids, NUMERIC prices) — tests were asserting against a
+// database shape that never existed anywhere else. Applying the real
+// migrations means the test DB is byte-identical in structure to
+// production, and migration/code drift shows up as a failing test
+// instead of a runtime surprise.
 const initializeTestDb = async () => {
-  let pool;
   try {
-    pool = createTestPool();
-
-    // Create basic schema for testing
-    const schemaSQL = `
-      -- Create channels table
-      CREATE TABLE IF NOT EXISTS channels (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL UNIQUE,
-        api_key TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Create products table
-      CREATE TABLE IF NOT EXISTS products (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        scent_profile TEXT NOT NULL,
-        base_price REAL NOT NULL CHECK (base_price > 0),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Create categories table
-      CREATE TABLE IF NOT EXISTS categories (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL UNIQUE,
-        slug TEXT NOT NULL UNIQUE,
-        description TEXT,
-        parent_id TEXT REFERENCES categories(id) ON DELETE CASCADE,
-        display_order INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Create users table
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        first_name TEXT,
-        last_name TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Insert test data
-      INSERT INTO channels (id, name, api_key) VALUES
-      ('pwa-channel', 'PWA', 'pwa-api-key')
-      ON CONFLICT (name) DO NOTHING;
-
-      INSERT INTO categories (id, name, slug, description) VALUES
-      ('test-cat-1', 'Test Category', 'test-category', 'Test category for testing')
-      ON CONFLICT (name) DO NOTHING;
-    `;
-
-    await pool.query(schemaSQL);
-    console.log('Test database schema initialized');
-
+    const { MigrationRunner } = require('../init-db');
+    const runner = new MigrationRunner();
+    await runner.testConnection();
+    await runner.initialize();
+    console.log('Test database schema initialized (real migrations applied)');
   } catch (error) {
     console.error('Failed to initialize test database:', error);
     throw error;
-  } finally {
-    if (pool) await pool.end();
   }
 };
 

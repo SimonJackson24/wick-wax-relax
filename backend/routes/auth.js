@@ -37,10 +37,30 @@ async function consumeMfaJti(jti) {
   return result === 1;
 }
 
+// Token-at-rest hashing for refresh and password-reset tokens.
+//
+// HMAC-SHA256 keyed with a server-side secret rather than a bare hash:
+// tokens are high-entropy random JWTs, so they cannot be reversed — but
+// with a plain hash, an attacker holding only a database dump could
+// verify a guessed/stolen token offline. Keying the digest removes that
+// possibility: without the secret, the stored values are useless.
+//
+// Every site that stores OR compares a token digest must go through this
+// helper so the digests always match. Rotating TOKEN_HASH_SECRET
+// invalidates all outstanding tokens (force-logout everyone) — that is
+// the expected behaviour of a secret rotation.
+function hashToken(token) {
+  const secret = process.env.TOKEN_HASH_SECRET || process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error('TOKEN_HASH_SECRET (or JWT_REFRESH_SECRET) must be configured');
+  }
+  return crypto.createHmac('sha256', secret).update(token).digest('hex');
+}
+
 function signMfaToken(user) {
   const jti = crypto.randomBytes(16).toString('hex');
   const token = jwt.sign(
-    { userId: user.id, email: user.email, isAdmin: user.is_admin === 1, purpose: 'mfa', jti },
+    { userId: user.id, email: user.email, isAdmin: user.is_admin === true, purpose: 'mfa', jti },
     process.env.JWT_SECRET,
     { expiresIn: `${MFA_TOKEN_TTL_SECONDS}s`, algorithm: 'HS256' }
   );
@@ -101,8 +121,16 @@ router.post('/register', authRateLimit, [
   body('password').isLength({ min: 8 })
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .withMessage('Password must be at least 8 characters with uppercase, lowercase, number and special character'),
-  body('firstName').trim().isLength({ min: 1, max: 50 }),
+  // Names are charset-restricted, not sanitized: markup in a name is
+  // rejected outright so script content can never reach the database or
+  // the HTML email templates. Apostrophes/hyphens allowed for names like
+  // O'Brien or Smith-Jones.
+  body('firstName').trim().isLength({ min: 1, max: 50 })
+    .matches(/^[a-zA-Z\s'\-]+$/)
+    .withMessage('First name can only contain letters, spaces, apostrophes and hyphens'),
   body('lastName').trim().isLength({ min: 1, max: 50 })
+    .matches(/^[a-zA-Z\s'\-]+$/)
+    .withMessage('Last name can only contain letters, spaces, apostrophes and hyphens')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -145,7 +173,7 @@ router.post('/register', authRateLimit, [
       { expiresIn: '7d', algorithm: 'HS256' }
     );
 
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = hashToken(refreshToken);
     await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     res.cookie('accessToken', accessToken, getSecureCookieOptions(15 * 60 * 1000));
@@ -206,8 +234,8 @@ router.post('/login', authRateLimit, [
 
     await query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
-    const isAdmin = user.is_admin === 1;
-    const passwordChangeRequired = user.password_change_required === 1;
+    const isAdmin = user.is_admin === true;
+    const passwordChangeRequired = user.password_change_required === true;
 
     // Admin accounts ALWAYS go through the MFA challenge. Non-admin users
     // skip MFA entirely — they do not have access to any privileged route.
@@ -244,7 +272,7 @@ router.post('/login', authRateLimit, [
       { expiresIn: '7d', algorithm: 'HS256' }
     );
 
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = hashToken(refreshToken);
     await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     res.cookie('accessToken', accessToken, getSecureCookieOptions(15 * 60 * 1000));
@@ -386,7 +414,7 @@ router.post('/mfa/enroll-verify', authRateLimit, requireMfaToken, [
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d', algorithm: 'HS256' }
     );
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = hashToken(refreshToken);
     await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     res.clearCookie('mfaToken');
@@ -468,7 +496,7 @@ router.post('/mfa/verify', authRateLimit, requireMfaToken, [
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d', algorithm: 'HS256' }
     );
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = hashToken(refreshToken);
     await query('UPDATE users SET refresh_token = ? WHERE id = ?', [refreshTokenHash, user.id]);
 
     res.clearCookie('mfaToken');
@@ -629,7 +657,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
       name: `${user.first_name} ${user.last_name}`,
       firstName: user.first_name,
       lastName: user.last_name,
-      isAdmin: user.is_admin === 1,
+      isAdmin: user.is_admin === true,
       createdAt: user.created_at,
       lastLogin: user.last_login
     };
@@ -659,7 +687,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
       name: `${user.first_name} ${user.last_name}`,
       firstName: user.first_name,
       lastName: user.last_name,
-      isAdmin: user.is_admin === 1,
+      isAdmin: user.is_admin === true,
       createdAt: user.created_at,
       lastLogin: user.last_login
     });
@@ -668,30 +696,6 @@ router.get('/profile', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
-
-function getSecureCookieOptions(maxAge) {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const options = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
-    path: '/',
-    maxAge: maxAge
-  };
-  if (frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1')) {
-    options.domain = 'localhost';
-  } else {
-    try {
-      const url = new URL(frontendUrl);
-      options.domain = url.hostname;
-    } catch (e) {
-      const domainMatch = frontendUrl.match(/https?:\/\/([^\/]+)/);
-      options.domain = domainMatch ? domainMatch[1] : undefined;
-    }
-  }
-  return options;
-}
 
 router.post('/refresh', async (req, res) => {
   try {
@@ -711,7 +715,7 @@ router.post('/refresh', async (req, res) => {
       return res.status(403).json({ error: 'Invalid or expired refresh token' });
     }
 
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = hashToken(refreshToken);
 
     // Atomically rotate the refresh token. If the presented token is not the
     // currently stored one, the chain has been compromised (the user already
@@ -722,7 +726,7 @@ router.post('/refresh', async (req, res) => {
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d', algorithm: 'HS256' }
     );
-    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const newRefreshTokenHash = hashToken(newRefreshToken);
 
     const rotation = await query(
       `UPDATE users
@@ -759,7 +763,7 @@ router.post('/refresh', async (req, res) => {
     // so an admin does not have to re-enter TOTP every 15 minutes when the
     // access token rotates — they only re-MFA at the 7-day refresh rotation.
     const newAccessToken = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin: user.is_admin === 1, mfaCompleted: true },
+      { userId: user.id, email: user.email, isAdmin: user.is_admin === true, mfaCompleted: true },
       process.env.JWT_SECRET,
       { expiresIn: '15m', algorithm: 'HS256' }
     );
@@ -819,7 +823,7 @@ router.post('/forgot-password', passwordResetRateLimit, [
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenHash = hashToken(resetToken);
 
     await query('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?', [
       resetTokenHash,
@@ -857,7 +861,7 @@ router.post('/reset-password', [
 
     const { token, password } = req.body;
 
-    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetTokenHash = hashToken(token);
 
     const result = await query(
       'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > ?',
@@ -889,7 +893,7 @@ router.get('/verify-reset-token/:token', async (req, res) => {
   try {
     const { token } = req.params;
 
-    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetTokenHash = hashToken(token);
 
     const result = await query(
       'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > ?',

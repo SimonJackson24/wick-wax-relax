@@ -31,6 +31,7 @@ import RateReviewIcon from '@mui/icons-material/RateReview';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
+import { SITE_URL } from '../../utils/siteConfig';
 import NavigationWithCategories from '../../components/NavigationWithCategories';
 import ProductCard from '../../components/ProductCard';
 import ProductGallery from '../../components/ProductGallery';
@@ -218,13 +219,13 @@ export default function ProductDetail() {
         title={product ? `${product.name} — Wick Wax Relax` : 'Product — Wick Wax Relax'}
         description={product?.description || 'Hand-crafted premium home fragrance products from Wick Wax Relax.'}
         keywords={product ? `wax melts, candles, ${product.name}, home fragrance, UK` : 'wax melts, candles, home fragrance'}
-        image={product?.image ? `https://wickwaxrelax.com${product.image}` : 'https://wickwaxrelax.com/images/hero-image.svg'}
-        url={`https://wickwaxrelax.com/product/${product?.slug || id}`}
+        image={product?.image ? `${SITE_URL}${product.image}` : `${SITE_URL}/images/hero-image.svg`}
+        url={`${SITE_URL}/product/${product?.slug || id}`}
         type="product"
         product={product ? {
           name: product.name,
           description: product.description,
-          image: product.image ? `https://wickwaxrelax.com${product.image}` : 'https://wickwaxrelax.com/images/hero-image.svg',
+          image: product.image ? `${SITE_URL}${product.image}` : `${SITE_URL}/images/hero-image.svg`,
           price: selectedVariantData?.price || product.price,
           availability: selectedVariantData?.inventory_quantity > 0 ? 'in_stock' : 'out_of_stock',
           category: product.category

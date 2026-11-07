@@ -1,6 +1,13 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Canonical domain default so any process.env.NEXT_PUBLIC_SITE_URL consumer
+  // (SEOHead, utils/siteConfig.js) gets the right value even without a .env
+  // file present. See frontend/utils/siteConfig.js.
+  env: {
+    NEXT_PUBLIC_SITE_URL:
+      process.env.NEXT_PUBLIC_SITE_URL || 'https://www.wickwaxrelax.co.uk',
+  },
   modularizeImports: {
     '@mui/material': { transform: '@mui/material/{{member}}' },
     '@mui/icons-material': { transform: '@mui/icons-material/{{member}}' },

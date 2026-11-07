@@ -1,7 +1,7 @@
 // Jest setup file for backend tests
 require('dotenv').config({ path: '.env.test' });
 
-const { getAvailablePort, getTestEnv, cleanupTestDb } = require('./__tests__/test-config');
+const { getAvailablePort, getTestEnv } = require('./__tests__/test-config');
 
 // Set test environment with dynamic port allocation
 beforeAll(async () => {
@@ -16,13 +16,14 @@ beforeAll(async () => {
   console.log(`Test environment configured with port: ${testPort}`);
 });
 
-// Mock console methods to reduce noise during testing
+// Mock console methods to reduce noise during testing — but keep
+// console.error REAL. The DB query wrapper logs failures via
+// console.error ('[DB ERROR]' + SQL + params); mocking it hides the
+// exact diagnostic needed to fix failing tests.
 global.console = {
   ...console,
-  // Keep log and warn for debugging if needed
   // log: jest.fn(),
   // warn: jest.fn(),
-  error: jest.fn(),
   info: jest.fn(),
   debug: jest.fn()
 };
@@ -66,11 +67,13 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-// Cleanup after all tests
+// Cleanup after all tests in a FILE. Note: this runs once per test file
+// (setupFilesAfterEach), NOT once per Jest run. The database schema must
+// SURVIVE between files — dropping it here (as this once did via
+// cleanupTestDb) left every subsequent test file running against an empty
+// database, cascading failures through auth/integration/security suites.
+// Full schema teardown belongs to globalTeardown only.
 afterAll(async () => {
-  // Clean up test database
-  await cleanupTestDb();
-  
   // Close any open database connections
   const { query } = require('./config/database');
   if (query.end) {

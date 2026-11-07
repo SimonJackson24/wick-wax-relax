@@ -17,6 +17,7 @@ import axios from 'axios';
 import { useSubscription } from '../components/SubscriptionContext';
 import { useAuth } from '../components/AuthContext';
 import SEOHead from '../components/SEOHead';
+import { SITE_URL } from '../utils/siteConfig';
 
 const FREQUENCY_LABELS = {
   WEEKLY: 'Every week',
@@ -118,7 +119,7 @@ export default function SubscriptionsPage() {
       <SEOHead
         title="Subscribe & Save — Wick Wax Relax"
         description="Build your subscription basket and save on regular deliveries of your favourite wax melts and candles."
-        url="https://wickwaxrelax.com/subscriptions"
+        url={`${SITE_URL}/subscriptions`}
       />
 
       <Container maxWidth="lg" sx={{ py: 4 }}>

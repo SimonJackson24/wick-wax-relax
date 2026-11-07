@@ -233,9 +233,20 @@ describe('Authentication Routes', () => {
     });
 
     it('should logout successfully', async () => {
+      // /api/auth/logout is a mutating request protected by the double-submit
+      // CSRF middleware (bootstrap endpoints like login are exempt; logout
+      // is not). Obtain a csrfToken cookie from any safe /api request, then
+      // echo it in the X-CSRF-Token header — exactly what the frontend does.
+      const csrfResponse = await request(app)
+        .get('/api/products')
+        .set('Cookie', [authToken]);
+      const csrfCookie = (csrfResponse.headers['set-cookie'] || [])
+        .find(cookie => cookie.includes('csrfToken'));
+
       const response = await request(app)
         .post('/api/auth/logout')
-        .set('Cookie', [authToken])
+        .set('Cookie', [authToken, csrfCookie])
+        .set('X-CSRF-Token', decodeURIComponent(csrfCookie.split('csrfToken=')[1].split(';')[0]))
         .expect(200);
 
       expect(response.body.message).toBe('Logged out successfully');
@@ -286,29 +297,35 @@ describe('Authentication Routes', () => {
         password: "' OR '1'='1"
       };
 
+      // 400, not 401: the email validator rejects the payload before any
+      // credential check runs — input never reaches the query layer at all,
+      // which is strictly better than reaching it and failing auth.
       const response = await request(app)
         .post('/api/auth/login')
         .send(maliciousData)
-        .expect(401);
+        .expect(400);
 
-      expect(response.body.error).toBe('Invalid credentials');
+      expect(response.body).not.toHaveProperty('accessToken');
     });
 
     it('should handle XSS attempts in registration', async () => {
       const maliciousData = {
         email: 'xss-test@example.com',
-        password: 'TestPassword123!',
+        password: testUser.password,
         firstName: '<script>alert("xss")</script>John',
         lastName: 'Doe'
       };
 
+      // 400: names are charset-validated (letters, spaces, apostrophes,
+      // hyphens only). Markup in a name is rejected at the door rather
+      // than sanitized-and-stored — no script content can ever reach the
+      // database or downstream HTML email templates.
       const response = await request(app)
         .post('/api/auth/register')
         .send(maliciousData)
-        .expect(201);
+        .expect(400);
 
-      // The input should be sanitized by the middleware
-      expect(response.body.user.firstName).not.toContain('<script>');
+      expect(response.body).not.toHaveProperty('user');
     });
   });
 });

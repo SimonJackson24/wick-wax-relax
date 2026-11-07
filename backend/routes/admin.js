@@ -379,6 +379,7 @@ router.get('/products/:id', authenticateToken, requireAdmin, [
 // Create new product
 router.post('/products', authenticateToken, requireAdmin, [
   body('name').trim().isLength({ min: 1, max: 255 }),
+  body('slug').optional().trim().isLength({ min: 1, max: 255 }),
   body('description').optional().trim(),
   body('scent_profile').isObject(),
   body('base_price').isFloat({ min: 0 }),
@@ -403,6 +404,7 @@ router.post('/products', authenticateToken, requireAdmin, [
 router.put('/products/:id', authenticateToken, requireAdmin, [
   param('id').isUUID(),
   body('name').trim().isLength({ min: 1, max: 255 }),
+  body('slug').optional().trim().isLength({ min: 1, max: 255 }),
   body('description').optional().trim(),
   body('scent_profile').isObject(),
   body('base_price').isFloat({ min: 0 }),

@@ -58,9 +58,17 @@ function ensureCsrfCookie(req, res) {
 }
 
 function csrfProtection(req, res, next) {
-  // Issue token cookie on safe requests for any path under /api.
-  if (SAFE_METHODS.has(req.method) && req.path.startsWith('/api/')) {
-    ensureCsrfCookie(req, res);
+  // Safe methods always pass. We only ISSUE the csrfToken cookie on /api
+  // paths (API clients are the consumers), but every safe request —
+  // including static assets like /images/**, /uploads/**, /fonts/** —
+  // must proceed. The previous shape only short-circuited safe requests
+  // under /api/, so safe non-API requests fell through to the mutating
+  // branch and were rejected with 403 "CSRF token missing". Any asset
+  // served by Express (uploaded product images especially) was broken.
+  if (SAFE_METHODS.has(req.method)) {
+    if (req.path.startsWith('/api/')) {
+      ensureCsrfCookie(req, res);
+    }
     return next();
   }
 

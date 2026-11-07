@@ -42,7 +42,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: 'Reset Your Password - Wick Wax & Relax',
       html: this.generatePasswordResetTemplate(resetToken, resetUrl),
@@ -65,7 +65,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: 'Order Confirmation - Wick Wax & Relax',
       html: this.generateOrderConfirmationTemplate(orderDetails),
@@ -87,7 +87,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: subject,
       html: html,
@@ -109,7 +109,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: subject,
       html: this.generateOrderNotificationTemplate(subject, message, orderDetails),
@@ -131,7 +131,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: `Your Order #${orderDetails.external_id} Has Shipped!`,
       html: this.generateShippingNotificationTemplate(orderDetails, trackingInfo),
@@ -154,7 +154,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: 'Welcome to Wick Wax & Relax!',
       html: this.generateWelcomeEmailTemplate(customerName),
@@ -177,7 +177,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: subject,
       html: this.generatePromotionalEmailTemplate(subject, content, unsubscribeUrl),
@@ -199,7 +199,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: subject,
       html: this.generateNewsletterTemplate(subject, content, unsubscribeUrl),
@@ -222,7 +222,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: email,
       subject: 'Low Stock Alert - Wick Wax & Relax',
       html: this.generateLowStockAlertTemplate(lowStockItems),
@@ -244,7 +244,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com',
+      from: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk',
       to: adminEmail,
       subject: `Admin Alert: ${alertType}`,
       html: this.generateAdminAlertTemplate(alertType, alertData),
@@ -352,7 +352,7 @@ class EmailService {
             </div>
 
             <p>You will receive an email when your order ships.</p>
-            <p>If you have any questions, please contact us at info@wickwaxrelax.com</p>
+            <p>If you have any questions, please contact us at info@wickwaxrelax.co.uk</p>
           </div>
           <div class="footer">
             <p>&copy; 2024 Wick Wax & Relax. All rights reserved.</p>
@@ -395,7 +395,7 @@ class EmailService {
                 <p><strong>Total:</strong> £${orderDetails.total}</p>
               ` : ''}
             </div>
-            <p>If you have any questions about your order, please contact us at info@wickwaxrelax.com</p>
+            <p>If you have any questions about your order, please contact us at info@wickwaxrelax.co.uk</p>
           </div>
           <div class="footer">
             <p>&copy; 2024 Wick Wax & Relax. All rights reserved.</p>
@@ -495,7 +495,7 @@ class EmailService {
 
             <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/products" class="button">Start Shopping</a>
 
-            <p>Questions? We're here to help! Contact us at info@wickwaxrelax.com</p>
+            <p>Questions? We're here to help! Contact us at info@wickwaxrelax.co.uk</p>
           </div>
           <div class="footer">
             <p>&copy; 2024 Wick Wax & Relax. All rights reserved.</p>

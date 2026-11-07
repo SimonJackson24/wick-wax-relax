@@ -1,129 +1,125 @@
-// Mock winston-daily-rotate-file first
-jest.mock('winston-daily-rotate-file', () => jest.fn(() => ({})));
+// Logger service tests.
+//
+// These spy on the REAL exported winston loggers rather than mocking the
+// winston module: the previous version mocked winston at module level and
+// then asserted on the mock's import-time call history, which
+// jest.clearAllMocks() wiped before every assertion — every test failed
+// with "createLogger not called" / "undefined.error". Spying on the real
+// instances tests actual middleware behaviour (finish events, PII
+// sanitisation, formatting) and is immune to mock-shape drift.
+//
+// Winston writes to backend/logs/ (gitignored); console transport output
+// is expected noise.
 
-// Mock winston
-jest.mock('winston', () => ({
-  createLogger: jest.fn(() => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    http: jest.fn(),
-    add: jest.fn()
-  })),
-  format: {
-    combine: jest.fn(),
-    timestamp: jest.fn(() => ({})),
-    errors: jest.fn(() => ({})),
-    json: jest.fn(),
-    colorize: jest.fn(() => ({})),
-    printf: jest.fn(() => ({}))
-  },
-  transports: {
-    Console: jest.fn(),
-    DailyRotateFile: jest.fn()
-  },
-  addColors: jest.fn()
-}));
-
-// Mock fs
-jest.mock('fs', () => ({
-  existsSync: jest.fn(() => false),
-  mkdirSync: jest.fn()
-}));
-
-// Mock path
-jest.mock('path', () => ({
-  join: jest.fn((...args) => args.join('/')),
-  basename: jest.fn((path) => path.split('/').pop())
-}));
-
-const { logger, performanceLogger, requestLogger, errorLogger, performanceMonitor } = require('../../services/logger');
+const {
+  logger,
+  performanceLogger,
+  requestLogger,
+  errorLogger,
+  performanceMonitor,
+} = require('../../services/logger');
 
 describe('Logger Service', () => {
-  let mockLogger, mockPerformanceLogger;
+  let httpSpy;
+  let warnSpy;
+  let errorSpy;
+  let perfInfoSpy;
+  let perfWarnSpy;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-
-    // Get the mocked logger instances
-    mockLogger = require('winston').createLogger.mock.results[0]?.value;
-    mockPerformanceLogger = require('winston').createLogger.mock.results[1]?.value;
+    httpSpy = jest.spyOn(logger, 'http').mockImplementation(() => {});
+    warnSpy = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+    errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
+    perfInfoSpy = jest.spyOn(performanceLogger, 'info').mockImplementation(() => {});
+    perfWarnSpy = jest.spyOn(performanceLogger, 'warn').mockImplementation(() => {});
   });
 
-  describe('Logger Configuration', () => {
-    it('should create main logger with correct configuration', () => {
-      expect(require('winston').createLogger).toHaveBeenCalled();
-      expect(mockLogger).toBeDefined();
-    });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
-    it('should create performance logger with correct configuration', () => {
-      expect(require('winston').createLogger).toHaveBeenCalledTimes(2);
-      expect(mockPerformanceLogger).toBeDefined();
+  describe('module shape', () => {
+    it('exports logger and performanceLogger instances', () => {
+      expect(logger).toBeDefined();
+      expect(performanceLogger).toBeDefined();
+      expect(typeof logger.error).toBe('function');
+      expect(typeof performanceLogger.info).toBe('function');
     });
   });
 
   describe('requestLogger', () => {
-    let mockReq, mockRes, mockNext;
+    let mockReq, mockRes, mockNext, finishCallback;
 
     beforeEach(() => {
+      finishCallback = null;
       mockReq = {
         method: 'GET',
         url: '/api/test',
         ip: '127.0.0.1',
         get: jest.fn(() => 'Mozilla/5.0'),
-        user: { id: 1 }
+        user: { id: 'user-1' },
       };
-
       mockRes = {
         statusCode: 200,
-        on: jest.fn((event, callback) => {
-          if (event === 'finish') {
-            setTimeout(callback, 10); // Simulate async finish
-          }
-        })
+        on: jest.fn((event, cb) => {
+          if (event === 'finish') finishCallback = cb;
+        }),
       };
-
       mockNext = jest.fn();
     });
 
-    it('should log successful requests', () => {
+    it('should log successful requests on finish', () => {
       requestLogger(mockReq, mockRes, mockNext);
 
-      // Wait for the finish event
-      setTimeout(() => {
-        expect(mockLogger.http).toHaveBeenCalledWith('Request completed', expect.objectContaining({
-          method: 'GET',
-          url: '/api/test',
-          status: 200,
-          userId: 1
-        }));
-      }, 20);
+      expect(mockNext).toHaveBeenCalled(); // must not block the request
+      expect(httpSpy).not.toHaveBeenCalled(); // not before finish
+
+      finishCallback();
+      expect(httpSpy).toHaveBeenCalledWith('Request completed', expect.objectContaining({
+        method: 'GET',
+        url: '/api/test',
+        status: 200,
+        userId: 'user-1',
+      }));
     });
 
-    it('should log error requests', () => {
+    it('should log error-status requests as warnings', () => {
       mockRes.statusCode = 404;
 
       requestLogger(mockReq, mockRes, mockNext);
+      finishCallback();
 
-      setTimeout(() => {
-        expect(mockLogger.warn).toHaveBeenCalledWith('Request completed with error', expect.objectContaining({
-          method: 'GET',
-          url: '/api/test',
-          status: 404
-        }));
-      }, 20);
+      expect(warnSpy).toHaveBeenCalledWith('Request completed with error', expect.objectContaining({
+        method: 'GET',
+        url: '/api/test',
+        status: 404,
+      }));
+      expect(httpSpy).not.toHaveBeenCalled();
     });
 
     it('should handle anonymous users', () => {
       delete mockReq.user;
 
       requestLogger(mockReq, mockRes, mockNext);
+      finishCallback();
 
-      setTimeout(() => {
-        expect(mockLogger.http).toHaveBeenCalledWith('Request completed', expect.objectContaining({
-          userId: 'anonymous'
-        }));
-      }, 20);
+      expect(httpSpy).toHaveBeenCalledWith('Request completed', expect.objectContaining({
+        userId: 'anonymous',
+      }));
+    });
+
+    it('should flag slow requests to the performance logger', () => {
+      const nowSpy = jest.spyOn(Date, 'now');
+      const t0 = 1000000;
+      nowSpy.mockReturnValue(t0); // request starts at t0
+
+      requestLogger(mockReq, mockRes, mockNext);
+      nowSpy.mockReturnValue(t0 + 2500); // finish fires 2.5s later
+      finishCallback();
+
+      expect(perfWarnSpy).toHaveBeenCalledWith('Slow request detected', expect.objectContaining({
+        threshold: '1000ms',
+      }));
     });
   });
 
@@ -136,97 +132,93 @@ describe('Logger Service', () => {
         url: '/api/test',
         ip: '127.0.0.1',
         get: jest.fn(() => 'Mozilla/5.0'),
-        user: { id: 1 },
-        body: { test: 'data' },
+        user: { id: 'user-1' },
+        body: { test: 'data', email: 'person@example.com' },
         query: { param: 'value' },
-        params: { id: '123' }
+        params: { id: '123' },
       };
-
       mockRes = {};
       mockNext = jest.fn();
     });
 
-    it('should log errors with full context', () => {
+    it('should log errors with full context and pass the error on', () => {
       const testError = new Error('Test error');
 
       errorLogger(testError, mockReq, mockRes, mockNext);
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Application error', expect.objectContaining({
+      expect(errorSpy).toHaveBeenCalledWith('Application error', expect.objectContaining({
         message: 'Test error',
         method: 'POST',
         url: '/api/test',
-        userId: 1,
-        body: { test: 'data' },
+        userId: 'user-1',
         query: { param: 'value' },
-        params: { id: '123' }
+        params: { id: '123' },
       }));
+      // Body goes through the PII sanitizer — email must not leak raw.
+      const logged = errorSpy.mock.calls[0][1];
+      expect(JSON.stringify(logged.body)).not.toContain('person@example.com');
 
       expect(mockNext).toHaveBeenCalledWith(testError);
     });
 
-    it('should handle anonymous users in error logging', () => {
+    it('should handle anonymous users', () => {
       delete mockReq.user;
       const testError = new Error('Test error');
 
       errorLogger(testError, mockReq, mockRes, mockNext);
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Application error', expect.objectContaining({
-        userId: 'anonymous'
+      expect(errorSpy).toHaveBeenCalledWith('Application error', expect.objectContaining({
+        userId: 'anonymous',
       }));
     });
   });
 
   describe('performanceMonitor', () => {
-    describe('startTimer', () => {
-      it('should create and return timer object', () => {
-        const timer = performanceMonitor.startTimer('test-operation');
+    it('startTimer returns an object with a working end()', () => {
+      const timer = performanceMonitor.startTimer('test-operation');
 
-        expect(timer).toHaveProperty('end');
-        expect(typeof timer.end).toBe('function');
-      });
+      expect(typeof timer.end).toBe('function');
+      const duration = timer.end();
+      expect(typeof duration).toBe('number');
+      expect(perfInfoSpy).toHaveBeenCalledWith('Performance measurement', expect.objectContaining({
+        label: 'test-operation',
+      }));
     });
 
-    describe('logDatabaseQuery', () => {
-      it('should log successful fast queries', () => {
-        performanceMonitor.logDatabaseQuery('SELECT * FROM users', 50, true);
+    it('logDatabaseQuery logs fast queries as info', () => {
+      performanceMonitor.logDatabaseQuery('SELECT * FROM users', 50, true);
 
-        expect(mockPerformanceLogger.info).toHaveBeenCalledWith('Database query', expect.objectContaining({
-          duration: '50.000ms',
-          success: true
-        }));
-      });
-
-      it('should log slow queries as warnings', () => {
-        performanceMonitor.logDatabaseQuery('SELECT * FROM users', 150, true);
-
-        expect(mockPerformanceLogger.warn).toHaveBeenCalledWith('Slow database query', expect.objectContaining({
-          duration: '150.000ms'
-        }));
-      });
+      expect(perfInfoSpy).toHaveBeenCalledWith('Database query', expect.objectContaining({
+        duration: '50.00ms',
+        success: true,
+      }));
     });
 
-    describe('logMemoryUsage', () => {
-      it('should log memory usage statistics', () => {
-        const mockMemoryUsage = {
-          rss: 50 * 1024 * 1024, // 50MB
-          heapTotal: 30 * 1024 * 1024, // 30MB
-          heapUsed: 20 * 1024 * 1024, // 20MB
-          external: 5 * 1024 * 1024 // 5MB
-        };
+    it('logDatabaseQuery logs slow queries as warnings', () => {
+      performanceMonitor.logDatabaseQuery('SELECT * FROM users', 150, true);
 
-        jest.spyOn(process, 'memoryUsage').mockReturnValue(mockMemoryUsage);
+      expect(perfWarnSpy).toHaveBeenCalledWith('Slow database query', expect.objectContaining({
+        duration: '150.00ms',
+      }));
+    });
 
-        performanceMonitor.logMemoryUsage();
+    it('logMemoryUsage formats memory statistics', () => {
+      const mockMemoryUsage = {
+        rss: 50 * 1024 * 1024,
+        heapTotal: 30 * 1024 * 1024,
+        heapUsed: 20 * 1024 * 1024,
+        external: 5 * 1024 * 1024,
+      };
+      jest.spyOn(process, 'memoryUsage').mockReturnValue(mockMemoryUsage);
 
-        expect(mockPerformanceLogger.info).toHaveBeenCalledWith('Memory usage', expect.objectContaining({
-          rss: '50.00MB',
-          heapTotal: '30.00MB',
-          heapUsed: '20.00MB',
-          external: '5.00MB'
-        }));
+      performanceMonitor.logMemoryUsage();
 
-        jest.restoreAllMocks();
-      });
+      expect(perfInfoSpy).toHaveBeenCalledWith('Memory usage', expect.objectContaining({
+        rss: '50.00MB',
+        heapTotal: '30.00MB',
+        heapUsed: '20.00MB',
+        external: '5.00MB',
+      }));
     });
   });
 });

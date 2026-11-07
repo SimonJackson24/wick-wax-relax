@@ -10,7 +10,7 @@ class PushService {
 
     // Comment out VAPID setup for testing
     // webpush.setVapidDetails(
-    //   'mailto:admin@wickwaxrelax.com',
+    //   'mailto:admin@wickwaxrelax.co.uk',
     //   this.vapidKeys.publicKey,
     //   this.vapidKeys.privateKey
     // );

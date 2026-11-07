@@ -245,7 +245,7 @@ const Footer = () => {
                       fontSize: { xs: '0.9rem', md: '0.95rem' }
                     }}
                   >
-                    info@wickwaxrelax.com
+                    info@wickwaxrelax.co.uk
                   </Typography>
                 </Box>
               </Box>

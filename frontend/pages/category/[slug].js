@@ -26,6 +26,7 @@ import {
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import SEOHead from '../../components/SEOHead';
+import { SITE_URL } from '../../utils/siteConfig';
 import ProductCard from '../../components/ProductCard';
 import HierarchicalSearchFilters from '../../components/HierarchicalSearchFilters';
 
@@ -179,8 +180,8 @@ const CategoryPage = () => {
         title={`${category?.name || 'Category'} — Wick Wax Relax`}
         description={category?.description || 'Shop premium hand-crafted home fragrance products from Wick Wax Relax.'}
         keywords={category ? `${category.name}, wax melts, candles, home fragrance, UK` : 'wax melts, candles, home fragrance'}
-        image="https://wickwaxrelax.com/images/hero-image.svg"
-        url={category ? `https://wickwaxrelax.com/category/${category.slug}` : 'https://wickwaxrelax.com/category'}
+        image={`${SITE_URL}/images/hero-image.svg`}
+        url={category ? `${SITE_URL}/category/${category.slug}` : `${SITE_URL}/category`}
         type="website"
       />
       <Container maxWidth="xl" sx={{ py: 4 }}>

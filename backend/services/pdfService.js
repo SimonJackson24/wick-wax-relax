@@ -116,9 +116,9 @@ class PDFService {
     doc.fontSize(10)
        .font('Helvetica')
        .fillColor('#333333')
-       .text('Email: info@wickwaxrelax.com', 50, 100)
+       .text('Email: info@wickwaxrelax.co.uk', 50, 100)
        .text('Phone: +44 123 456 7890', 50, 115)
-       .text('Website: www.wickwaxrelax.com', 50, 130);
+       .text('Website: www.wickwaxrelax.co.uk', 50, 130);
 
     // Invoice title
     doc.fontSize(18)
@@ -332,7 +332,7 @@ class PDFService {
        .fillColor('#666666')
        .text('Thank you for your business!', 50, footerY + 10, { align: 'center' })
        .text('Wick Wax & Relax - Premium Waxing Products & Relaxation Essentials', 50, footerY + 25, { align: 'center' })
-       .text('For any questions about this invoice, please contact us at info@wickwaxrelax.com', 50, footerY + 40, { align: 'center' });
+       .text('For any questions about this invoice, please contact us at info@wickwaxrelax.co.uk', 50, footerY + 40, { align: 'center' });
 
     // Page number
     doc.text('Page 1 of 1', pageWidth - 100, footerY + 55, { align: 'right' });

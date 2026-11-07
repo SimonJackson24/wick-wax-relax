@@ -188,9 +188,17 @@ describe('Authentication Integration Tests', () => {
 
   describe('POST /api/auth/logout', () => {
     test('should logout successfully', async () => {
+      // Mutating request — obtain the CSRF double-submit pair first.
+      const csrfResponse = await request(app)
+        .get('/api/products')
+        .set('Cookie', [accessToken]);
+      const csrfCookie = (csrfResponse.headers['set-cookie'] || [])
+        .find(cookie => cookie.includes('csrfToken'));
+
       const response = await request(app)
         .post('/api/auth/logout')
-        .set('Cookie', [accessToken, refreshToken])
+        .set('Cookie', [accessToken, refreshToken, csrfCookie])
+        .set('X-CSRF-Token', decodeURIComponent(csrfCookie.split('csrfToken=')[1].split(';')[0]))
         .expect(200);
 
       expect(response.body).toHaveProperty('message', 'Logged out successfully');

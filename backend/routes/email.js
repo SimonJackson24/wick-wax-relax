@@ -383,7 +383,7 @@ router.get('/status', authenticateToken, requireAdmin, (req, res) => {
       configured: emailService.isConfigured,
       environment: process.env.NODE_ENV,
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
-      fromEmail: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.com'
+      fromEmail: process.env.FROM_EMAIL || 'noreply@wickwaxrelax.co.uk'
     };
 
     res.json({

@@ -161,7 +161,7 @@ Sitemap: ${formData.canonical_url || 'https://yourdomain.com'}/sitemap.xml`;
                     onChange={(e) => handleInputChange('canonical_url', e.target.value)}
                     error={!!errors.canonical_url}
                     helperText={errors.canonical_url || 'Main domain URL for SEO canonical tags'}
-                    placeholder="https://wickwaxrelax.com"
+                    placeholder="https://www.wickwaxrelax.co.uk"
                   />
                 </Grid>
               </Grid>
@@ -208,7 +208,7 @@ Sitemap: ${formData.canonical_url || 'https://yourdomain.com'}/sitemap.xml`;
                     value={formData.og_image}
                     onChange={(e) => handleInputChange('og_image', e.target.value)}
                     helperText="URL to image for social media sharing (1200x630 recommended)"
-                    placeholder="https://wickwaxrelax.com/images/og-image.jpg"
+                    placeholder="https://www.wickwaxrelax.co.uk/images/og-image.jpg"
                   />
                 </Grid>
 

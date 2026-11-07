@@ -101,7 +101,9 @@ async function requireAdminFresh(req, res, next) {
       'SELECT is_admin FROM users WHERE id = ? LIMIT 1',
       [req.user.userId]
     );
-    if (result.rows.length === 0 || result.rows[0].is_admin !== 1) {
+    // is_admin is BOOLEAN in Postgres — comparing to the integer 1 is
+    // always false and locked every admin out of admin routes.
+    if (result.rows.length === 0 || result.rows[0].is_admin !== true) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     req.user.isAdmin = true;

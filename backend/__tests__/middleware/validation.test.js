@@ -110,13 +110,17 @@ describe('Validation Middleware', () => {
         });
       });
 
+      // Slash-free XSS payloads: a payload containing '/' (like a literal
+      // <script>...</script> pair) splits into multiple URL path segments
+      // and simply 404s before the route ever runs — no client can send
+      // that as a single segment unencoded.
       const response = await request(app)
-        .get('/test/<script>evil()</script>123')
-        .query({ search: '<script>alert("xss")</script>' })
+        .get('/test/<b onpointerover=alert(1)>123')
+        .query({ search: '<img src=x onerror=alert(1)>' })
         .expect(200);
 
-      expect(response.body.query.search).not.toContain('<script>');
-      expect(response.body.params.id).not.toContain('<script>');
+      expect(response.body.query.search).not.toContain('onerror=');
+      expect(response.body.params.id).not.toContain('onpointerover=');
     });
 
     it('should handle non-string values gracefully', async () => {

@@ -2,40 +2,59 @@ const request = require('supertest');
 const { query } = require('../../config/database');
 const app = require('../../server');
 
+// Fixture credential from backend/.env.test — never hardcoded in source.
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  throw new Error('TEST_ADMIN_PASSWORD must be set (see backend/.env.test)');
+}
+
+// Valid base32 TOTP test vector — the admin login flow always issues an
+// MFA challenge, so this suite completes the verify step like the real UI.
+const ADMIN_TEST_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
+
 describe('Products Integration Tests', () => {
   let adminToken;
+  let csrf; // { cookie, header } for the double-submit CSRF middleware
   let testProduct;
   let testCategory;
 
   beforeAll(async () => {
-    // Create admin user for testing
-    const adminUser = {
-      email: 'admin@test.com',
-      password: 'AdminPass123!',
-      first_name: 'Admin',
-      last_name: 'User'
-    };
+    const adminEmail = 'admin@test.com';
 
-    // Clean up existing admin user
-    await query('DELETE FROM users WHERE email = ?', [adminUser.email]);
+    await query('DELETE FROM users WHERE email = ?', [adminEmail]);
 
-    // Create admin user
-    const hashedPassword = require('bcryptjs').hashSync(adminUser.password, 12);
+    const hashedPassword = require('bcryptjs').hashSync(ADMIN_PASSWORD, 12);
     await query(
-      'INSERT INTO users (email, password_hash, first_name, last_name, is_admin) VALUES (?, ?, ?, ?, ?)',
-      [adminUser.email, hashedPassword, adminUser.first_name, adminUser.last_name, true]
+      `INSERT INTO users (email, password_hash, first_name, last_name, is_admin, mfa_secret, mfa_enabled)
+       VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+      [adminEmail, hashedPassword, 'Admin', 'User', true, ADMIN_TEST_TOTP_SECRET]
     );
 
-    // Login to get admin token
-    const loginResponse = await request(app)
+    // Admin login → MFA challenge → verify with a live TOTP code → tokens
+    const login = await request(app)
       .post('/api/auth/login')
-      .send({
-        email: adminUser.email,
-        password: adminUser.password
-      });
+      .send({ email: adminEmail, password: ADMIN_PASSWORD });
 
-    const cookies = loginResponse.headers['set-cookie'];
-    adminToken = cookies.find(cookie => cookie.includes('accessToken'));
+    expect(login.body.requiresMfa).toBe(true);
+
+    const { authenticator } = require('otplib');
+    const verify = await request(app)
+      .post('/api/auth/mfa/verify')
+      .send({ mfaToken: login.body.mfaToken, code: authenticator.generate(ADMIN_TEST_TOTP_SECRET) });
+
+    adminToken = (verify.headers['set-cookie'] || [])
+      .find(cookie => cookie.includes('accessToken'));
+
+    // CSRF pair for mutating requests
+    const csrfResponse = await request(app)
+      .get('/api/products')
+      .set('Cookie', [adminToken]);
+    const csrfCookie = (csrfResponse.headers['set-cookie'] || [])
+      .find(cookie => cookie.includes('csrfToken'));
+    csrf = {
+      cookie: csrfCookie,
+      header: decodeURIComponent(csrfCookie.split('csrfToken=')[1].split(';')[0]),
+    };
 
     // Create test category
     const categoryResult = await query(
@@ -44,14 +63,13 @@ describe('Products Integration Tests', () => {
     );
     testCategory = categoryResult.rows[0];
 
-    // Create test product
     testProduct = {
       name: 'Test Product',
       description: 'Test product for integration tests',
       scent_profile: {
         primary: 'Lavender',
         notes: ['Floral', 'Herbal'],
-        intensity: 'Medium'
+        intensity: 'Medium',
       },
       base_price: 25.99,
       categories: [testCategory.id],
@@ -63,15 +81,14 @@ describe('Products Integration Tests', () => {
           inventory_quantity: 100,
           attributes: {
             size: 'Medium',
-            color: 'Blue'
-          }
-        }
-      ]
+            color: 'Blue',
+          },
+        },
+      ],
     };
   });
 
   afterAll(async () => {
-    // Clean up test data
     if (testProduct && testProduct.id) {
       await query('DELETE FROM products WHERE id = ?', [testProduct.id]);
     }
@@ -87,12 +104,9 @@ describe('Products Integration Tests', () => {
         .get('/api/products')
         .expect(200);
 
-      // Handle both response formats: {products: [], pagination: {}} or []
       if (Array.isArray(response.body)) {
-        // API returns array directly
         expect(Array.isArray(response.body)).toBe(true);
       } else {
-        // API returns object with products and pagination
         expect(response.body).toHaveProperty('products');
         expect(response.body).toHaveProperty('pagination');
         expect(Array.isArray(response.body.products)).toBe(true);
@@ -104,9 +118,7 @@ describe('Products Integration Tests', () => {
         .get('/api/products?page=1&limit=5')
         .expect(200);
 
-      // Handle both response formats
       if (Array.isArray(response.body)) {
-        expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeLessThanOrEqual(5);
       } else {
         expect(response.body.pagination).toHaveProperty('page', 1);
@@ -120,7 +132,6 @@ describe('Products Integration Tests', () => {
         .get('/api/products?search=test')
         .expect(200);
 
-      // Handle both response formats
       if (Array.isArray(response.body)) {
         expect(Array.isArray(response.body)).toBe(true);
       } else {
@@ -133,7 +144,6 @@ describe('Products Integration Tests', () => {
         .get(`/api/products?category=${testCategory.id}`)
         .expect(200);
 
-      // Handle both response formats
       if (Array.isArray(response.body)) {
         expect(Array.isArray(response.body)).toBe(true);
       } else {
@@ -146,22 +156,26 @@ describe('Products Integration Tests', () => {
     test('should create product with admin token', async () => {
       const response = await request(app)
         .post('/api/admin/products')
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send(testProduct)
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe(testProduct.name);
       expect(response.body.description).toBe(testProduct.description);
-      expect(response.body.base_price).toBe(testProduct.base_price);
+      expect(Number(response.body.base_price)).toBe(testProduct.base_price);
 
-      // Store product ID for cleanup
       testProduct.id = response.body.id;
     });
 
     test('should reject product creation without admin token', async () => {
+      // CSRF pair but NO auth cookie, so the request clears the CSRF
+      // middleware and reaches the authentication gate.
       const response = await request(app)
         .post('/api/admin/products')
+        .set('Cookie', [csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send(testProduct)
         .expect(401);
 
@@ -171,11 +185,12 @@ describe('Products Integration Tests', () => {
     test('should reject invalid product data', async () => {
       const response = await request(app)
         .post('/api/admin/products')
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send({
           name: '', // Invalid: empty name
           description: 'Test',
-          base_price: -10 // Invalid: negative price
+          base_price: -10, // Invalid: negative price
         })
         .expect(400);
 
@@ -197,13 +212,15 @@ describe('Products Integration Tests', () => {
       expect(Array.isArray(response.body.variants)).toBe(true);
     });
 
-    test('should return 404 for non-existent product', async () => {
+    test('should reject non-UUID ids', async () => {
+      // '99999' is not a UUID — the param validator rejects it with 400
+      // before any lookup runs.
       const response = await request(app)
         .get('/api/admin/products/99999')
         .set('Cookie', [adminToken])
-        .expect(404);
+        .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Product not found');
+      expect(response.body).toHaveProperty('errors');
     });
   });
 
@@ -212,28 +229,31 @@ describe('Products Integration Tests', () => {
       const updateData = {
         name: 'Updated Test Product',
         description: 'Updated description',
-        base_price: 29.99
+        scent_profile: { primary: 'Vanilla' },
+        base_price: 29.99,
       };
 
       const response = await request(app)
         .put(`/api/admin/products/${testProduct.id}`)
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send(updateData)
         .expect(200);
 
       expect(response.body.name).toBe(updateData.name);
       expect(response.body.description).toBe(updateData.description);
-      expect(response.body.base_price).toBe(updateData.base_price);
+      expect(Number(response.body.base_price)).toBe(updateData.base_price);
     });
 
-    test('should reject update for non-existent product', async () => {
+    test('should reject non-UUID ids on update', async () => {
       const response = await request(app)
         .put('/api/admin/products/99999')
-        .set('Cookie', [adminToken])
-        .send({ name: 'Test' })
-        .expect(404);
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
+        .send({ name: 'Test', scent_profile: {}, base_price: 1 })
+        .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Product not found');
+      expect(response.body).toHaveProperty('errors');
     });
   });
 
@@ -241,12 +261,12 @@ describe('Products Integration Tests', () => {
     test('should delete product', async () => {
       const response = await request(app)
         .delete(`/api/admin/products/${testProduct.id}`)
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
 
-      // Verify product is deleted
       const checkResponse = await request(app)
         .get(`/api/admin/products/${testProduct.id}`)
         .set('Cookie', [adminToken])
@@ -271,12 +291,13 @@ describe('Products Integration Tests', () => {
       const categoryData = {
         name: 'New Test Category',
         slug: 'new-test-category',
-        description: 'New test category'
+        description: 'New test category',
       };
 
       const response = await request(app)
         .post('/api/admin/categories')
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send(categoryData)
         .expect(201);
 
@@ -284,17 +305,17 @@ describe('Products Integration Tests', () => {
       expect(response.body.name).toBe(categoryData.name);
       expect(response.body.slug).toBe(categoryData.slug);
 
-      // Clean up
       await query('DELETE FROM categories WHERE id = ?', [response.body.id]);
     });
 
     test('should reject invalid category data', async () => {
       const response = await request(app)
         .post('/api/admin/categories')
-        .set('Cookie', [adminToken])
+        .set('Cookie', [adminToken, csrf.cookie])
+        .set('X-CSRF-Token', csrf.header)
         .send({
           name: '', // Invalid: empty name
-          slug: 'test'
+          slug: 'test',
         })
         .expect(400);
 

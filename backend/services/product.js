@@ -1,13 +1,41 @@
-const { query } = require('../config/database');
+const { query, getClient } = require('../config/database');
+const seoService = require('./seoService');
+
+// Extract the commerce fields from a product payload into insert/update
+// params. Arrays/objects are JSON-encoded; absent scalars become NULL.
+function commerceParams(data) {
+  return {
+    status: data.status || 'DRAFT',
+    vat_rate: data.vat_rate !== undefined ? data.vat_rate : 20.0,
+    meta_title: data.meta_title || null,
+    meta_description: data.meta_description || null,
+    weight_grams: data.weight_grams !== undefined && data.weight_grams !== null
+      ? parseInt(data.weight_grams, 10)
+      : null,
+    dimensions_cm: data.dimensions_cm ? JSON.stringify(data.dimensions_cm) : null,
+    clp_allergens: JSON.stringify(data.clp_allergens || []),
+    clp_hazard_pictograms: JSON.stringify(data.clp_hazard_pictograms || []),
+    clp_signal_word: data.clp_signal_word || null,
+    clp_hazard_statements: JSON.stringify(data.clp_hazard_statements || []),
+    clp_precautionary_statements: JSON.stringify(data.clp_precautionary_statements || []),
+    ufi_code: data.ufi_code || null,
+    clp_responsible_name: data.clp_responsible_name || null,
+  };
+}
 
 class ProductService {
   // Get all products with variants and categories
   async getAllProducts(options = {}) {
-    const { page = 1, limit = 20, search = '', category = '' } = options;
+    const { page = 1, limit = 20, search = '', category = '', status = '' } = options;
     const offset = (page - 1) * limit;
 
     let whereClause = 'WHERE 1=1';
     const params = [];
+
+    if (status) {
+      whereClause += ' AND p.status = ?';
+      params.push(status);
+    }
 
     if (search) {
       whereClause += ' AND (p.name ILIKE ? OR p.description ILIKE ?)';
@@ -23,11 +51,25 @@ class ProductService {
       SELECT
         p.id,
         p.name,
+        p.slug,
         p.description,
         p.scent_profile,
         p.base_price,
+        p.status,
+        p.vat_rate,
+        p.meta_title,
+        p.meta_description,
+        p.weight_grams,
+        p.dimensions_cm,
+        p.clp_allergens,
+        p.clp_hazard_pictograms,
+        p.clp_signal_word,
+        p.clp_hazard_statements,
+        p.clp_precautionary_statements,
+        p.ufi_code,
+        p.clp_responsible_name,
         p.created_at,
-        GROUP_CONCAT(DISTINCT c.name) as categories
+        string_agg(DISTINCT c.name, ',') as categories
       FROM products p
       LEFT JOIN product_categories pc ON p.id = pc.product_id
       LEFT JOIN categories c ON pc.category_id = c.id
@@ -88,10 +130,12 @@ class ProductService {
       SELECT
         id,
         name,
+        slug,
         description,
         scent_profile,
         base_price,
-        created_at
+        created_at,
+        updated_at
       FROM products
       WHERE id = ?
     `, [id]);
@@ -133,27 +177,50 @@ class ProductService {
     return result;
   }
 
+  // Generate a unique, SEO-friendly slug. Suffixes -2, -3, ... on collision.
+  // `excludeId` lets updateProduct reuse its own slug without a false clash.
+  async uniqueSlug(client, source, excludeId = null) {
+    const base = seoService.generateSlug(source || '') || 'product';
+    let suffix = 1;
+    let slug = base;
+    for (;;) {
+      const existing = excludeId
+        ? await client.query('SELECT id FROM products WHERE slug = ? AND id <> ?', [slug, excludeId])
+        : await client.query('SELECT id FROM products WHERE slug = ?', [slug]);
+      if (existing.rows.length === 0) return slug;
+      suffix += 1;
+      slug = `${base}-${suffix}`;
+    }
+  }
+
   // Create new product
   async createProduct(productData) {
     const { name, description, scent_profile, base_price, categories = [], variants = [] } = productData;
 
-    // Start transaction
-    const client = await query('BEGIN');
+    // BEGIN/COMMIT through the shared pool can land on different
+    // connections, leaving statements outside the transaction. Pin one
+    // client for the whole unit of work (same pattern as
+    // scripts/seed-demo-products.js).
+    const client = await getClient();
 
     try {
+      await client.query('BEGIN');
+
+      const slug = await this.uniqueSlug(client, productData.slug || name);
+
       // Insert product
-      const productResult = await query(`
-        INSERT INTO products (name, description, scent_profile, base_price)
-        VALUES (?, ?, ?, ?)
+      const productResult = await client.query(`
+        INSERT INTO products (name, slug, description, scent_profile, base_price)
+        VALUES (?, ?, ?, ?, ?)
         RETURNING id
-      `, [name, description, JSON.stringify(scent_profile), base_price]);
+      `, [name, slug, description, JSON.stringify(scent_profile), base_price]);
 
       const productId = productResult.rows[0].id;
 
       // Insert categories
       if (categories.length > 0) {
         for (const categoryId of categories) {
-          await query(`
+          await client.query(`
             INSERT INTO product_categories (product_id, category_id)
             VALUES (?, ?)
           `, [productId, categoryId]);
@@ -163,7 +230,7 @@ class ProductService {
       // Insert variants
       if (variants.length > 0) {
         for (const variant of variants) {
-          await query(`
+          await client.query(`
             INSERT INTO product_variants (product_id, sku, name, price, inventory_quantity, attributes)
             VALUES (?, ?, ?, ?, ?, ?)
           `, [
@@ -177,12 +244,14 @@ class ProductService {
         }
       }
 
-      await query('COMMIT');
+      await client.query('COMMIT');
 
       return await this.getProductById(productId);
     } catch (error) {
-      await query('ROLLBACK');
+      try { await client.query('ROLLBACK'); } catch { /* transaction already aborted */ }
       throw error;
+    } finally {
+      client.release();
     }
   }
 
@@ -190,22 +259,36 @@ class ProductService {
   async updateProduct(id, productData) {
     const { name, description, scent_profile, base_price, categories = [], variants = [] } = productData;
 
-    // Start transaction
-    await query('BEGIN');
+    // One client for the whole transaction (see createProduct).
+    const client = await getClient();
 
     try {
+      await client.query('BEGIN');
+
+      const current = await client.query('SELECT name, slug FROM products WHERE id = ?', [id]);
+      if (current.rows.length === 0) {
+        throw new Error('Product not found');
+      }
+
+      // Explicit slug wins; otherwise regenerate when the name changes.
+      const newSlug = productData.slug
+        ? await this.uniqueSlug(client, productData.slug, id)
+        : name !== current.rows[0].name
+          ? await this.uniqueSlug(client, name, id)
+          : current.rows[0].slug;
+
       // Update product
-      await query(`
+      await client.query(`
         UPDATE products
-        SET name = ?, description = ?, scent_profile = ?, base_price = ?, updated_at = NOW()
+        SET name = ?, slug = ?, description = ?, scent_profile = ?, base_price = ?, updated_at = NOW()
         WHERE id = ?
-      `, [name, description, JSON.stringify(scent_profile), base_price, id]);
+      `, [name, newSlug, description, JSON.stringify(scent_profile), base_price, id]);
 
       // Update categories
-      await query('DELETE FROM product_categories WHERE product_id = ?', [id]);
+      await client.query('DELETE FROM product_categories WHERE product_id = ?', [id]);
       if (categories.length > 0) {
         for (const categoryId of categories) {
-          await query(`
+          await client.query(`
             INSERT INTO product_categories (product_id, category_id)
             VALUES (?, ?)
           `, [id, categoryId]);
@@ -213,10 +296,10 @@ class ProductService {
       }
 
       // Update variants (delete existing and insert new)
-      await query('DELETE FROM product_variants WHERE product_id = ?', [id]);
+      await client.query('DELETE FROM product_variants WHERE product_id = ?', [id]);
       if (variants.length > 0) {
         for (const variant of variants) {
-          await query(`
+          await client.query(`
             INSERT INTO product_variants (product_id, sku, name, price, inventory_quantity, attributes)
             VALUES (?, ?, ?, ?, ?, ?)
           `, [
@@ -230,12 +313,14 @@ class ProductService {
         }
       }
 
-      await query('COMMIT');
+      await client.query('COMMIT');
 
       return await this.getProductById(id);
     } catch (error) {
-      await query('ROLLBACK');
+      try { await client.query('ROLLBACK'); } catch { /* transaction already aborted */ }
       throw error;
+    } finally {
+      client.release();
     }
   }
 

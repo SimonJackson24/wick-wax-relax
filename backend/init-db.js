@@ -126,10 +126,26 @@ function splitStatements(sql) {
 
   // 4. Reassemble and split on `;`.
   const reassembled = lines.join('\n');
-  const statements = reassembled
+  let statements = reassembled
     .split(';')
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+
+  // 4b. Strip stray BEGIN/COMMIT. This runner executes each statement with
+  // autocommit by design; a file-level transaction wrapper is actively
+  // dangerous under it — when one statement fails (tolerated as ignorable),
+  // the aborted transaction makes COMMIT roll back every earlier statement
+  // in the file while the file still gets recorded as applied. That exact
+  // failure mode shipped: 0001/019_admin_totp_2fa.sql applied "successfully"
+  // with zero of its content on every migration-built database.
+  statements = statements.filter((s) => {
+    const bare = s.replace(/\s+/g, ' ').trim().toUpperCase();
+    if (bare === 'BEGIN' || bare === 'COMMIT' || bare === 'ROLLBACK') {
+      console.warn(`   ⚠️  stripped stray ${bare} — this runner uses per-statement autocommit; transaction wrappers in migration files cause silent rollbacks`);
+      return false;
+    }
+    return true;
+  });
 
   // 5. Restore dollar-quoted blocks in each statement.
   return statements.map((stmt) =>
@@ -582,4 +598,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { MigrationRunner, discoverMigrations, checksumFile };
+module.exports = { MigrationRunner, discoverMigrations, checksumFile, splitStatements, isIgnorableError };

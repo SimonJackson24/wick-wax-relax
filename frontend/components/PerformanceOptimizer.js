@@ -101,7 +101,7 @@ const PerformanceOptimizer = ({ children }) => {
               "@type": "WebApplication",
               "name": "Wick Wax Relax",
               "description": "Premium wax products and relaxation solutions",
-              "url": "https://wickwaxrelax.com",
+              "url": "https://www.wickwaxrelax.co.uk",
               "applicationCategory": "ShoppingApplication",
               "operatingSystem": "Web Browser",
               "offers": {

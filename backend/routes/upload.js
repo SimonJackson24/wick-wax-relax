@@ -42,11 +42,18 @@ const BLOCKED_EXTENSIONS = new Set(['.svg', '.html', '.htm', '.js', '.mjs', '.ph
 //     to defeat mimetype spoofing.
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
+  // Rejections carry an HTTP status so the router-level error handler
+  // below maps them to 400 instead of bubbling to the generic 500
+  // handler (invalid uploads used to surface as server errors).
   if (BLOCKED_EXTENSIONS.has(ext)) {
-    return cb(new Error(`File type ${ext} is not allowed`), false);
+    const err = new Error(`File type ${ext} is not allowed`);
+    err.status = 400;
+    return cb(err, false);
   }
   if (!file.mimetype || !file.mimetype.startsWith('image/')) {
-    return cb(new Error('Only image files are allowed'), false);
+    const err = new Error('Only image files are allowed');
+    err.status = 400;
+    return cb(err, false);
   }
   cb(null, true);
 };
@@ -321,6 +328,19 @@ router.put('/product-image/:id', authenticateToken, requireAdminMfa, async (req,
     console.error('Error updating image:', error);
     res.status(500).json({ error: 'Failed to update image' });
   }
+});
+
+// Router-level error handler: map multer/fileFilter errors to proper
+// statuses. Without this, rejected uploads bubbled to the global handler
+// and returned 500 "Something went wrong" to the admin UI.
+router.use((err, req, res, next) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'File too large (5 MB max)' });
+  }
+  if (err && err.status) {
+    return res.status(err.status).json({ error: err.message });
+  }
+  next(err);
 });
 
 module.exports = router;
