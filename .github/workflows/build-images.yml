@@ -52,5 +52,7 @@ jobs:
           tags: |
             ${{ steps.vars.outputs.prefix }}/${{ matrix.name }}:latest
             ${{ steps.vars.outputs.prefix }}/${{ matrix.name }}:${{ github.sha }}
+          build-args: |
+            BUILD_API_URL=https://api.wickwaxrelax.co.uk
           cache-from: type=gha
           cache-to: type=gha,mode=max

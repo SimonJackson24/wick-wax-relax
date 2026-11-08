@@ -13,7 +13,13 @@ COPY . .
 # (https://www.wickwaxrelax.co.uk) so no build args are required; pass
 # BUILD_SITE_URL to override for previews.
 ARG BUILD_SITE_URL=""
+# Public API URL for ISR getStaticProps fetches during `next build` in CI.
+# GitHub Actions can't reach localhost — without this, the build renders
+# the homepage with empty products (the hero fallback, no images) and the
+# static HTML ships without its LCP element.
+ARG BUILD_API_URL="https://api.wickwaxrelax.co.uk"
 ENV NEXT_PUBLIC_SITE_URL=$BUILD_SITE_URL
+ENV API_URL=$BUILD_API_URL
 RUN npm run build
 
 FROM node:20-alpine AS runner
