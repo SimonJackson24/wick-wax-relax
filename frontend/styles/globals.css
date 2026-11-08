@@ -1,7 +1,11 @@
 /* Global Styles for Wick Wax & Relax */
 
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500;700&family=Dancing+Script:wght@400;700&display=swap');
+/* Fonts are self-hosted via next/font (see pages/_app.js — Playfair
+   Display + Montserrat bundled at build time). The old @import here was
+   hoisted by the CSS build into a RENDER-BLOCKING <link> in the head of
+   every page (760ms + 75KB of woff2 on Slow 4G) and was the last
+   surviving Google Fonts request after the JS-side cleanups. Do not
+   re-add external font imports — use next/font. */
 
 /* CSS Reset and Base Styles */
 * {

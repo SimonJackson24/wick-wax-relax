@@ -29,14 +29,14 @@ const MOODS = [
   {
     label: 'To Celebrate',
     caption: 'Warm, spiced, golden',
-    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?w=480&q=70&fit=crop',
     href: '/products?category=bath-bombs',
     tint: '#F3E7E1',
   },
   {
     label: 'To Reset',
     caption: 'Clean, green, uncluttered',
-    image: '/images/wax-melts.png',
+    image: '/images/wax-melts-opt.jpg',
     href: '/products?category=diffusers',
     tint: '#E7EDE8',
   },
