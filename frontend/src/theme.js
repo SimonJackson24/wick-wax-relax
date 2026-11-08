@@ -57,11 +57,13 @@ const theme = createTheme({
   },
 
   typography: {
-    fontFamily: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
+    // next/font self-hosted families via CSS variables (see _app.js) —
+    // falls back to the same named families if a variable is absent.
+    fontFamily: 'var(--font-montserrat), "Montserrat", "Helvetica Neue", Arial, sans-serif',
     // Display — the editorial voice. Weight 500 gives real contrast
     // against the light body copy (previously everything was 400).
     h1: {
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
       fontWeight: 500,
       fontSize: 'clamp(2.75rem, 6.2vw, 4.75rem)',
       lineHeight: 1.04,
@@ -69,7 +71,7 @@ const theme = createTheme({
       color: '#1C1A1F',
     },
     h2: {
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
       fontWeight: 500,
       fontSize: 'clamp(2rem, 4.2vw, 3.25rem)',
       lineHeight: 1.1,
@@ -77,7 +79,7 @@ const theme = createTheme({
       color: '#1C1A1F',
     },
     h3: {
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
       fontWeight: 500,
       fontSize: 'clamp(1.6rem, 3vw, 2.35rem)',
       lineHeight: 1.16,
@@ -85,14 +87,14 @@ const theme = createTheme({
       color: '#1C1A1F',
     },
     h4: {
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
       fontWeight: 500,
       fontSize: 'clamp(1.35rem, 2.2vw, 1.75rem)',
       lineHeight: 1.25,
       color: '#1C1A1F',
     },
     h5: {
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif',
       fontWeight: 500,
       fontSize: '1.25rem',
       lineHeight: 1.3,

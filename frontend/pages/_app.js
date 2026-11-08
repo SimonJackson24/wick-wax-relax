@@ -5,6 +5,11 @@ import Head from 'next/head';
 import axios from 'axios';
 import { CacheProvider } from '@emotion/react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
+// Self-hosted fonts (next/font/google downloads and bundles them at BUILD
+// time): zero render-blocking external CSS, zero preconnects, zero
+// third-party font fetch on the critical path. The CSS variables are
+// consumed by src/theme.js.
+import { Playfair_Display, Montserrat } from 'next/font/google';
 import createEmotionCache from '../src/createEmotionCache';
 import theme from '../src/theme';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -17,6 +22,20 @@ import DynamicPWAProvider from '../components/DynamicPWAProvider';
 import { ToastProvider } from '../components/ToastContext';
 import CookieConsent from '../components/CookieConsent';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-playfair',
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-montserrat',
+});
 
 // Axios: same-origin in production, configurable in development.
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -92,15 +111,17 @@ function MyApp(props) {
 
   return (
     <CacheProvider value={emotionCache}>
+      {/* Font variables on the app root — the self-hosted families apply
+          site-wide via the CSS variables consumed in src/theme.js. */}
+      <div className={`${playfair.variable} ${montserrat.variable}`}>
       <Head>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <meta name="theme-color" content={theme.palette.primary.main} />
-        {/* Font preconnects + the single stylesheet live in _document only —
-            duplicating them here (and per-page in SEOHead) triggered the
-            Lighthouse "more than 4 preconnects" warning and raced duplicate
-            font downloads. */}
+        {/* Fonts are self-hosted via next/font (see imports) — no external
+            font stylesheet, no preconnects, nothing render-blocking from
+            Google Fonts. */}
         {/* Security meta — these are the only ones browsers enforce in-document
             without a CSP header. The full set lives in next.config.js so they
             are emitted by the server. */}
@@ -130,6 +151,7 @@ function MyApp(props) {
           </DynamicPWAProvider>
         </ErrorBoundary>
       </ThemeProvider>
+      </div>
     </CacheProvider>
   );
 }

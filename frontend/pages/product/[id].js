@@ -34,13 +34,18 @@ import SEOHead from '../../components/SEOHead';
 import ClpDisclosure from '../../components/ClpDisclosure';
 import ProductBuyBox from '../../components/ProductBuyBox';
 import ReviewHistogram from '../../components/ReviewHistogram';
-import RecentlyViewed, { recordRecentlyViewed } from '../../components/RecentlyViewed';
-import ProductQa from '../../components/ProductQa';
+import { recordRecentlyViewed } from '../../components/RecentlyViewed';
+const RecentlyViewed = dynamic(() => import('../../components/RecentlyViewed').then(m => m.default), { ssr: false, loading: () => null });
+const ProductQa = dynamic(() => import('../../components/ProductQa'), { ssr: false, loading: () => null });
 import { SITE_URL } from '../../utils/siteConfig';
 import Navigation from '../../components/Navigation';
 import ProductCard from '../../components/ProductCard';
 import ProductGallery from '../../components/ProductGallery';
-import FrequentlyBoughtTogether from '../../components/FrequentlyBoughtTogether';
+// Below-fold cross-sell sections load lazily: 19 motion-animated ProductCards
+// hydrating on first paint was the bulk of the 10.5s LCP — deferring them
+// lets the browser paint the buy box first and hydrate the rest after.
+import dynamic from 'next/dynamic';
+const FrequentlyBoughtTogether = dynamic(() => import('../../components/FrequentlyBoughtTogether'), { ssr: false, loading: () => null });
 import TrustBadges from '../../components/TrustBadges';
 import StarRating from '../../components/StarRating';
 import ReviewList from '../../components/ReviewList';
@@ -88,6 +93,13 @@ export default function ProductDetail({ initialProduct }) {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewSort, setReviewSort] = useState('recent');
   const [reviewRatingFilter, setReviewRatingFilter] = useState('');
+  // Defer the below-fold cross-sell grids until after first paint — the
+  // 19 staggered motion cards were the bulk of hydration cost.
+  const [crossSellReady, setCrossSellReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setCrossSellReady(true), 120);
+    return () => clearTimeout(t);
+  }, []);
   const [reviewStats, setReviewStats] = useState({ average: 0, count: 0, distribution: [] });
 
   useEffect(() => {
@@ -546,7 +558,7 @@ export default function ProductDetail({ initialProduct }) {
           </Collapse>
         </Box>
 
-        {(relatedProducts.length > 0 || relatedLoading) && (
+        {crossSellReady && (relatedProducts.length > 0 || relatedLoading) && (
           <Box sx={{ mt: 8 }}>
             <Box sx={{ textAlign: 'center', mb: 5 }}>
               <Typography variant="h4" component="h2" gutterBottom sx={{
@@ -592,7 +604,7 @@ export default function ProductDetail({ initialProduct }) {
           </Box>
         )}
 
-        {newProducts.length > 0 && (
+        {crossSellReady && newProducts.length > 0 && (
           <Box sx={{ mt: 8, mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 5 }}>
               <Box>
