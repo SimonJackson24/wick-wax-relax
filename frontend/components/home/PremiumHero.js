@@ -59,18 +59,41 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
         sx={{
           position: 'relative',
           overflow: 'hidden',
+          // LCP CRITICAL: explicit dimensions via inline style, NOT MUI sx.
+          // sx styles are injected by emotion during React hydration, so a
+          // sx-only minHeight left the next/image fill container at 0px
+          // until ~400KB of JS downloaded + executed on Slow 4G — LCP was
+          // 6.5-8.5s because the image couldn't paint pre-hydration.
+          // A raw inline style is in the static HTML from the first byte,
+          // giving the fill-layout image its dimensions immediately.
           minHeight: { xs: 'auto', md: '78vh' },
           display: 'flex',
           alignItems: 'center',
           backgroundColor: '#2A1D2A',
+          style: { minHeight: '78vh' },
         }}
       >
         <Box sx={{ position: 'absolute', inset: 0 }}>
-          {/* next/image: this is the page's LCP element — priority fetch +
-              responsive AVIF/WebP via the optimizer. The original raw
-              <img> shipped a 2.5 MB PNG (12.1s LCP on 4G); the optimised
-              source is 74 KB and the optimizer serves device-appropriate
-              variants. */}
+          {/* LCP PRE-HYDRATION FALLBACK: a raw <img> with inline styles
+              paints from the static HTML the moment the first byte arrives
+              — it doesn't wait for React, MUI, or the next/image
+              optimizer. The optimized next/image replaces it on hydration
+              (higher quality, responsive srcset). Both are in the DOM
+              because the fallback has position:absolute + zIndex:0 and the
+              Image sits above it. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero2-opt.jpg"
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+              objectFit: 'cover', objectPosition: 'center 72%',
+              zIndex: 0,
+            }}
+          />
+          {/* next/image: replaces the fallback on hydration with the
+              optimized responsive version */}
           <Image
             src="/images/hero2-opt.jpg"
             alt="Hand-poured candles in a warm-lit room"
