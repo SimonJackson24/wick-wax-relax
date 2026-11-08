@@ -100,6 +100,10 @@ const ProductBuyBox = ({
       arrives: from.getTime() === to.getTime() ? fmt(from) : `${fmt(from)} – ${fmt(to)}`,
       cost: delivery.cost,
       methodName: delivery.name,
+      // From the live rate row — the admin-configurable threshold, NOT a
+      // hardcoded number (the text previously said "£50" regardless of
+      // what was configured).
+      freeOver: delivery.freeOverAmount != null ? delivery.freeOverAmount : null,
     };
   }, [delivery]);
 
@@ -195,7 +199,9 @@ const ProductBuyBox = ({
                 </Box>
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                {deliveryWindow.methodName} · {deliveryWindow.cost === 0 ? 'FREE delivery' : `${gbp(deliveryWindow.cost)} — FREE over £50`}
+                {deliveryWindow.methodName} · {deliveryWindow.cost === 0
+                  ? 'FREE delivery'
+                  : `${gbp(deliveryWindow.cost)}${deliveryWindow.freeOver != null ? ` — FREE over ${gbp(deliveryWindow.freeOver)}` : ''}`}
               </Typography>
             </Box>
           </Box>

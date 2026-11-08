@@ -114,6 +114,7 @@ async function estimateDelivery({ zone = 'UK', weightGrams = null, subtotal = 0 
     daysMin: chosen.estimatedDaysMin,
     daysMax: chosen.estimatedDaysMax,
     cost: chosen.cost,
+    freeOverAmount: chosen.freeOverAmount != null ? Number(chosen.freeOverAmount) : null,
   };
 }
 
