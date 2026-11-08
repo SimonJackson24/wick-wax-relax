@@ -69,10 +69,12 @@ const nextConfig = {
       {
         source: '/api/:path*',
         // Next.js bakes rewrites at BUILD time — runtime env changes have
-        // no effect. Default to the public API domain (stable across
-        // redeploys, unlike Coolify's timestamped container names);
-        // override NEXT_PUBLIC_API_URL at build time for other environments.
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'https://api.wickwaxrelax.co.uk'}/api/:path*`,
+        // no effect. Same-origin for visitors: /api/* is proxied SERVER-SIDE
+        // to the API container over the internal docker network (network
+        // alias wwr-demo-api), so no public API hostname is needed.
+        // API_URL is server-only (never inlined into the browser bundle);
+        // override at build time for other environments.
+        destination: `${process.env.API_URL || 'http://localhost:3001'}/api/:path*`,
       },
     ];
   },
