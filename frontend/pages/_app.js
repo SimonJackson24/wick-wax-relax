@@ -97,12 +97,10 @@ function MyApp(props) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <meta name="theme-color" content={theme.palette.primary.main} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
+        {/* Font preconnects + the single stylesheet live in _document only —
+            duplicating them here (and per-page in SEOHead) triggered the
+            Lighthouse "more than 4 preconnects" warning and raced duplicate
+            font downloads. */}
         {/* Security meta — these are the only ones browsers enforce in-document
             without a CSP header. The full set lives in next.config.js so they
             are emitted by the server. */}

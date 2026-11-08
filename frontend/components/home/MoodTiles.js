@@ -15,14 +15,14 @@ const MOODS = [
   {
     label: 'To Unwind',
     caption: 'Slow evenings, soft light',
-    image: '/images/hero2.png',
+    image: '/images/hero2-opt.jpg',
     href: '/products?category=wax-melts',
     tint: '#EDE6F2',
   },
   {
     label: 'To Wake',
     caption: 'Bright, citrus, morning',
-    image: '/images/hero1.jpg',
+    image: '/images/hero1-opt.jpg',
     href: '/products?category=candles',
     tint: '#F6EADB',
   },
