@@ -78,6 +78,19 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 'linear-gradient(95deg, rgba(28,22,28,0.88) 0%, rgba(28,22,28,0.62) 45%, rgba(28,22,28,0.15) 100%)',
             }}
           />
+          {/* Warm candle-glow wash on the dark text side — the flat plum
+              read as a SaaS gradient; a soft amber radial (like light from
+              a flame off-frame) gives the copy side the warmth the
+              photography already has. */}
+          <Box
+            sx={{
+              position: 'absolute', inset: 0,
+              background:
+                'radial-gradient(55% 80% at 6% 85%, rgba(230,200,138,0.14) 0%, rgba(230,200,138,0) 60%)',
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+            }}
+          />
         </Box>
         <Box
           sx={{
@@ -339,15 +352,19 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 </Button>
                 {slide.variants?.[0] && stock > 0 && (
                   <Button
-                    variant="outlined"
                     size="large"
                     onClick={handleQuickAdd}
                     disabled={adding}
                     startIcon={<AddIcon sx={{ fontSize: '1.1rem !important' }} />}
                     sx={{
-                      borderColor: 'rgba(244,239,231,0.45)',
-                      color: '#F4EFE7',
-                      '&:hover': { borderColor: '#F4EFE7', backgroundColor: 'rgba(244,239,231,0.08)' },
+                      // Same gold language as the glass card's Shop button:
+                      // one accent, one primary, no third dialect.
+                      bgcolor: 'transparent',
+                      border: '1px solid rgba(230,200,138,0.55)',
+                      color: '#E6C88A',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      '&:hover': { bgcolor: 'rgba(230,200,138,0.10)', borderColor: '#E6C88A' },
                     }}
                   >
                     {adding ? 'Adding…' : 'Quick add'}

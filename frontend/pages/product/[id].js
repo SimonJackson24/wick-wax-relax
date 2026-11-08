@@ -473,38 +473,46 @@ export default function ProductDetail({ initialProduct }) {
                 Customer Reviews
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-                <Box>
-                  <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
-                  {reviewStats.count === 0 && (
-                    <Typography variant="body2" color="text.secondary">No reviews yet</Typography>
-                  )}
-                </Box>
-                <Box>
-                  <ReviewHistogram distribution={reviewStats.distribution} reviewCount={reviewStats.count} onSelectRating={(r) => setReviewRatingFilter(reviewRatingFilter === r ? '' : String(r))} />
-                  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ minWidth: 130 }}>
-                      <InputLabel id="review-sort-label">Sort by</InputLabel>
-                      <Select
-                        labelId="review-sort-label"
-                        value={reviewSort}
-                        label="Sort by"
-                        onChange={(e) => setReviewSort(e.target.value)}
-                      >
-                        <MenuItem value="recent">Most recent</MenuItem>
-                        <MenuItem value="highest">Highest rated</MenuItem>
-                        <MenuItem value="lowest">Lowest rated</MenuItem>
-                        <MenuItem value="helpful">Most helpful</MenuItem>
-                      </Select>
-                    </FormControl>
-                    {reviewRatingFilter && (
-                      <Chip
-                        size="small"
-                        label={`${reviewRatingFilter}★ filter — clear`}
-                        onClick={() => setReviewRatingFilter('')}
-                      />
-                    )}
-                  </Box>
-                </Box>
+                {reviewStats.count > 0 ? (
+                  <>
+                    <Box>
+                      <StarRating value={reviewStats.average} reviewCount={reviewStats.count} size="medium" />
+                    </Box>
+                    <Box>
+                      <ReviewHistogram distribution={reviewStats.distribution} reviewCount={reviewStats.count} onSelectRating={(r) => setReviewRatingFilter(reviewRatingFilter === r ? '' : String(r))} />
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <FormControl size="small" sx={{ minWidth: 130 }}>
+                          <InputLabel id="review-sort-label">Sort by</InputLabel>
+                          <Select
+                            labelId="review-sort-label"
+                            value={reviewSort}
+                            label="Sort by"
+                            onChange={(e) => setReviewSort(e.target.value)}
+                          >
+                            <MenuItem value="recent">Most recent</MenuItem>
+                            <MenuItem value="highest">Highest rated</MenuItem>
+                            <MenuItem value="lowest">Lowest rated</MenuItem>
+                            <MenuItem value="helpful">Most helpful</MenuItem>
+                          </Select>
+                        </FormControl>
+                        {reviewRatingFilter && (
+                          <Chip
+                            size="small"
+                            label={`${reviewRatingFilter}★ filter — clear`}
+                            onClick={() => setReviewRatingFilter('')}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </>
+                ) : (
+                  /* Zero-state: no empty star grids, no dead sort controls —
+                     an invitation instead. */
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    Be the first to review this scent — your words help other
+                    people find their favourite.
+                  </Typography>
+                )}
               </Box>
             </Box>
             <Button
