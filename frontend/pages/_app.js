@@ -9,7 +9,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 // time): zero render-blocking external CSS, zero preconnects, zero
 // third-party font fetch on the critical path. The CSS variables are
 // consumed by src/theme.js.
-import { Playfair_Display, Montserrat } from 'next/font/google';
+import localFont from 'next/font/local';
 import createEmotionCache from '../src/createEmotionCache';
 import theme from '../src/theme';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -23,16 +23,29 @@ import { ToastProvider } from '../components/ToastContext';
 import CookieConsent from '../components/CookieConsent';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+// Self-hosted fonts via next/font/local — the .woff2 files live in
+// public/fonts/ (downloaded from fontsource). No build-time download
+// from Google (which was failing intermittently in CI), no external
+// request at runtime. Same CSS variables, same display:swap.
+const playfair = localFont({
+  src: [
+    { path: '../public/fonts/playfair-400.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/playfair-500.woff2', weight: '500', style: 'normal' },
+    { path: '../public/fonts/playfair-600.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/playfair-700.woff2', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
   variable: '--font-playfair',
 });
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+const montserrat = localFont({
+  src: [
+    { path: '../public/fonts/montserrat-300.woff2', weight: '300', style: 'normal' },
+    { path: '../public/fonts/montserrat-400.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/montserrat-500.woff2', weight: '500', style: 'normal' },
+    { path: '../public/fonts/montserrat-600.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/montserrat-700.woff2', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
   variable: '--font-montserrat',
 });
