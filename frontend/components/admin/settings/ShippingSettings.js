@@ -25,6 +25,8 @@ const ShippingSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =
     default_shipping_method: settings.shipping?.default_shipping_method?.value || 'standard',
     shipping_zones: settings.shipping?.shipping_zones?.value ? JSON.parse(settings.shipping.shipping_zones.value) : ['UK', 'EU', 'Worldwide'],
     max_order_weight: settings.shipping?.max_order_weight?.value || '10.0',
+    dispatch_cutoff_hour: settings.shipping?.dispatch_cutoff_hour?.value || '14',
+    dispatch_sunday_delivery: settings.shipping?.dispatch_sunday_delivery?.value === 'true',
   });
 
   const [errors, setErrors] = useState({});
@@ -76,6 +78,11 @@ const ShippingSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =
       newErrors.free_shipping_threshold = 'Please enter a valid amount';
     }
 
+    const cutoff = parseInt(formData.dispatch_cutoff_hour, 10);
+    if (isNaN(cutoff) || cutoff < 0 || cutoff > 23) {
+      newErrors.dispatch_cutoff_hour = 'Cut-off hour must be 0–23 (24h clock)';
+    }
+
     const maxWeight = parseFloat(formData.max_order_weight);
     if (isNaN(maxWeight) || maxWeight <= 0) {
       newErrors.max_order_weight = 'Please enter a valid weight';
@@ -99,6 +106,8 @@ const ShippingSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =
       { category: 'shipping', key: 'default_shipping_method', value: formData.default_shipping_method },
       { category: 'shipping', key: 'shipping_zones', value: JSON.stringify(formData.shipping_zones) },
       { category: 'shipping', key: 'max_order_weight', value: formData.max_order_weight },
+          { category: 'shipping', key: 'dispatch_cutoff_hour', value: String(parseInt(formData.dispatch_cutoff_hour, 10) || 14) },
+      { category: 'shipping', key: 'dispatch_sunday_delivery', value: formData.dispatch_sunday_delivery ? 'true' : 'false' },
     ];
 
     await onBulkUpdate(updates);
@@ -157,6 +166,36 @@ const ShippingSettings = ({ settings, onSettingUpdate, onBulkUpdate, saving }) =
                     helperText={errors.max_order_weight || 'Maximum weight allowed for orders'}
                     inputProps={{ min: 0.1, step: 0.1 }}
                   />
+
+        {/* Dispatch promise — drives the "Order within / arrives" line on
+            product pages. Cut-off hour: orders after this count as
+            tomorrow. Sunday delivery: Royal Mail = off. */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Dispatch cut-off hour (24h)"
+            type="number"
+            value={formData.dispatch_cutoff_hour}
+            onChange={(e) => handleInputChange('dispatch_cutoff_hour', e.target.value)}
+            error={!!errors.dispatch_cutoff_hour}
+            helperText={errors.dispatch_cutoff_hour || 'Orders placed after this hour dispatch the next working day (currently drives the product-page delivery promise)'}
+            inputProps={{ min: 0, max: 23 }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.dispatch_sunday_delivery}
+                onChange={(e) => handleInputChange('dispatch_sunday_delivery', e.target.checked)}
+              />
+            }
+            label="Carrier delivers on Sundays"
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            Royal Mail does not deliver Sundays — leave off unless your carrier does. Affects arrival-date calculation on product pages.
+          </Typography>
+        </Grid>
                 </Grid>
               </Grid>
             </CardContent>

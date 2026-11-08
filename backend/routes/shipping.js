@@ -27,6 +27,10 @@ router.get('/rates', [
 
 // Public: delivery estimate for a basket (weight + value), used at
 // checkout and for the PDP's delivery promise.
+//
+// The response also carries the admin-configured dispatch parameters
+// (cutoff hour, Sunday delivery) so the storefront computes the promise
+// line identically to how the admin dialled it in — no hardcoded values.
 router.get('/estimate', [
   query('weightGrams').optional().isInt({ min: 0 }),
   query('subtotal').optional().isFloat({ min: 0 }),
@@ -43,7 +47,28 @@ router.get('/estimate', [
       weightGrams: req.query.weightGrams != null ? parseInt(req.query.weightGrams, 10) : null,
       subtotal: req.query.subtotal != null ? parseFloat(req.query.subtotal) : 0,
     });
-    res.json({ zone, estimate });
+
+    // Admin settings (defaults keep the promise working even before the
+    // settings exist — e.g. a fresh database pre-migration).
+    let cutoffHour = 14;
+    let sundayDelivery = false;
+    try {
+      const cutoff = await dbQuery(
+        'SELECT value FROM platform_settings WHERE category = ? AND key = ?',
+        ['shipping', 'dispatch_cutoff_hour']
+      );
+      if (cutoff.rows.length > 0) {
+        const parsed = parseInt(cutoff.rows[0].value, 10);
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 23) cutoffHour = parsed;
+      }
+      const sunday = await dbQuery(
+        'SELECT value FROM platform_settings WHERE category = ? AND key = ?',
+        ['shipping', 'dispatch_sunday_delivery']
+      );
+      if (sunday.rows.length > 0) sundayDelivery = sunday.rows[0].value === 'true';
+    } catch { /* settings unavailable — use defaults */ }
+
+    res.json({ zone, estimate, dispatch: { cutoffHour, sundayDelivery } });
   } catch (error) {
     console.error('Error estimating delivery:', error);
     res.status(500).json({ error: 'Failed to estimate delivery' });

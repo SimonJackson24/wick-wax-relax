@@ -60,41 +60,47 @@ const ProductBuyBox = ({
 
   // Delivery estimate (Amazon-style promise line). Fetched once from the
   // live shipping rates; recomputed when the price (subtotal) changes
-  // because free-over thresholds hinge on it.
+  // because free-over thresholds hinge on it. The response also carries
+  // the admin-configured dispatch parameters (cutoff hour, Sunday
+  // delivery) — previously hardcoded constants in this file.
   const [delivery, setDelivery] = React.useState(null);
+  const [dispatch, setDispatch] = React.useState({ cutoffHour: 14, sundayDelivery: false });
   React.useEffect(() => {
     let cancelled = false;
     axios
       .get(
         `/api/shipping/estimate?country=GB&weightGrams=${weight ?? ''}&subtotal=${price * quantity}`
       )
-      .then((res) => { if (!cancelled) setDelivery(res.data && res.data.estimate); })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.data && res.data.estimate) setDelivery(res.data.estimate);
+        if (res.data && res.data.dispatch) setDispatch(res.data.dispatch);
+      })
       .catch(() => { if (!cancelled) setDelivery(null); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weight, price, quantity]);
 
-  // Royal Mail delivers Mon–Sat but not Sun; dispatch cut-off 14:00 on
-  // working days. Compute the arrival window the shopper will see.
+  // Arrival window from the rate's day estimates + the admin dispatch
+  // settings. Non-delivery days (Sundays unless the carrier delivers
+  // them) are skipped; after the cutoff the clock starts tomorrow.
   const deliveryWindow = React.useMemo(() => {
     if (!delivery || delivery.daysMin == null) return null;
-    const CUTOFF_HOUR = 14;
     const now = new Date();
-    const isSunday = now.getDay() === 0;
-    const afterCutoff = now.getHours() >= CUTOFF_HOUR;
-    let extraDay = (isSunday ? 1 : 0) + (afterCutoff ? 1 : 0);
+    const isNonDeliveryDay = (d) => !dispatch.sundayDelivery && d.getDay() === 0;
+    const extraDay = (isNonDeliveryDay(now) ? 1 : 0) + (now.getHours() >= dispatch.cutoffHour ? 1 : 0);
 
-    const addWorkingDays = (start, days) => {
+    const addDeliveryDays = (start, days) => {
       const d = new Date(start);
       let added = 0;
       while (added < days) {
         d.setDate(d.getDate() + 1);
-        if (d.getDay() !== 0) added++; // skip Sundays only (RM delivers Sat)
+        if (!isNonDeliveryDay(d)) added++;
       }
       return d;
     };
-    const from = addWorkingDays(now, delivery.daysMin + extraDay);
-    const to = addWorkingDays(now, delivery.daysMax + extraDay);
+    const from = addDeliveryDays(now, delivery.daysMin + extraDay);
+    const to = addDeliveryDays(now, delivery.daysMax + extraDay);
     const fmt = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     return {
       arrives: from.getTime() === to.getTime() ? fmt(from) : `${fmt(from)} – ${fmt(to)}`,
@@ -105,19 +111,19 @@ const ProductBuyBox = ({
       // what was configured).
       freeOver: delivery.freeOverAmount != null ? delivery.freeOverAmount : null,
     };
-  }, [delivery]);
+  }, [delivery, dispatch]);
 
   // "Order within Xh Ym" countdown to today's cut-off (or tomorrow's).
   const orderWithin = React.useMemo(() => {
     const now = new Date();
     const cutoff = new Date(now);
-    cutoff.setHours(14, 0, 0, 0);
+    cutoff.setHours(dispatch.cutoffHour, 0, 0, 0);
     if (now >= cutoff) cutoff.setDate(cutoff.getDate() + 1);
     const mins = Math.max(0, Math.round((cutoff - now) / 60000));
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return { h, m };
-  }, []);
+  }, [dispatch]);
 
   return (
     <>
