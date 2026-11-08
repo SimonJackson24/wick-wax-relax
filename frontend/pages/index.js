@@ -8,6 +8,7 @@ import Footer from '../components/Footer';
 import AnnouncementBar from '../components/home/AnnouncementBar';
 import PremiumHero from '../components/home/PremiumHero';
 import CinematicBand from '../components/home/CinematicBand';
+import ScentMarquee from '../components/home/ScentMarquee';
 import MoodTiles from '../components/home/MoodTiles';
 import BestSellers from '../components/home/BestSellers';
 import EditorialSplit from '../components/home/EditorialSplit';
@@ -47,6 +48,8 @@ const HomePage = ({ featuredInitial }) => {
       <Navigation />
 
       <PremiumHero products={products} />
+
+      <ScentMarquee items={products.map((p) => p.name.replace(/^Showcase:\s*/, ''))} />
 
       <MoodTiles />
 

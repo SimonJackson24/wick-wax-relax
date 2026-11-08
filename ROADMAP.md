@@ -685,6 +685,34 @@ Append a new entry here every time the roadmap is updated (task completed, new t
 
 ---
 
+2026-11-07  HOMEPAGE PREMIUM PASS + two production bugs fixed.
+            DESIGN: hero rebuilt as a full-bleed dark cinematic panel —
+            photograph runs past the container to the screen edge, a
+            solid plum gradient panel carries cream Playfair display
+            type, the product card floats over the photograph's
+            lower-left with a layered shadow, and up to five products
+            cross-fade (1.3s dissolve + Ken Burns). Scent-name marquee
+            band added. Mood tiles switched from placeholder gradient
+            SVGs (which read as colour blocks) to real photography.
+            Brand grade = warm plum→amber soft-light pass + film grain
+            over all imagery so mixed stock reads as one campaign.
+            Layered shadow system, editorial 01/02 numbering.
+            NAV: broken logo image (a 1-byte logo.webp) replaced with a
+            typographic monogram; dark-plum bar → always-light; fixed →
+            sticky so the announcement bar is no longer hidden.
+            PRODUCTION BUG 1 — rate limiting: the storefront SSR-fetches
+            the API from the server's own egress IP, so every page view
+            counted against one 100-req/15-min bucket; under real
+            traffic the homepage rendered EMPTY ("Too many requests").
+            Catalogue read paths are now exempt; auth/order/review/promo
+            keep their own dedicated limiters.
+            PRODUCTION BUG 2 — three showcase product images 404'd (the
+            hero showed empty frames). Now use the repo's own warm spa
+            photography. The hero also falls back to a full premium hero
+            (not a bare text block) when no products are available.
+            VERIFIED with headless Chrome screenshots at each step.
+
+
 ## How to use this file
 
 - **For me:** at the start of every work session, scan `[ ]` and `[/]` to know what's next, then update the file as tasks complete.

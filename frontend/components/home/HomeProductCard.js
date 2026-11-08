@@ -78,6 +78,15 @@ const HomeProductCard = ({ product }) => {
             loading="lazy"
             sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
+          {/* Brand grade + grain so product photography matches the hero */}
+          <Box
+            sx={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(200deg, rgba(61,43,61,0.12) 0%, rgba(230,200,138,0.06) 100%)',
+              mixBlendMode: 'soft-light',
+              pointerEvents: 'none',
+            }}
+          />
           {product.rrp && Number(product.rrp) > Number(price) && (
             <Box
               sx={{
@@ -142,7 +151,16 @@ const HomeProductCard = ({ product }) => {
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {gbp(price)}
             </Typography>
-            {product.rrp && Number(product.rrp) > Number(price) && (
+            {/* Brand grade + grain so product photography matches the hero */}
+          <Box
+            sx={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(200deg, rgba(61,43,61,0.12) 0%, rgba(230,200,138,0.06) 100%)',
+              mixBlendMode: 'soft-light',
+              pointerEvents: 'none',
+            }}
+          />
+          {product.rrp && Number(product.rrp) > Number(price) && (
               <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
                 {gbp(product.rrp)}
               </Typography>

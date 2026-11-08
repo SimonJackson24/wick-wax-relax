@@ -138,7 +138,26 @@ app.use(
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-      const skipPaths = ['/api/health', '/api/search/health', '/api/search/popular', '/api/search/filters'];
+      // Catalogue read endpoints are exempt from the global IP limit.
+      // The storefront server-renders pages by calling this API from the
+      // server's own egress IP, so every page view counted against the
+      // same bucket — under normal traffic the limit was reached and the
+      // homepage rendered EMPTY (the SSR fetch was rejected with "Too
+      // many requests"). Abuse protection stays where it belongs: auth,
+      // order creation, review submission and promo validation each
+      // have their own dedicated limiters.
+      const skipPaths = [
+        '/api/health',
+        '/api/search/health',
+        '/api/search/popular',
+        '/api/search/filters',
+        '/api/products',
+        '/api/products/featured',
+        '/api/products/new',
+        '/api/categories',
+        '/api/search/products',
+        '/api/search/suggestions',
+      ];
       if (skipPaths.includes(req.path)) return true;
       if (req.path.startsWith('/images/') || req.path.startsWith('/fonts/')) return true;
       return false;

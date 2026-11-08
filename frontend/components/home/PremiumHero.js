@@ -10,17 +10,24 @@ import { useCart } from '../CartContext';
 const gbp = (value) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(value) || 0);
 
+// Film grain — a subtle noise layer over photography. Cheap, but it is the
+// single most effective way to stop stock imagery reading as stock: it
+// removes the flat digital-cleanliness and gives the page a printed feel.
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E\")";
+
 /**
- * Premium hero — a large product photograph with the product card
- * overlapping and offset, cross-fading between products.
+ * Premium hero — a large, full-bleed product photograph bleeding off the
+ * right edge of the viewport, with the product card floating over the
+ * image's lower-left corner, cross-fading between products.
  *
- * Composition: editorial split (copy left, image right) with the card
- * floating over the image's lower-left edge, breaking the grid. Depth
- * comes from the layered shadow on that card, the tall crop of the
- * photograph, and a soft tinted wash behind the whole section.
+ * Composition is deliberately asymmetric: copy occupies the left ~42%,
+ * the image runs past the container to the screen edge. Nothing is
+ * centred; the grid is broken on purpose.
  *
- * Transition: a slow opacity dissolve (1.4s) with a gentle Ken Burns
- * scale on the image — the Apple/Aesop treatment, not a slide.
+ * The photograph carries a warm brand grade (plum→amber multiply with a
+ * soft-light pass) plus film grain, so a set of unrelated stock photos
+ * reads as one art-directed campaign.
  */
 const PremiumHero = ({ products = [], interval = 6500 }) => {
   const { addToCart } = useCart();
@@ -43,30 +50,67 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
   }, [count, index, paused, interval, go]);
 
   if (count === 0) {
+    // No products (first launch, or the API was unreachable) — still show a
+    // full premium hero rather than a bare text block. A half-built page is
+    // worse than an elegant one.
     return (
       <Box
         sx={{
-          py: { xs: 8, md: 14 },
-          textAlign: 'center',
-          px: 3,
-          backgroundColor: 'background.default',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: { xs: 'auto', md: '78vh' },
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: '#2A1D2A',
         }}
       >
-        <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 2 }}>
-          Hand-poured in small batches
-        </Typography>
-        <Typography variant="h1" sx={{ mb: 3 }}>
-          Light, scent and stillness.
-        </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 460, mx: 'auto', mb: 4 }}>
-          Soy candles and wax melts, poured by hand in Sussex. Clean-burning,
-          plastic-free, made to slow the room down.
-        </Typography>
-        <Button component={Link} href="/products" variant="contained" size="large">
-          Shop the collection
-        </Button>
+        <Box sx={{ position: 'absolute', inset: 0 }}>
+          <Box
+            component="img"
+            src="/images/hero2.png"
+            alt="Hand-poured candles in a warm-lit room"
+            sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 72%' }}
+          />
+          <Box
+            sx={{
+              position: 'absolute', inset: 0,
+              background:
+                'linear-gradient(95deg, rgba(28,22,28,0.88) 0%, rgba(28,22,28,0.62) 45%, rgba(28,22,28,0.15) 100%)',
+            }}
+          />
+        </Box>
+        <Box
+          sx={{
+            position: 'relative', zIndex: 2, width: '100%', maxWidth: 1440, mx: 'auto',
+            px: { xs: 2.5, md: 5 }, py: { xs: 8, md: 12 }, color: '#F4EFE7',
+          }}
+        >
+          <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: 2 }}>
+            Hand-poured in small batches
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: '"Playfair Display", serif', fontWeight: 500,
+              fontSize: 'clamp(3rem, 6.2vw, 5.25rem)', lineHeight: 0.98,
+              letterSpacing: '-0.03em', mb: 2.5, color: '#FFFFFF',
+            }}
+          >
+            Light, scent and stillness.
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(244,239,231,0.84)', maxWidth: 440, mb: 4 }}>
+            Soy candles and wax melts, poured by hand in Sussex. Clean-burning,
+            plastic-free, made to slow the room down.
+          </Typography>
+          <Button
+            component={Link}
+            href="/products"
+            variant="contained"
+            size="large"
+            sx={{ bgcolor: '#F4EFE7', color: '#2A1D2A', '&:hover': { bgcolor: '#FFFFFF' } }}
+          >
+            Shop the collection
+          </Button>
+        </Box>
       </Box>
     );
   }
@@ -109,38 +153,122 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
       onMouseLeave={() => setPaused(false)}
       sx={{
         position: 'relative',
-        // Soft tinted wash rather than flat cream — gives the section a
-        // sense of light falling on it.
-        background:
-          'radial-gradient(120% 90% at 78% 18%, rgba(200,182,219,0.30) 0%, rgba(244,239,231,0) 58%), linear-gradient(180deg, #F7F3EC 0%, #FDFCFA 100%)',
+        overflow: 'hidden',
+        backgroundColor: '#F7F3EC',
+        backgroundImage:
+          'radial-gradient(90% 70% at 18% 30%, rgba(200,182,219,0.26) 0%, rgba(247,243,236,0) 62%)',
         borderBottom: '1px solid',
         borderColor: 'divider',
-        overflow: 'hidden',
       }}
     >
+      {/* Full-bleed photograph — runs past the container to the screen edge */}
       <Box
         sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: { xs: '100%', md: '58%' },
+          overflow: 'hidden',
+        }}
+      >
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={slide.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.3, ease: [0.4, 0, 0.2, 1] }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 1.06 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 9, ease: 'linear' }}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Box
+                component="img"
+                src={image}
+                alt={slide.name}
+                sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 72%', display: 'block' }}
+              />
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Brand grade — warm plum/amber duotone so any photo sits in one world */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(200deg, rgba(61,43,61,0.20) 0%, rgba(230,200,138,0.10) 55%, rgba(201,132,107,0.10) 100%)',
+            mixBlendMode: 'soft-light',
+            pointerEvents: 'none',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: GRAIN,
+            backgroundSize: '160px 160px',
+            opacity: 0.10,
+            mixBlendMode: 'overlay',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Soften the photograph's own left edge so it meets the panel cleanly */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(95deg, rgba(42,29,42,0.5) 0%, rgba(42,29,42,0) 26%)',
+            pointerEvents: 'none',
+          }}
+        />
+      </Box>
+
+      {/* The dark editorial panel spans the WHOLE hero (not just the image
+          side) so the display type sits on plum rather than on the pale
+          page background — legible and premium. */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(95deg, #2A1D2A 0%, #2A1D2A 26%, rgba(42,29,42,0.86) 44%, rgba(42,29,42,0.18) 63%, rgba(42,29,42,0) 76%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Content */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 2,
           maxWidth: 1440,
           mx: 'auto',
           px: { xs: 2.5, md: 5 },
-          py: { xs: 6, md: 9 },
+          pt: { xs: 6, md: 7 },
+          pb: { xs: 8, md: 7 },
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1.05fr)' },
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 42%) minmax(0, 1fr)' },
           alignItems: 'center',
-          gap: { xs: 4, md: 7 },
+          minHeight: { md: '78vh' },
         }}
       >
-        {/* Copy */}
-        <Box sx={{ maxWidth: 540, order: { xs: 2, md: 1 } }}>
+        <Box sx={{ maxWidth: 520, order: { xs: 2, md: 1 } }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
             >
-              <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 2 }}>
+              <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: 2.5 }}>
                 {slide.scent_profile?.mood || 'Hand-poured in small batches'}
               </Typography>
 
@@ -148,10 +276,10 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 sx={{
                   fontFamily: '"Playfair Display", serif',
                   fontWeight: 500,
-                  fontSize: 'clamp(2.75rem, 5.6vw, 4.5rem)',
-                  lineHeight: 1.04,
-                  letterSpacing: '-0.025em',
-                  mb: 2,
+                  fontSize: 'clamp(3rem, 6.2vw, 5.25rem)',
+                  lineHeight: 0.98,
+                  letterSpacing: '-0.03em',
+                  mb: 2.5, color: '#FFFFFF',
                 }}
               >
                 {slide.name.replace(/^Showcase:\s*/, '')}
@@ -160,7 +288,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
               {notes && (
                 <Typography
                   variant="body1"
-                  sx={{ color: 'text.secondary', mb: 2, fontSize: '1.0625rem' }}
+                  sx={{ color: 'rgba(244,239,231,0.88)', mb: 1.5, fontSize: '1.0625rem', letterSpacing: '0.01em' }}
                 >
                   {notes}
                 </Typography>
@@ -168,28 +296,28 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
 
               <Typography
                 variant="body2"
-                sx={{ color: 'text.secondary', maxWidth: 460, mb: 3.5, lineHeight: 1.8 }}
+                sx={{ color: 'rgba(244,239,231,0.76)', maxWidth: 440, mb: 3.5, lineHeight: 1.85 }}
               >
                 {slide.description}
               </Typography>
 
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 3.5, flexWrap: 'wrap' }}>
                 <Typography
-                  sx={{ fontFamily: '"Playfair Display", serif', fontSize: '1.75rem', fontWeight: 500 }}
+                  sx={{ fontFamily: '"Playfair Display", serif', fontSize: '2rem', fontWeight: 500, color: '#FFFFFF' }}
                 >
                   {gbp(price)}
                 </Typography>
                 {rrp && Number(rrp) > Number(price) && (
                   <>
-                    <Typography sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                    <Typography sx={{ textDecoration: 'line-through', color: 'rgba(244,239,231,0.6)' }}>
                       {gbp(rrp)}
                     </Typography>
                     <Chip
                       size="small"
                       label={`Save ${Math.round((1 - Number(price) / Number(rrp)) * 100)}%`}
                       sx={{
-                        bgcolor: 'rgba(61,43,61,0.08)',
-                        color: 'primary.dark',
+                        bgcolor: '#E6C88A',
+                        color: '#2A1D2A',
                         fontWeight: 700,
                         height: 24,
                       }}
@@ -205,6 +333,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                   variant="contained"
                   size="large"
                   endIcon={<ArrowForwardIcon sx={{ fontSize: '1.1rem !important' }} />}
+                  sx={{ bgcolor: '#F4EFE7', color: '#2A1D2A', '&:hover': { bgcolor: '#FFFFFF' } }}
                 >
                   Shop this scent
                 </Button>
@@ -215,6 +344,11 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                     onClick={handleQuickAdd}
                     disabled={adding}
                     startIcon={<AddIcon sx={{ fontSize: '1.1rem !important' }} />}
+                    sx={{
+                      borderColor: 'rgba(244,239,231,0.45)',
+                      color: '#F4EFE7',
+                      '&:hover': { borderColor: '#F4EFE7', backgroundColor: 'rgba(244,239,231,0.08)' },
+                    }}
                   >
                     {adding ? 'Adding…' : 'Quick add'}
                   </Button>
@@ -227,7 +361,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
             {['Free 30-day returns', 'Plastic-free packaging', 'Made in the UK'].map((item) => (
               <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                 <CheckIcon sx={{ fontSize: 15, color: 'tertiary.main' }} />
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.78)' }}>
                   {item}
                 </Typography>
               </Box>
@@ -235,118 +369,90 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
           </Box>
         </Box>
 
-        {/* Large photograph with the offset product card */}
-        <Box sx={{ order: { xs: 1, md: 2 }, position: 'relative', width: '100%' }}>
+        {/* Right column — the card floats over the full-bleed photograph.
+            Positioning lives on a wrapper Box (sx) because framer-motion's
+            style prop does not understand responsive breakpoint objects. */}
+        <Box sx={{ order: { xs: 1, md: 2 }, position: 'relative', height: { md: '100%' } }}>
           <Box
             sx={{
-              position: 'relative',
-              borderRadius: 2,
-              overflow: 'hidden',
-              aspectRatio: { xs: '4 / 3.6', md: '5 / 5.6' }, // tall crop = premium
-              backgroundColor: '#F1EBE1',
-              border: '1px solid rgba(28,26,31,0.07)',
-              boxShadow: '0 24px 60px rgba(28,26,31,0.14)',
+              position: 'absolute',
+              left: { xs: 16, md: -20 },
+              bottom: { xs: 16, md: 40 },
+              zIndex: 3,
+              width: { xs: 'calc(100% - 32px)', md: 268 },
             }}
           >
-            <AnimatePresence initial={false}>
+            <AnimatePresence mode="wait">
               <motion.div
                 key={slide.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.3, ease: [0.4, 0, 0.2, 1] }}
-                style={{ position: 'absolute', inset: 0 }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
               >
-                <motion.div
-                  initial={{ scale: 1.05 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 9, ease: 'linear' }}
-                  style={{ width: '100%', height: '100%' }}
+                <Box
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid rgba(28,26,31,0.08)',
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    boxShadow:
+                      '0 2px 4px rgba(28,26,31,0.06), 0 14px 32px rgba(28,26,31,0.12), 0 40px 80px rgba(28,26,31,0.16)',
+                  }}
                 >
-                  <Box
-                    component="img"
-                    src={image}
-                    alt={slide.name}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                </motion.div>
+                  <Typography variant="overline" sx={{ color: 'text.secondary', fontSize: '0.625rem' }}>
+                    {slide.scent_profile?.mood ? 'Now pouring' : 'Bestseller'}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"Playfair Display", serif',
+                      fontSize: '1.125rem',
+                      fontWeight: 500,
+                      mb: 0.25,
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {slide.name.replace(/^Showcase:\s*/, '')}
+                  </Typography>
+                  {notes && (
+                    <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontSize: '0.6875rem' }}>
+                      {notes}
+                    </Typography>
+                  )}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      {gbp(price)}
+                    </Typography>
+                    {rrp && Number(rrp) > Number(price) && (
+                      <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                        {gbp(rrp)}
+                      </Typography>
+                    )}
+                    <Button
+                      component={Link}
+                      href={`/product/${slide.slug || slide.id}`}
+                      variant="contained"
+                      size="small"
+                      sx={{ ml: 'auto' }}
+                    >
+                      Shop
+                    </Button>
+                  </Box>
+                </Box>
               </motion.div>
             </AnimatePresence>
           </Box>
-
-          {/* The offset card — overlaps the photograph's lower-left edge */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slide.id}
-              initial={{ opacity: 0, x: -14, y: 10 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, x: -10, y: 6 }}
-              transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-              style={{ position: 'absolute', left: { xs: 12, md: -34 }, bottom: { xs: 12, md: 34 } }}
-            >
-              <Box
-                sx={{
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid rgba(28,26,31,0.08)',
-                  borderRadius: 1.5,
-                  p: { xs: 2, md: 2.5 },
-                  minWidth: { xs: 200, md: 240 },
-                  // Layered shadow: tight contact + wide ambient = physical depth
-                  boxShadow:
-                    '0 2px 4px rgba(28,26,31,0.06), 0 12px 28px rgba(28,26,31,0.10), 0 32px 64px rgba(28,26,31,0.12)',
-                }}
-              >
-                <Typography variant="overline" sx={{ color: 'text.secondary', fontSize: '0.625rem' }}>
-                  {slide.scent_profile?.mood ? 'Now pouring' : 'Bestseller'}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: '"Playfair Display", serif',
-                    fontSize: '1.0625rem',
-                    fontWeight: 500,
-                    mb: 0.25,
-                    lineHeight: 1.25,
-                  }}
-                >
-                  {slide.name.replace(/^Showcase:\s*/, '')}
-                </Typography>
-                {notes && (
-                  <Typography variant="caption" sx={{ display: 'block', mb: 1.25, fontSize: '0.6875rem' }}>
-                    {notes}
-                  </Typography>
-                )}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    {gbp(price)}
-                  </Typography>
-                  {rrp && Number(rrp) > Number(price) && (
-                    <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                      {gbp(rrp)}
-                    </Typography>
-                  )}
-                  <Button
-                    component={Link}
-                    href={`/product/${slide.slug || slide.id}`}
-                    variant="contained"
-                    size="small"
-                    sx={{ ml: 'auto' }}
-                  >
-                    Shop
-                  </Button>
-                </Box>
-              </Box>
-            </motion.div>
-          </AnimatePresence>
 
           {/* Slide indicators — editorial thin lines */}
           {count > 1 && (
             <Box
               sx={{
                 position: 'absolute',
-                right: { xs: 14, md: 22 },
-                top: { xs: 14, md: 22 },
+                right: { xs: 16, md: 28 },
+                top: { xs: 20, md: 32 },
                 display: 'flex',
                 gap: 1,
+                zIndex: 3,
               }}
             >
               {slides.map((s, i) => (

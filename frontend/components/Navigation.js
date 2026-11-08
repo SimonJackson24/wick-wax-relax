@@ -258,18 +258,21 @@ const Navigation = () => {
       <SkipLink href="#main-content">Skip to main content</SkipLink>
 
       <Slide appear={false} direction="down" in={!trigger}>
+        {/* Sticky (not fixed): a fixed bar sits on top of the announcement
+            strip and hides it. Light always — the old dark-plum/cream swap
+            clashed with the warm hero and read as two different sites. */}
         <AppBar
           ref={navRef}
           component="nav"
-          position="fixed"
-          elevation={trigger ? 4 : 0}
+          position="sticky"
+          elevation={0}
           sx={{
-            backgroundColor: trigger
-              ? 'rgba(250, 248, 243, 0.97)'
-              : 'rgba(62, 35, 81, 0.97)',
+            top: 0,
+            backgroundColor: 'rgba(253, 252, 250, 0.92)',
             backdropFilter: 'blur(20px)',
-            borderBottom: trigger ? '1px solid rgba(0,0,0,0.08)' : 'none',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            transition: 'background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: theme.zIndex.appBar,
           }}
         >
@@ -284,7 +287,7 @@ const Navigation = () => {
             >
               <Box
                 component={motion.div}
-                initial={{ opacity: 0, x: -20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
                 sx={{
@@ -305,36 +308,43 @@ const Navigation = () => {
                       }
                     }}
                   >
-                    <Image
-                      src="/images/logo.webp"
-                      alt="Wick Wax Relax Logo"
-                      width={isMobile ? 40 : 48}
-                      height={isMobile ? 40 : 48}
-                      style={{
-                        borderRadius: '12px',
-                        objectFit: 'cover'
+                    {/* Monogram mark — the previous <img src="/images/logo.webp">
+                        pointed at a 1-byte file, so the header showed a broken
+                        image icon. A typographic mark is also more premium
+                        than a small bitmap logo. */}
+                    <Box
+                      sx={{
+                        width: { xs: 34, md: 38 },
+                        height: { xs: 34, md: 38 },
+                        borderRadius: '50%',
+                        bgcolor: 'primary.main',
+                        color: '#F4EFE7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: '"Playfair Display", serif',
+                        fontSize: { xs: '0.9rem', md: '1rem' },
+                        letterSpacing: '0.02em',
+                        flexShrink: 0,
                       }}
-                      priority
-                    />
+                    >
+                      W
+                    </Box>
                     <Typography
                       variant="h6"
                       noWrap
                       component="span"
                       sx={{
-                        ml: 2,
+                        ml: 1.5,
                         fontFamily: '"Playfair Display", serif',
-                        fontWeight: 700,
-                        fontSize: { xs: '1.1rem', md: '1.4rem' },
-                        background: trigger
-                          ? 'linear-gradient(135deg, #3E2351 0%, #4A235A 100%)'
-                          : 'linear-gradient(135deg, #9B59B6 0%, #6C3483 100%)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
+                        fontWeight: 500,
+                        fontSize: { xs: '1.05rem', md: '1.25rem' },
+                        color: 'text.primary',
+                        letterSpacing: '0.01em',
                         display: { xs: 'none', sm: 'block' },
                       }}
                     >
-                      Wick Wax & Relax
+                      Wick Wax &amp; Relax
                     </Typography>
                   </Box>
                 </Link>
@@ -342,7 +352,7 @@ const Navigation = () => {
 
               <Box
                 component={motion.div}
-                initial={{ opacity: 0, y: -10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 sx={{
@@ -363,8 +373,8 @@ const Navigation = () => {
                           aria-current={isLinkActive(link) ? 'page' : undefined}
                           sx={{
                             color: isLinkActive(link)
-                              ? (trigger ? '#E6C88A' : '#E6C88A')
-                              : (trigger ? theme.palette.text.primary : theme.palette.common.white),
+                              ? '#3D2B3D'
+                              : (theme.palette.text.primary),
                             fontWeight: isLinkActive(link) ? 600 : 500,
                             fontSize: '0.95rem',
                             px: 3,
@@ -379,8 +389,8 @@ const Navigation = () => {
                                 : 'rgba(230, 200, 138, 0.12)',
                               transform: 'translateY(-1px)',
                               color: isLinkActive(link)
-                                ? (trigger ? '#E6C88A' : '#E6C88A')
-                                : (trigger ? theme.palette.text.primary : '#E6C88A'),
+                                ? '#3D2B3D'
+                                : (theme.palette.text.primary),
                             },
                             '&::after': isLinkActive(link) ? {
                               content: '""',
@@ -390,7 +400,7 @@ const Navigation = () => {
                               transform: 'translateX(-50%)',
                               width: '40%',
                               height: '3px',
-                              backgroundColor: trigger ? '#C8B6DB' : '#E6C88A',
+                              backgroundColor: '#3D2B3D',
                               borderRadius: '2px',
                             } : {},
                           }}
@@ -405,7 +415,7 @@ const Navigation = () => {
 
               <Box
                 component={motion.div}
-                initial={{ opacity: 0, x: 20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 sx={{
@@ -423,7 +433,7 @@ const Navigation = () => {
                       startIcon={link.icon ? React.createElement(link.icon, { fontSize: 'small' }) : null}
                       aria-current={link.href === '/account' && (router.pathname === '/account' || router.pathname === '/account/profile') ? 'page' : undefined}
                       sx={{
-                        color: trigger ? theme.palette.text.primary : theme.palette.common.white,
+                        color: theme.palette.text.primary,
                         fontSize: '0.9rem',
                         px: 2,
                         py: 1,
@@ -446,7 +456,7 @@ const Navigation = () => {
                   href="/subscriptions"
                   aria-label={`Subscription basket with ${subCount} items`}
                   sx={{
-                    color: trigger ? theme.palette.text.primary : theme.palette.common.white,
+                    color: theme.palette.text.primary,
                     backgroundColor: trigger
                       ? 'rgba(200, 182, 219, 0.18)'
                       : 'rgba(230, 200, 138, 0.2)',
@@ -482,7 +492,7 @@ const Navigation = () => {
                   href="/cart"
                   aria-label={`Shopping cart with ${cartItemCount} items`}
                   sx={{
-                    color: trigger ? theme.palette.text.primary : theme.palette.common.white,
+                    color: theme.palette.text.primary,
                     backgroundColor: trigger
                       ? 'rgba(200, 182, 219, 0.18)'
                       : 'rgba(230, 200, 138, 0.2)',
@@ -520,7 +530,7 @@ const Navigation = () => {
                   onClick={handleDrawerToggle}
                   sx={{
                     display: { md: 'none' },
-                    color: trigger ? theme.palette.text.primary : theme.palette.common.white,
+                    color: theme.palette.text.primary,
                     ml: 1,
                     p: 1.5,
                     borderRadius: '12px',

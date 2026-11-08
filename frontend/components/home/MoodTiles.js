@@ -8,32 +8,35 @@ import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
  * premium home-fragrance brands sell by occasion ("To Unwind", "To Wake").
  * This is the section a competitor's grid cannot copy.
  */
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E\")";
+
 const MOODS = [
   {
     label: 'To Unwind',
     caption: 'Slow evenings, soft light',
-    image: '/images/wax-melt.svg',
+    image: '/images/hero2.png',
     href: '/products?category=wax-melts',
     tint: '#EDE6F2',
   },
   {
     label: 'To Wake',
     caption: 'Bright, citrus, morning',
-    image: '/images/candles-hero.svg',
+    image: '/images/hero1.jpg',
     href: '/products?category=candles',
     tint: '#F6EADB',
   },
   {
     label: 'To Celebrate',
     caption: 'Warm, spiced, golden',
-    image: '/images/bath-bombs-hero.svg',
+    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?w=900&q=80',
     href: '/products?category=bath-bombs',
     tint: '#F3E7E1',
   },
   {
     label: 'To Reset',
     caption: 'Clean, green, uncluttered',
-    image: '/images/diffusers-hero.svg',
+    image: '/images/wax-melts.png',
     href: '/products?category=diffusers',
     tint: '#E7EDE8',
   },
@@ -86,7 +89,24 @@ const MoodTiles = ({ moods = MOODS }) => (
               <Box
                 sx={{
                   position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to top, rgba(28,26,31,0.55) 0%, rgba(28,26,31,0.12) 45%, transparent 70%)',
+                  background:
+                    'linear-gradient(200deg, rgba(61,43,61,0.18) 0%, rgba(230,200,138,0.10) 60%, rgba(201,132,107,0.10) 100%)',
+                  mixBlendMode: 'soft-light',
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: GRAIN,
+                  backgroundSize: '160px 160px',
+                  opacity: 0.14,
+                  mixBlendMode: 'overlay',
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(to top, rgba(28,26,31,0.62) 0%, rgba(28,26,31,0.14) 48%, transparent 72%)',
                 }}
               />
               <Box
