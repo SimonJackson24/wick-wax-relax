@@ -53,11 +53,6 @@ import { useSubscription } from '../../components/SubscriptionContext';
 export default function ProductDetail({ initialProduct }) {
   const router = useRouter();
   const { id } = router.query;
-  // Canonical product UUID. Visitors arrive via SLUG urls (SSR), so
-  // router.query.id is "lavender-dream" — but FBT/related/reviews/Q&A
-  // endpoints validate :id as UUID and rejected slugs with 400, silently
-  // emptying those sections. Always call APIs with the real id.
-  const productId = product?.id || id;
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const { addToSubscription } = useSubscription();
@@ -71,6 +66,14 @@ export default function ProductDetail({ initialProduct }) {
   const [selectedVariant, setSelectedVariant] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(!initialProduct);
+
+  // Canonical product UUID. Visitors arrive via SLUG urls (SSR), so
+  // router.query.id is "lavender-dream" — but FBT/related/reviews/Q&A
+  // endpoints validate :id as UUID and rejected slugs with 400, silently
+  // emptying those sections. Always call APIs with the real id. Declared
+  // AFTER the product state: reading it earlier is a temporal-dead-zone
+  // crash under SSR ("Cannot access ... before initialization").
+  const productId = product?.id || id;
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToSubscription, setAddingToSubscription] = useState(false);
   const [subMessage, setSubMessage] = useState('');
