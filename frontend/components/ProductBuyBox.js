@@ -34,6 +34,9 @@ const ProductBuyBox = ({
   onAddToCart,
   addingToCart,
   message,
+  onSubscribe,
+  subscribing,
+  subscribeDisabled,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -271,6 +274,32 @@ const ProductBuyBox = ({
           <Typography variant="body2" sx={{ mt: 1.5, color: theme.palette.success.dark }}>
             {message}
           </Typography>
+        )}
+
+        {/* Subscribe & Save — lives INSIDE the sticky card so it scrolls
+            with the pricing box. Previously a sibling below the sticky
+            element: the box pinned at top:90 while the button scrolled
+            away, detaching the two CTAs. */}
+        {onSubscribe && (
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={onSubscribe}
+            disabled={subscribeDisabled || outOfStock}
+            sx={{
+              mt: 2,
+              py: 1.25,
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              borderRadius: '10px',
+              textTransform: 'none',
+              borderColor: theme.palette.secondary.main,
+              color: theme.palette.secondary.main,
+              '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.06)' },
+            }}
+          >
+            {subscribing ? 'Adding…' : 'Subscribe & Save — Set & Save'}
+          </Button>
         )}
       </Box>
 

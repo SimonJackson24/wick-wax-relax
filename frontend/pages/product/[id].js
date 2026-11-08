@@ -353,7 +353,8 @@ export default function ProductDetail({ initialProduct }) {
             </Box>
           </Grid>
 
-          {/* === RIGHT RAIL — the bespoke buy box === */}
+          {/* === RIGHT RAIL — the bespoke buy box (sticky card: pricing,
+              ATC and Subscribe & Save all scroll together) === */}
           <Grid item xs={12} md={5}>
             <ProductBuyBox
               product={product}
@@ -365,29 +366,10 @@ export default function ProductDetail({ initialProduct }) {
               onAddToCart={handleAddToCart}
               addingToCart={addingToCart}
               message={message}
+              onSubscribe={handleAddToSubscription}
+              subscribing={addingToSubscription}
+              subscribeDisabled={!selectedVariantData || selectedVariantData.inventory_quantity < quantity}
             />
-
-            <Button
-              variant="outlined"
-              size="large"
-              fullWidth
-              onClick={handleAddToSubscription}
-              disabled={addingToSubscription || !selectedVariantData || selectedVariantData.inventory_quantity < quantity}
-              sx={{
-                mt: 2,
-                py: 1.5,
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                borderRadius: 3,
-                textTransform: 'none',
-                borderColor: theme.palette.secondary.main,
-                color: theme.palette.secondary.main,
-                '&:hover': { backgroundColor: 'rgba(156, 39, 176, 0.06)' },
-              }}
-              aria-label={`Add ${quantity} ${selectedVariantData?.name || 'item'} to subscription`}
-            >
-              {addingToSubscription ? '...' : 'Subscribe & Save — Set & Save'}
-            </Button>
           </Grid>
         </Grid>
 
