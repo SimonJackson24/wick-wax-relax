@@ -79,8 +79,10 @@ const PerformanceOptimizer = ({ children }) => {
   return (
     <>
       <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Fonts are self-hosted via next/font (see _app.js) — no Google
+            Fonts preconnects or stylesheet from here. These runtime-injected
+            links were the last remaining third-party font requests and the
+            source of the "4+ preconnects" Lighthouse warning. */}
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
         <link rel="dns-prefetch" href="//www.googletagmanager.com" />
         <link rel="prefetch" href="/api/products" />
