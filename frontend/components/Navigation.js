@@ -708,10 +708,6 @@ const Navigation = () => {
         </Box>
       </Drawer>
 
-      <Box sx={{
-        height: { xs: 64, md: 80 }
-      }} />
-
       <CartDrawer
         open={cartDrawerOpen}
         onClose={() => setCartDrawerOpen(false)}

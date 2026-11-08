@@ -2,7 +2,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   useTheme
 } from '@mui/material';
 import {
@@ -12,51 +11,80 @@ import {
   Recycling as RecyclingIcon,
   Lock as SecureIcon
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
+
+// Compact trust strip — one narrow banner, icon left of each label.
+// The original six-badge wording (Simon's preferred copy) is kept; the
+// long descriptions live on as tooltips so no information is lost, but
+// the strip stays a single tight row (~48px) instead of a 226px grid.
 
 const trustBadges = [
-  { id: 'ethical-beeswax', icon: EcoIcon, title: 'Ethical Beeswax', description: 'Queen bees kept with intact wings' },
-  { id: 'sustainable', icon: EcoIcon, title: 'Sustainable Wax', description: 'Premium plant-based blend' },
-  { id: 'handmade-uk', icon: UkIcon, title: 'Handmade in UK', description: 'Handcrafted with care' },
-  { id: 'vegan', icon: PetsIcon, title: '100% Vegan', description: 'Cruelty-free products' },
-  { id: 'eco-packaging', icon: RecyclingIcon, title: 'Eco Packaging', description: 'Glassine bags & biodegradable labels' },
-  { id: 'secure', icon: SecureIcon, title: 'Secure Checkout', description: 'Protected payments' }
+  { id: 'ethical-beeswax', icon: EcoIcon, title: 'Ethical Beeswax', detail: 'Queen bees kept with intact wings' },
+  { id: 'sustainable', icon: EcoIcon, title: 'Sustainable Wax', detail: 'Premium plant-based blend' },
+  { id: 'handmade-uk', icon: UkIcon, title: 'Handmade in UK', detail: 'Handcrafted with care' },
+  { id: 'vegan', icon: PetsIcon, title: '100% Vegan', detail: 'Cruelty-free products' },
+  { id: 'eco-packaging', icon: RecyclingIcon, title: 'Eco Packaging', detail: 'Glassine bags & biodegradable labels' },
+  { id: 'secure', icon: SecureIcon, title: 'Secure Checkout', detail: 'Protected payments' },
 ];
-
-const TrustBadge = ({ badge, index }) => {
-  const theme = useTheme();
-  const IconComponent = badge.icon;
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      whileInView={{ opacity: 1, y: 0 }} 
-      viewport={{ once: true }} 
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 16 }}
-    >
-      <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: `${theme.palette.primary.main}15`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5, border: `2px solid ${theme.palette.primary.main}30` }}>
-        <IconComponent sx={{ fontSize: 28, color: theme.palette.primary.main }} />
-      </Box>
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.primary, mb: 0.5 }}>{badge.title}</Typography>
-      <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}>{badge.description}</Typography>
-    </motion.div>
-  );
-};
 
 const TrustBadges = () => {
   const theme = useTheme();
+
   return (
-    <Box sx={{ py: 4, backgroundColor: theme.palette.background.default,
-      borderTop: `1px solid ${theme.palette.primary.main}20`, borderBottom: `1px solid ${theme.palette.primary.main}20` }}>
-      <Container maxWidth="lg">
-        <Grid container spacing={2}>
-          {trustBadges.map((badge, index) => (
-            <Grid item xs={6} sm={4} md={2} key={badge.id}>
-              <TrustBadge badge={badge} index={index} />
-            </Grid>
-          ))}
-        </Grid>
+    <Box
+      component="section"
+      aria-label="Our promises"
+      sx={{
+        backgroundColor: theme.palette.background.default,
+        borderTop: `1px solid ${theme.palette.primary.main}20`,
+        borderBottom: `1px solid ${theme.palette.primary.main}20`,
+      }}
+    >
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: { xs: 'wrap', md: 'nowrap' },
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            py: { xs: 1.25, md: 1 },
+            gap: { xs: 1, md: 0 },
+          }}
+        >
+          {trustBadges.map((badge) => {
+            const IconComponent = badge.icon;
+            return (
+              <Box
+                key={badge.id}
+                title={badge.detail}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  width: { xs: 'calc(50% - 4px)', md: 'auto' },
+                  minWidth: 0,
+                }}
+              >
+                <IconComponent
+                  sx={{ fontSize: 17, color: theme.palette.primary.main, flexShrink: 0 }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: '0.7rem', md: '0.75rem' },
+                    letterSpacing: '0.04em',
+                    color: theme.palette.text.primary,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {badge.title}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
       </Container>
     </Box>
   );
