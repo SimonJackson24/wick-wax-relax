@@ -12,7 +12,7 @@ import ScentMarquee from '../components/home/ScentMarquee';
 import MoodTiles from '../components/home/MoodTiles';
 import BestSellers from '../components/home/BestSellers';
 import EditorialSplit from '../components/home/EditorialSplit';
-import TransparencyStrip from '../components/home/TransparencyStrip';
+import TrustBadges from '../components/TrustBadges';
 import ReviewsBand from '../components/home/ReviewsBand';
 import SubscribeBand from '../components/home/SubscribeBand';
 
@@ -47,6 +47,11 @@ const HomePage = ({ featuredInitial }) => {
 
       <Navigation />
 
+      {/* Original trust banner — Simon's preferred design and wording. Sits
+          above the hero so trust signals land before the fold and fill the
+          gap between nav and the full-bleed photograph. */}
+      <TrustBadges />
+
       <PremiumHero products={products} />
 
       <ScentMarquee items={products.map((p) => p.name.replace(/^Showcase:\s*/, ''))} />
@@ -58,8 +63,6 @@ const HomePage = ({ featuredInitial }) => {
       <CinematicBand />
 
       <EditorialSplit />
-
-      <TransparencyStrip />
 
       <ReviewsBand />
 
