@@ -191,8 +191,19 @@ class ProductService {
       WHERE pc.product_id = ?
     `, [id]);
 
+    // Gallery images — the PDP gallery consumes product.images; without
+    // this fetch it rendered the "No images available" placeholder on
+    // every product.
+    const images = await query(`
+      SELECT id, image_url, alt_text
+        FROM product_images
+       WHERE product_id = ?
+       ORDER BY created_at
+    `, [id]);
+
     result.variants = variants.rows;
     result.categories = categories.rows;
+    result.images = images.rows;
 
     return result;
   }

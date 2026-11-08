@@ -29,7 +29,7 @@ const MOODS = [
   {
     label: 'To Celebrate',
     caption: 'Warm, spiced, golden',
-    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?w=480&q=70&fit=crop',
+    image: '/images/mood-citrus.jpg',
     href: '/products?category=bath-bombs',
     tint: '#F3E7E1',
   },
