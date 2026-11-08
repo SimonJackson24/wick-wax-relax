@@ -53,6 +53,11 @@ import { useSubscription } from '../../components/SubscriptionContext';
 export default function ProductDetail({ initialProduct }) {
   const router = useRouter();
   const { id } = router.query;
+  // Canonical product UUID. Visitors arrive via SLUG urls (SSR), so
+  // router.query.id is "lavender-dream" — but FBT/related/reviews/Q&A
+  // endpoints validate :id as UUID and rejected slugs with 400, silently
+  // emptying those sections. Always call APIs with the real id.
+  const productId = product?.id || id;
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const { addToSubscription } = useSubscription();
@@ -126,7 +131,7 @@ export default function ProductDetail({ initialProduct }) {
   const fetchRelatedProducts = async () => {
     setRelatedLoading(true);
     try {
-      const response = await axios.get(`/api/products/related/${id}`);
+      const response = await axios.get(`/api/products/related/${productId}`);
       setRelatedProducts(response.data || []);
     } catch (error) {
       console.error('Error fetching related products:', error);
@@ -151,7 +156,7 @@ export default function ProductDetail({ initialProduct }) {
     try {
       const params = new URLSearchParams({ limit: '10', sortBy: reviewSort });
       if (reviewRatingFilter) params.set('rating', reviewRatingFilter);
-      const response = await axios.get(`/api/products/${id}/reviews?${params.toString()}`);
+      const response = await axios.get(`/api/products/${productId}/reviews?${params.toString()}`);
       setReviews(response.data.reviews || []);
       setReviewStats({ average: response.data.averageRating || 0, count: response.data.reviewCount || 0, distribution: response.data.distribution || [] });
     } catch (error) {
@@ -530,7 +535,7 @@ export default function ProductDetail({ initialProduct }) {
 
           <Collapse in={reviewFormOpen}>
             <Box sx={{ mb: 4 }}>
-              <ReviewForm productId={id} onReviewSubmitted={() => { setReviewFormOpen(false); fetchReviews(); }} />
+              <ReviewForm productId={productId} onReviewSubmitted={() => { setReviewFormOpen(false); fetchReviews(); }} />
             </Box>
           </Collapse>
 
@@ -651,7 +656,7 @@ export default function ProductDetail({ initialProduct }) {
       </Container>
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
-        {product && <FrequentlyBoughtTogether productId={id} />}
+        {product && <FrequentlyBoughtTogether productId={productId} />}
         <RecentlyViewed excludeId={product?.id} />
         {product && <ProductQa productId={product.id} />}
       </Container>
