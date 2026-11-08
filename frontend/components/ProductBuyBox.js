@@ -13,6 +13,8 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import axios from 'axios';
 
 // The bespoke buy box — Amazon's information architecture (price framing,
 // per-unit, stock urgency, variant picker, quantity, primary CTA) wearing
@@ -52,6 +54,63 @@ const ProductBuyBox = ({
   // Per-unit price: Amazon-style "£9.99 / 100g" line under the price.
   const weight = product.weight_grams ? Number(product.weight_grams) : null;
   const per100g = weight ? (price / weight) * 100 : null;
+
+  // Delivery estimate (Amazon-style promise line). Fetched once from the
+  // live shipping rates; recomputed when the price (subtotal) changes
+  // because free-over thresholds hinge on it.
+  const [delivery, setDelivery] = React.useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    axios
+      .get(
+        `/api/shipping/estimate?country=GB&weightGrams=${weight ?? ''}&subtotal=${price * quantity}`
+      )
+      .then((res) => { if (!cancelled) setDelivery(res.data && res.data.estimate); })
+      .catch(() => { if (!cancelled) setDelivery(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weight, price, quantity]);
+
+  // Royal Mail delivers Mon–Sat but not Sun; dispatch cut-off 14:00 on
+  // working days. Compute the arrival window the shopper will see.
+  const deliveryWindow = React.useMemo(() => {
+    if (!delivery || delivery.daysMin == null) return null;
+    const CUTOFF_HOUR = 14;
+    const now = new Date();
+    const isSunday = now.getDay() === 0;
+    const afterCutoff = now.getHours() >= CUTOFF_HOUR;
+    let extraDay = (isSunday ? 1 : 0) + (afterCutoff ? 1 : 0);
+
+    const addWorkingDays = (start, days) => {
+      const d = new Date(start);
+      let added = 0;
+      while (added < days) {
+        d.setDate(d.getDate() + 1);
+        if (d.getDay() !== 0) added++; // skip Sundays only (RM delivers Sat)
+      }
+      return d;
+    };
+    const from = addWorkingDays(now, delivery.daysMin + extraDay);
+    const to = addWorkingDays(now, delivery.daysMax + extraDay);
+    const fmt = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    return {
+      arrives: from.getTime() === to.getTime() ? fmt(from) : `${fmt(from)} – ${fmt(to)}`,
+      cost: delivery.cost,
+      methodName: delivery.name,
+    };
+  }, [delivery]);
+
+  // "Order within Xh Ym" countdown to today's cut-off (or tomorrow's).
+  const orderWithin = React.useMemo(() => {
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setHours(14, 0, 0, 0);
+    if (now >= cutoff) cutoff.setDate(cutoff.getDate() + 1);
+    const mins = Math.max(0, Math.round((cutoff - now) / 60000));
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return { h, m };
+  }, []);
 
   return (
     <>
@@ -115,6 +174,28 @@ const ProductBuyBox = ({
           <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary' }}>
             In stock
           </Typography>
+        )}
+
+        {/* Amazon-style delivery promise: live from the shipping rates */}
+        {deliveryWindow && !outOfStock && (
+          <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <LocalShippingIcon sx={{ fontSize: 18, color: 'text.secondary', mt: '2px' }} />
+            <Box>
+              <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
+                Order within{' '}
+                <Box component="span" sx={{ color: 'success.dark', fontWeight: 700 }}>
+                  {orderWithin.h}h {orderWithin.m}m
+                </Box>{' '}
+                for delivery{' '}
+                <Box component="span" sx={{ fontWeight: 600 }}>
+                  {deliveryWindow.arrives}
+                </Box>
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                {deliveryWindow.methodName} · {deliveryWindow.cost === 0 ? 'FREE delivery' : `${gbp(deliveryWindow.cost)} — FREE over £50`}
+              </Typography>
+            </Box>
+          </Box>
         )}
 
         <Divider sx={{ my: 2 }} />

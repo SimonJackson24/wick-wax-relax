@@ -146,19 +146,20 @@ app.use(
       // many requests"). Abuse protection stays where it belongs: auth,
       // order creation, review submission and promo validation each
       // have their own dedicated limiters.
-      const skipPaths = [
+      //
+      // PREFIX matching (not exact): the original exact-match list
+      // exempted '/api/products' but NOT '/api/products/<uuid>/fbt' or
+      // '/related/<uuid>' — so the PDP's cross-sell fetches were being
+      // rate-limited while the product fetch itself passed. Every GET
+      // under these prefixes is a read-only catalogue call.
+      const skipPrefixes = [
         '/api/health',
-        '/api/search/health',
-        '/api/search/popular',
-        '/api/search/filters',
+        '/api/search',
         '/api/products',
-        '/api/products/featured',
-        '/api/products/new',
         '/api/categories',
-        '/api/search/products',
-        '/api/search/suggestions',
+        '/api/shipping',
       ];
-      if (skipPaths.includes(req.path)) return true;
+      if (skipPrefixes.some((p) => req.path === p || req.path.startsWith(p + '/'))) return true;
       if (req.path.startsWith('/images/') || req.path.startsWith('/fonts/')) return true;
       return false;
     },
