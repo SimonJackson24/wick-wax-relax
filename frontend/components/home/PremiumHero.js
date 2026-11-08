@@ -282,14 +282,12 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
         }}
       >
         <Box sx={{ maxWidth: 520, order: { xs: 2, md: 1 } }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slide.id}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-            >
+          {/* NO entrance animation here. The headline is the LCP element:
+              framer-motion starts it at opacity 0 and only reveals it after
+              hydration + animation, which pushed mobile LCP to 8.5s. The
+              copy renders immediately; slide changes swap content in place
+              with a light CSS fade. */}
+          <Box key={slide.id} sx={{ '@media (prefers-reduced-motion: no-preference)': { animation: 'wwr-copy-in 0.4s ease both' } }}>
               <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: 2.5 }}>
                 {slide.scent_profile?.mood || 'Hand-poured in small batches'}
               </Typography>
@@ -380,8 +378,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                   </Button>
                 )}
               </Box>
-            </motion.div>
-          </AnimatePresence>
+          </Box>
 
           <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
             {['Free 30-day returns', 'Plastic-free packaging', 'Made in the UK'].map((item) => (
@@ -408,14 +405,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
               width: { xs: 'calc(100% - 32px)', md: 268 },
             }}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={slide.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-              >
+            <Box key={slide.id} sx={{ '@media (prefers-reduced-motion: no-preference)': { animation: 'wwr-copy-in 0.4s ease both' } }}>
                 {/* Editorial glass card — dark plum glass with gold accent,
                     native to the hero's world. The previous white
                     drop-shadowed card read as a foreign Shopify widget
@@ -479,8 +469,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                     </Button>
                   </Box>
                 </Box>
-              </motion.div>
-            </AnimatePresence>
+            </Box>
           </Box>
 
           {/* Slide indicators — editorial thin lines */}

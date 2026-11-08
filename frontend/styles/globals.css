@@ -296,3 +296,10 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: #1565c0;
 }
+/* Hero copy swap — pure CSS (no JS dependency, paints immediately).
+   Content is visible from first frame (animation fills both directions
+   but starts from a near-opaque state, never hiding the LCP element). */
+@keyframes wwr-copy-in {
+  from { opacity: 0.4; transform: translateY(6px); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
