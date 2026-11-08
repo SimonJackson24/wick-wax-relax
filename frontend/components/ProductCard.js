@@ -56,8 +56,12 @@ const ProductCard = ({
 
   const categories = product.categories?.join(', ') || '';
 
-  const rating = product.rating || 4.2;
-  const reviewCount = product.reviewCount || product.total_reviews || 12;
+  // Real review data only. The previous defaults (4.2 ★ / 12 reviews for
+  // every unreviewed product) were fabricated social proof — misleading
+  // under CMA rules and exactly what makes a store look templated. No
+  // reviews = no stars, and the grid handles the missing rating below.
+  const rating = product.rating && product.rating.count > 0 ? product.rating : null;
+  const reviewCount = rating ? rating.count : 0;
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
@@ -235,16 +239,24 @@ const ProductCard = ({
                 </Typography>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Rating 
-                    value={rating} 
-                    precision={0.5} 
-                    readOnly 
-                    size="small"
-                    sx={{ color: theme.palette.secondary.main }}
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                    ({reviewCount})
-                  </Typography>
+                  {rating ? (
+                    <>
+                      <Rating
+                        value={rating.average}
+                        precision={0.5}
+                        readOnly
+                        size="small"
+                        sx={{ color: theme.palette.secondary.main }}
+                      />
+                      <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                        ({reviewCount})
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                      New — awaiting first review
+                    </Typography>
+                  )}
                 </Box>
 
                 {product.variants && product.variants.length > 1 && (
@@ -566,21 +578,29 @@ const ProductCard = ({
         )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-          <Rating 
-            value={rating} 
-            precision={0.5} 
-            readOnly 
-            size="small"
-            sx={{ 
-              color: theme.palette.secondary.main,
-              '& .MuiRating-iconFilled': {
-                color: theme.palette.secondary.main,
-              }
-            }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            ({reviewCount})
-          </Typography>
+          {rating ? (
+            <>
+              <Rating
+                value={rating.average}
+                precision={0.5}
+                readOnly
+                size="small"
+                sx={{
+                  color: theme.palette.secondary.main,
+                  '& .MuiRating-iconFilled': {
+                    color: theme.palette.secondary.main,
+                  }
+                }}
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                ({reviewCount})
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+              New — awaiting first review
+            </Typography>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>

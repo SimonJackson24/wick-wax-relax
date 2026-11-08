@@ -23,6 +23,11 @@ const ScentMarquee = ({ items = [], speed = 42 }) => {
         alignItems: 'center',
         borderTop: '1px solid rgba(255,255,255,0.08)',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
+        // Edge fades — words previously appeared/vanished clipped mid-letter
+        // at the container edges; the mask makes entries/exits feel
+        // intentional instead of broken.
+        maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
       }}
     >
       <Box

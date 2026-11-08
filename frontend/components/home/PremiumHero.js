@@ -390,50 +390,64 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
               >
+                {/* Editorial glass card — dark plum glass with gold accent,
+                    native to the hero's world. The previous white
+                    drop-shadowed card read as a foreign Shopify widget
+                    pasted onto the photography. */}
                 <Box
                   sx={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid rgba(28,26,31,0.08)',
-                    borderRadius: 1.5,
+                    backgroundColor: 'rgba(30, 20, 32, 0.66)',
+                    backdropFilter: 'blur(14px)',
+                    WebkitBackdropFilter: 'blur(14px)',
+                    border: '1px solid rgba(230, 200, 138, 0.28)',
+                    borderRadius: 2,
                     p: 2.5,
                     boxShadow:
-                      '0 2px 4px rgba(28,26,31,0.06), 0 14px 32px rgba(28,26,31,0.12), 0 40px 80px rgba(28,26,31,0.16)',
+                      '0 2px 6px rgba(12, 8, 14, 0.22), 0 18px 40px rgba(12, 8, 14, 0.30)',
                   }}
                 >
-                  <Typography variant="overline" sx={{ color: 'text.secondary', fontSize: '0.625rem' }}>
+                  <Typography variant="overline" sx={{ color: '#E6C88A', fontSize: '0.625rem', letterSpacing: '0.14em' }}>
                     {slide.scent_profile?.mood ? 'Now pouring' : 'Bestseller'}
                   </Typography>
                   <Typography
                     sx={{
                       fontFamily: '"Playfair Display", serif',
-                      fontSize: '1.125rem',
+                      fontSize: '1.2rem',
                       fontWeight: 500,
                       mb: 0.25,
                       lineHeight: 1.25,
+                      color: '#F7F1E8',
                     }}
                   >
                     {slide.name.replace(/^Showcase:\s*/, '')}
                   </Typography>
                   {notes && (
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontSize: '0.6875rem' }}>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontSize: '0.6875rem', color: 'rgba(247, 241, 232, 0.72)' }}>
                       {notes}
                     </Typography>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#E6C88A' }}>
                       {gbp(price)}
                     </Typography>
                     {rrp && Number(rrp) > Number(price) && (
-                      <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                      <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'rgba(247, 241, 232, 0.55)' }}>
                         {gbp(rrp)}
                       </Typography>
                     )}
                     <Button
                       component={Link}
                       href={`/product/${slide.slug || slide.id}`}
-                      variant="contained"
                       size="small"
-                      sx={{ ml: 'auto' }}
+                      sx={{
+                        ml: 'auto',
+                        bgcolor: '#E6C88A',
+                        color: '#2A1D2A',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        borderRadius: 1,
+                        '&:hover': { bgcolor: '#F0D6A0' },
+                      }}
                     >
                       Shop
                     </Button>
