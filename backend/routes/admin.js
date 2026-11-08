@@ -4,6 +4,7 @@ const orderService = require('../services/order');
 const inventoryService = require('../services/inventory');
 const productService = require('../services/product');
 const { query } = require('../config/database');
+const { revalidate } = require('../services/revalidate');
 const { body, param, validationResult } = require('express-validator');
 
 const router = express.Router();
@@ -437,6 +438,7 @@ router.post('/products', authenticateToken, requireAdmin, [
     }
 
     const product = await productService.createProduct(req.body);
+    revalidate(['/', '/products']);
     res.status(201).json(product);
   } catch (error) {
     console.error('Error creating product:', error);
@@ -484,6 +486,7 @@ router.put('/products/:id', authenticateToken, requireAdmin, [
 
     const { id } = req.params;
     const product = await productService.updateProduct(id, req.body);
+    revalidate(['/', '/products']);
     // Commerce fields (migration 021/022/023) persist after the core-row
     // update: status, VAT, SEO, CLP, shipping, exemption, fragrance load.
     const { applyCommerceFields } = require('../services/productCommerce');
@@ -507,6 +510,7 @@ router.delete('/products/:id', authenticateToken, requireAdmin, [
 
     const { id } = req.params;
     await productService.deleteProduct(id);
+    revalidate(['/', '/products']);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting product:', error);

@@ -75,16 +75,28 @@ const HomePage = ({ featuredInitial }) => {
 
 export default HomePage;
 
-// Server-render the home page's featured products so the storefront's most
-// important page ships real product HTML (names, prices, links) in the
-// first response.
-export async function getServerSideProps() {
-  const apiBase = process.env.API_URL || 'http://localhost:3001';
+// ISR (Incremental Static Regeneration): the homepage is pre-rendered as
+// pure HTML at build time — no per-request SSR, no hydration blocking
+// first paint on the visitor's phone. Next.js re-renders it in the
+// background every 60s so new products / price changes appear within a
+// minute of being saved in admin (or instantly via the on-demand
+// revalidation endpoint).
+//
+// The API base URL is a BUILD-TIME environment variable set by the
+// deployment pipeline (never user input), and the fetch path is a fixed
+// constant — there is no user-controllable URL component.
+const API_BASE = process.env.API_URL || 'http://localhost:3001';
+const FEATURED_URL = `${API_BASE}/api/products/featured`;
+
+export async function getStaticProps() {
   try {
-    const res = await axios.get(`${apiBase}/api/products/featured`, { timeout: 3000 });
-    return { props: { featuredInitial: (res.data && res.data.products) || [] } };
+    const res = await axios.get(FEATURED_URL, { timeout: 5000 });
+    return {
+      props: { featuredInitial: (res.data && res.data.products) || [] },
+      revalidate: 60,
+    };
   } catch {
     // Backend briefly unreachable: render the shell; client fetch fills in.
-    return { props: { featuredInitial: null } };
+    return { props: { featuredInitial: null }, revalidate: 30 };
   }
 }
