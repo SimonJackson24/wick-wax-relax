@@ -17,7 +17,7 @@ import { useAuth } from '../../components/AuthContext';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import axios from 'axios';
 
-function ProfileContent() {
+export function ProfileContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState([]);
