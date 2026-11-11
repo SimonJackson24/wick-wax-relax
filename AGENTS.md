@@ -18,6 +18,10 @@ This project follows the engineering standards at `~/projects/standards`.
 - Products API is an external container — frontend proxies `/api/*` same-origin
 - CI: GitHub Actions — build fetches real products via `API_URL` build arg (never localhost)
 
+## Commands
+
+- frontend: dev `npm run dev` · build `npm run build` · lint `npm run lint` · test `npm test` (jest)
+
 ## Project-specific rules
 
 - Commit style: Conventional Commits with scopes (fix(account), chore(assets), fix(isr), fix(fonts))
