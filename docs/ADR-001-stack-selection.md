@@ -3,18 +3,23 @@
 - **Status:** Proposed — retroactive draft pending Simon's Inception Gate sign-off
 - **Date:** 2026-11-11
 - **Deciders:** Simon + agent (draft)
-- **Standards version:** v1.0.0
+- **Standards version:** v1.1.0
 
 ## Context
 
 wick-wax-relax is a live customer storefront (Next.js + ISR) built before the
 standards; the gate records the incumbent stack and classifies the surface.
+Styling today is vanilla CSS (no utility engine installed); the `@mui/*`
+dependencies are vestigial — `frontend/src/theme.js` is the only import.
 
 ## Decision
 
 Classify as **marketing-site** (storefront for unauthenticated visitors) on the
 Next.js/TypeScript stack it already runs; products data stays owned by the
-external API container, proxied same-origin.
+external API container, proxied same-origin. Styling: vanilla CSS stands today;
+the utility engine (UnoCSS default per v1.1.0, or Tailwind 4) is chosen at the
+next major frontend touch. The vestigial MUI deps are removed at the next
+dependency pass (kit ban, v1.1.0).
 
 ## Alternatives considered
 

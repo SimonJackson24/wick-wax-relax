@@ -27,6 +27,7 @@ This project follows the engineering standards at `~/projects/standards`.
 - Commit style: Conventional Commits with scopes (fix(account), chore(assets), fix(isr), fix(fonts))
 - `/account` route must exist — the nav links to it (it was a 404 once)
 - `completed-works/` is the hermes agent's session record — ignored, never commit
+- Styling: **vanilla CSS** (no utility engine installed — not Tailwind). Per standards v1.1.0: pick the engine (UnoCSS default / Tailwind) at the next major frontend touch. **MUI deps are vestigial** (`frontend/src/theme.js` is the only import) — remove `@mui/*` from package.json at the next dependency pass (kit ban applies to new work; this is cleanup, not migration).
 
 ## Known deviations (ADR-bound)
 
