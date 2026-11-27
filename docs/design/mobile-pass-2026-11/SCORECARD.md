@@ -53,3 +53,48 @@ ProductCard for axe violations, landmarks, ARIA and the focus ring.
   demo data and content was out of scope for this pass.
 - `/products` renders no site header or footer (pre-existing, not introduced
   here) — worth a separate fix.
+
+
+---
+
+# Pass 4 (2026-11-27) — mobile "Explore the scents" marquee
+
+Scored on the rendered build at 375px (filmstrip, five-stage stills and an
+11-second recording in `shots/pass4-*`), plus 1280px to confirm no change.
+
+| Criterion | Score | Evidence |
+|---|---|---|
+| Uniqueness | 4 | Unchanged: the client's own system. The row now moves the opposite way to the trust band, which is a deliberate pairing rather than a stock ticker. |
+| Fit | 4 | Five scents drift past at reading pace; a finger stops them instantly and can drag them; a tap opens the product. |
+| Typography | 4 | Unchanged: italic Playfair 17px chips, measured on the built page. |
+| Depth and craft | 4 | Unchanged chip design; motion is a single composited transform with no edge treatment. |
+| Layout variety | 4 | Unchanged section order. The two bands between header and content now read as a pair moving in counterpoint: cream and leftward, plum and rightward. |
+| Motion | 5 | 34.6–35.1 px/s measured, linear, steady; rightward while the trust marquee goes left. Pauses on press, hover, focus, off-screen and hidden tab; drag follows the finger 1:1 and resumes from that exact offset; no backward step across a cold load and a whole loop. |
+| Finish | 4 | Focus brings its own chip on screen (8px inset); reduced motion falls back to the swipeable row; axe clean at 375, 390, 414, 1280 and under reduced motion; 68 browser checks and 29 jest tests pass. Held at 4: real-device iOS/Safari was not available, so WebKit behaviour is reasoned from the spec and unit tests, not observed. |
+| Mobile | 5 | Chips 44px, swatch 34px, 12px at every gap including the loop seam, no horizontal overflow at 360/375/390/414/767. |
+
+**Automatic fails:** none.
+
+**Measured**
+
+| Check | Result |
+|---|---|
+| Loop | two identical groups (936.2px each); track exactly two groups wide; 12px between chips, at the copy seam and after the last chip |
+| Speed and direction | 34.6–35.1 px/s, every step forward; chips travel left to right; trust marquee travels left |
+| Press (mouse, in a gap) | held at −925.7px for 1.3s; still at 1.5s after release; moving by 2.8s from that same offset |
+| Touch drag on a chip | −910.5 → −174.3 for a 200px left drag (exact); no link followed; page did not scroll; still for 2s; then carried on from −174.3 |
+| Keyboard | Tab focused "Lavender Dream", froze the track, chip at 8–188px; a chip 578px off-screen was brought to 207–367px |
+| Off-screen / hidden tab | paused, no creep, resumed |
+| Tap | opened the product page |
+| Reduced motion | no animation anywhere on the page; one list of chips; swipe scrolls it |
+| Short list (1 and 2 scents) | group repeats 1–4× as the width requires; 35.0 px/s; never an empty edge across a whole loop; exactly the real scents tabbable |
+| Desktop 1280 | mobile row hidden and never animated; name marquee unchanged (26s, 26px, 10 links, no mask, 72px plum fades) |
+
+**Bugs this pass found and fixed in its own work before shipping**
+
+1. Every drag jumped: the start position was read before the track was parked.
+2. Keyboard focus revealed a chip's identical twin instead of the focused chip, leaving no visible focus ring.
+3. Short lists would have scrolled 2–4× too fast: the loop period was taken as one copy rather than one group.
+4. On WebKit every pause would have snapped the row back: the transform parser counted the "3" in `matrix3d`.
+5. A cold load snapped the row back ~24px: the start could fire twice and restart a moving track from a stale offset.
+6. Repeats inside the first group were in the tab order.

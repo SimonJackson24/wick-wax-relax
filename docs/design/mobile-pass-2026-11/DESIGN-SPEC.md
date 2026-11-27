@@ -208,3 +208,61 @@ new decorative motion, no new shadows.
 Screenshots at **1440 / 1280 / 414 / 390 / 375 / 360** px, scored with the
 DESIGN-MAPPING §7 rubric, plus a programmatic check for horizontal overflow
 and console errors on every page captured.
+
+---
+
+# Pass 4 (2026-11-27) — mobile "Explore the scents" row becomes a marquee
+
+**Owner-supplied concept** (no pitch needed): keep the chip design exactly as
+shipped in pass 3 and make the row move. Direction carried forward unchanged.
+
+## Behaviour spec (mobile, <768px)
+
+| Aspect | Decision |
+|---|---|
+| Loop | Continuous and seamless: two identical groups; the track animates `translate3d(-50%) → 0`, so one cycle is exactly one group |
+| Motion | CSS `transform` animation, linear, GPU-composited (`will-change: transform`). Never `scrollLeft` |
+| Speed | 35 px/s (top of the 30–35 range, closest to the "~8–10 s to cross 375 px" target: 375 ÷ 35 ≈ 10.7 s) |
+| Direction | Rightward (enters left, exits right) — the opposite of the trust-badge marquee above the hero, which travels left |
+| Pause | pointer down on the row · hover (mouse) · keyboard focus inside the row · row off-screen (IntersectionObserver) · tab hidden |
+| Resume | 2 s after release / pointer leave / blur; immediately when scrolled back into view or the tab is shown again |
+| Drag | Follows the finger 1:1 (wraps around the loop); resumes from where it was left, via a negative `animation-delay`, so there is no jump |
+| Tap vs drag | A press that moves ≥6 px is a drag: its click is swallowed. A tap navigates as before |
+| Keyboard | Focus pauses the track and shifts it so the focused chip sits fully inside the row (8 px inset) |
+| Edges | No mask-image, no overlay: chips simply slide off the screen edge |
+| Reduced motion | No animation: the static, swipeable, scroll-snapped row from pass 3 (one list) |
+| A11y | Region labelled "Explore the scents"; the second group is `aria-hidden` with its links at `tabindex=-1` |
+| Desktop | Unchanged |
+
+## Implementation notes (as built)
+
+- Plain 2D transforms throughout (`translateX`), in the keyframes and when
+  parked, so every browser reports the position in the same flat form. The
+  parser reads only the numbers inside the brackets — fishing for digits in
+  the whole string counts the "3" in `matrix3d`, which is what WebKit
+  reports, and would have made every pause on an iPhone snap the row back.
+- One cycle is one **group**. Its width is measured after the fonts settle
+  and the duration is `groupWidth ÷ 35`. A group holds as many copies of
+  the list as it needs to span the row (one copy for a normal list; two to
+  four when the shop has only one or two scents), so the right edge never
+  runs empty and the speed never changes.
+- Only the very first copy of the list is exposed: the second group, and
+  any repeat inside the first, are `aria-hidden` with `tabindex=-1` links.
+- Pausing reads the track's computed transform and parks it there as an
+  inline transform; resuming converts that offset into a negative delay.
+- A track that is already moving is never restarted: a restart begins from
+  the parked offset, which is stale once it is moving, and would snap it
+  back to wherever it was last paused. (The row's start can fire twice —
+  the fonts promise and a fallback timer — and did exactly that for a
+  fraction of a second on a cold load before this rule.)
+- The row uses `overflow: clip` (with `hidden` as fallback) so focus
+  navigation cannot scroll it behind the transform's back.
+- Keyboard focus shifts the track by the distance taken from the focused
+  chip's own position, without wrapping round the loop, so the chip that
+  holds the focus ring is the one on screen rather than its twin.
+- A press parks the track *before* it records where the drag starts.
+- With 12px gaps there is no way to touch the row without touching a chip:
+  browsers retarget a tap within a few pixels of a link onto that link. A
+  press that moves 6px or more is a drag, and its click is swallowed.
+- Pure arithmetic lives in `frontend/utils/scentMarquee.js`
+  (`parseTranslateX`, `copiesThatSpan`) and is unit-tested.
