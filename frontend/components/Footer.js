@@ -5,6 +5,7 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { GUTTER } from '../src/layoutTokens';
 
 // Rebuilt for "The Ritual" design system. The previous Footer existed but
 // was never imported by any page — the homepage rendered its own inline
@@ -81,7 +82,7 @@ const Footer = () => (
     className="wwr-dark-surface"
     sx={{ backgroundColor: '#3D2B3D', color: '#F4EFE7', pt: { xs: 7, md: 10 }, pb: 4 }}
   >
-    <Container maxWidth={false} sx={{ maxWidth: 1440, px: { xs: 2, md: 4 } }}>
+    <Container maxWidth={false} sx={{ maxWidth: 1440, px: GUTTER }}>
       <Grid container spacing={{ xs: 5, md: 8 }}>
         {/* Brand + newsletter */}
         <Grid item xs={12} md={5}>

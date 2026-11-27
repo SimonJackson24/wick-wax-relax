@@ -76,9 +76,11 @@ const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sell
             scrollSnapType: { xs: 'x mandatory', md: 'none' },
             scrollPaddingLeft: { xs: 0, md: 'auto' },
             scrollbarWidth: 'none',
-            // Bleed to the screen edge so the next card peeks in.
-            mx: { xs: -2, md: 0 },
-            px: { xs: 2, md: 0 },
+            // Bleed to the screen edge so the next card peeks in. The
+            // bleed cancels the container's gutter exactly, so it has to
+            // track the GUTTER token (it was hard-coded to 16px).
+            mx: { xs: -GUTTER.xs, md: 0 },
+            px: { xs: GUTTER.xs, md: 0 },
             '&::-webkit-scrollbar': { display: 'none' },
           }}
         >

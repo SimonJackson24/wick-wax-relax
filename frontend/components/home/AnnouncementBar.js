@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Link } from '@mui/material';
+import { GUTTER } from '../../src/layoutTokens';
 
 /**
  * Announcement bar — the trust strip. Amazon does this as a banner; we do
@@ -30,7 +31,7 @@ const AnnouncementBar = ({ messages }) => {
         sx={{
           maxWidth: 1440,
           mx: 'auto',
-          px: { xs: 2, md: 4 },
+          px: GUTTER,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

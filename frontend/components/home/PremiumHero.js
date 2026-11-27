@@ -248,7 +248,10 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
           md: 'radial-gradient(90% 70% at 18% 30%, rgba(200,182,219,0.26) 0%, rgba(247,243,236,0) 62%)',
         },
         borderBottom: '1px solid',
-        borderColor: 'divider',
+        // The hero ends in plum on mobile (copy under the photograph), so a
+        // light theme divider here drew a cream rule between two plum
+        // surfaces. Plum-to-plum gets a near-invisible hairline.
+        borderColor: { xs: 'rgba(255,255,255,0.08)', md: 'divider' },
       }}
     >
       {/* Full-bleed photograph — runs past the container to the screen edge */}

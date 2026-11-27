@@ -134,8 +134,8 @@ const TrustBadges = () => {
             width: 'max-content',
             alignItems: 'center',
             py: 1,
-            pl: 2,
-            pr: 2,
+            pl: 2.5,
+            pr: 2.5,
             // The gap lives at the END of each copy, not between the two
             // copies, so the -50% translation lands exactly on the start
             // of the next copy and the loop has no seam.
