@@ -80,7 +80,7 @@ const HomePage = ({ featuredInitial }) => {
 
         <PremiumHero products={products} />
 
-        <ScentMarquee items={products.map((p) => p.name.replace(/^Showcase:\s*/, ''))} />
+        <ScentMarquee items={products.map((p) => ({ name: p.name.replace(/^Showcase:\s*/, ''), slug: p.slug }))} />
 
         <MoodTiles />
 

@@ -11,6 +11,30 @@ import { useCart } from '../CartContext';
 const gbp = (value) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(value) || 0);
 
+// Where the subject sits in each product photograph, as a CSS
+// object-position. The catalogue is demo data today, so this map is where a
+// CMS focal-point field lands: `object_position` (or focal_x / focal_y)
+// from the API wins, then this map, then the centre.
+//
+// The desktop split has its own tuned crop ("center 72%", the wide bath
+// scene) and is left alone — these values are for the tight mobile crop,
+// where a portrait 1024x1536 photograph was being sliced into a phone-wide
+// strip and the candle was cropped out of frame entirely.
+const FOCAL_POINTS = {
+  'lavender-dream': '38% 45%',
+  'fireside-vanilla': '58% 52%',
+  'midnight-jasmine': 'center 50%',
+  'amber-and-oak': '45% 50%',
+};
+
+const focalPointFor = (slide) => {
+  if (slide.object_position) return slide.object_position;
+  if (typeof slide.focal_x === 'number' || typeof slide.focal_y === 'number') {
+    return `${slide.focal_x ?? 50}% ${slide.focal_y ?? 50}%`;
+  }
+  return FOCAL_POINTS[slide.slug] || 'center';
+};
+
 // Film grain — a subtle noise layer over photography. Cheap, but it is the
 // single most effective way to stop stock imagery reading as stock: it
 // removes the flat digital-cleanliness and gives the page a printed feel.
@@ -187,6 +211,12 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
     (slide.images && slide.images[0] && (slide.images[0].image_url || slide.images[0])) ||
     '/images/candles-hero.svg';
 
+  // Self-hosted files go through next/image (right-sized crops); anything
+  // on another host keeps the plain <img>, because next/image would need
+  // that host in its remotePatterns allow-list.
+  const isLocalImage = image.startsWith('/');
+  const objectPosition = focalPointFor(slide);
+
   const handleQuickAdd = async () => {
     const variant = slide.variants?.[0];
     if (!variant) return;
@@ -209,9 +239,14 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#F7F3EC',
-        backgroundImage:
-          'radial-gradient(90% 70% at 18% 30%, rgba(200,182,219,0.26) 0%, rgba(247,243,236,0) 62%)',
+        // Mobile: the hero is a STACKED composition — photograph on top,
+        // copy on plum underneath it. The plum has to be the root colour
+        // now, because the copy no longer sits over the photograph.
+        backgroundColor: { xs: '#2A1D2A', md: '#F7F3EC' },
+        backgroundImage: {
+          xs: 'none',
+          md: 'radial-gradient(90% 70% at 18% 30%, rgba(200,182,219,0.26) 0%, rgba(247,243,236,0) 62%)',
+        },
         borderBottom: '1px solid',
         borderColor: 'divider',
       }}
@@ -219,11 +254,22 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
       {/* Full-bleed photograph — runs past the container to the screen edge */}
       <Box
         sx={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
+          // Mobile: a real block at the top of the hero, not a full-bleed
+          // background behind the copy. The photograph is 1024x1536
+          // portrait; cropped into a phone-wide strip it was an unreadable
+          // blur. 4:5 keeps the scene, capped at 52vh so the CTA still
+          // clears the fold. Desktop: unchanged, bleeding off the right.
+          position: { xs: 'relative', md: 'absolute' },
+          top: { md: 0 },
+          right: { md: 0 },
+          bottom: { md: 0 },
           width: { xs: '100%', md: '58%' },
+          height: { xs: 'auto', md: '100%' },
+          // NOTE: a responsive value that is only set at xs keeps applying
+          // at every larger breakpoint — both of these have to be reset at
+          // md or the desktop photo is squashed to the mobile crop.
+          aspectRatio: { xs: '4 / 5', md: 'none' },
+          maxHeight: { xs: '44vh', md: 'none' },
           overflow: 'hidden',
         }}
       >
@@ -242,12 +288,26 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
               transition={{ duration: 9, ease: 'linear' }}
               style={{ width: '100%', height: '100%' }}
             >
-              <Box
-                component="img"
-                src={image}
-                alt={slide.name}
-                sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 72%', display: 'block' }}
-              />
+              {isLocalImage ? (
+                /* Self-hosted file: next/image serves a right-sized crop
+                   (sizes) instead of the full 1024x1536 file on a phone. */
+                <Image
+                  src={image}
+                  alt={slide.name}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 58vw"
+                  priority={index === 0}
+                  quality={72}
+                  style={{ objectFit: 'cover', objectPosition }}
+                />
+              ) : (
+                <Box
+                  component="img"
+                  src={image}
+                  alt={slide.name}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition, display: 'block' }}
+                />
+              )}
             </motion.div>
           </motion.div>
         </AnimatePresence>
@@ -274,12 +334,28 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
             pointerEvents: 'none',
           }}
         />
-        {/* Soften the photograph's own left edge so it meets the panel cleanly */}
+        {/* Soften the photograph's own left edge so it meets the panel
+            cleanly — desktop split only. */}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
+            display: { xs: 'none', md: 'block' },
             background: 'linear-gradient(95deg, rgba(42,29,42,0.5) 0%, rgba(42,29,42,0) 26%)',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Mobile: the photograph melts into the plum panel it sits on. */}
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: { xs: 140, md: 0 },
+            display: { xs: 'block', md: 'none' },
+            background:
+              'linear-gradient(to top, #2A1D2A 0%, rgba(42,29,42,0.55) 45%, rgba(42,29,42,0) 100%)',
             pointerEvents: 'none',
           }}
         />
@@ -295,10 +371,11 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
         sx={{
           position: 'absolute',
           inset: 0,
-          background: {
-            xs: 'linear-gradient(180deg, rgba(42,29,42,0.28) 0%, rgba(42,29,42,0.62) 26%, rgba(42,29,42,0.90) 56%, #2A1D2A 100%)',
-            md: 'linear-gradient(95deg, #2A1D2A 0%, #2A1D2A 26%, rgba(42,29,42,0.86) 44%, rgba(42,29,42,0.18) 63%, rgba(42,29,42,0) 76%)',
-          },
+          // Desktop only: on a phone the copy sits on the plum panel
+          // below the photograph, not over it.
+          display: { xs: 'none', md: 'block' },
+          background:
+            'linear-gradient(95deg, #2A1D2A 0%, #2A1D2A 26%, rgba(42,29,42,0.86) 44%, rgba(42,29,42,0.18) 63%, rgba(42,29,42,0) 76%)',
           pointerEvents: 'none',
         }}
       />
@@ -311,16 +388,15 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
           maxWidth: 1440,
           mx: 'auto',
           px: { xs: 2.5, md: 5 },
-          pt: { xs: 5, md: 7 },
-          pb: { xs: 4, md: 7 },
+          pt: { xs: 2.5, md: 7 },
+          pb: { xs: 3.5, md: 7 },
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 42%) minmax(0, 1fr)' },
-          alignItems: { xs: 'flex-end', md: 'center' },
-          // Mobile: the hero is capped so the primary CTA clears the fold
-          // on a 390×844 screen (the announcement bar, header and trust
-          // scroller take ~144px above it).
-          minHeight: { xs: '78vh', md: '78vh' },
-          maxHeight: { xs: '86vh' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          // Desktop sets the hero height (the photograph is absolute).
+          // On a phone the hero is photograph + copy stacked, so the grid
+          // takes only the height of the copy.
+          minHeight: { md: '78vh' },
         }}
       >
         <Box sx={{ maxWidth: 520, order: { xs: 1, md: 1 }, width: '100%' }}>
@@ -361,7 +437,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 sx={{
                   fontFamily: '"Playfair Display", serif',
                   fontWeight: 500,
-                  fontSize: { xs: 'clamp(2.25rem, 9.2vw, 2.9rem)', md: 'clamp(3rem, 6.2vw, 5.25rem)' },
+                  fontSize: { xs: 'clamp(2rem, 8.6vw, 2.6rem)', md: 'clamp(3rem, 6.2vw, 5.25rem)' },
                   lineHeight: { xs: 1.02, md: 0.98 },
                   letterSpacing: '-0.03em',
                   mb: { xs: 1.5, md: 2.5 }, color: '#FFFFFF', mt: 0,
@@ -386,7 +462,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: 'rgba(244,239,231,0.82)', maxWidth: 440, mb: { xs: 2, md: 3.5 },
+                  color: 'rgba(244,239,231,0.82)', maxWidth: 440, mb: { xs: 1.5, md: 3.5 },
                   lineHeight: 1.7,
                   // Two lines on mobile — the description must never push
                   // the CTA below the fold.
@@ -399,7 +475,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 {slide.description}
               </Typography>
 
-              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: { xs: 2.5, md: 3.5 }, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: { xs: 2, md: 3.5 }, flexWrap: 'wrap' }}>
                 <Typography
                   sx={{
                     fontFamily: '"Playfair Display", serif',

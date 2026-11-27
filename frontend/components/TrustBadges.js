@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import {
   Box,
   Typography,
+  useMediaQuery,
   useTheme
 } from '@mui/material';
 import {
@@ -12,9 +14,19 @@ import {
 } from '@mui/icons-material';
 
 // Compact trust strip — one narrow banner, icon left of each label.
-// The original six-badge wording (Simon's preferred copy) is kept; the
-// long descriptions live on as tooltips so no information is lost, but
-// the strip stays a single tight row (~48px) instead of a 226px grid.
+//
+// Mobile (<900px): a single-row marquee. The six promises are wider than a
+// phone, so the old two-column grid either truncated the labels with an
+// ellipsis ("Ethical Beeswa…") or stacked them over three rows and pushed
+// the hero down. The strip is now one calm ~36px row that scrolls on its
+// own — full labels, never truncated — and pauses the moment a finger is
+// on it.
+//
+// Reduced motion: no marquee at all. The row becomes a swipeable,
+// scroll-snapped strip instead.
+//
+// Desktop (>=900px): the static, evenly spaced row — all six fit there
+// without truncation, so no motion is needed.
 
 const trustBadges = [
   { id: 'ethical-beeswax', icon: EcoIcon, title: 'Ethical Beeswax', detail: 'Queen bees kept with intact wings' },
@@ -25,76 +37,168 @@ const trustBadges = [
   { id: 'secure', icon: SecureIcon, title: 'Secure Checkout', detail: 'Protected payments' },
 ];
 
+const Badge = ({ badge, theme, separator }) => {
+  const IconComponent = badge.icon;
+  return (
+    <>
+      <Box
+        title={badge.detail}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          flex: '0 0 auto',
+          minWidth: 0,
+        }}
+      >
+        <IconComponent
+          sx={{ fontSize: 17, color: theme.palette.primary.main, flexShrink: 0 }}
+        />
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.8125rem',
+            letterSpacing: '0.04em',
+            color: theme.palette.primary.main,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {badge.title}
+        </Typography>
+      </Box>
+      {separator && (
+        <Box
+          aria-hidden
+          sx={{
+            mx: 2,
+            color: theme.palette.primary.main,
+            opacity: 0.45,
+            fontSize: '0.6875rem',
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          •
+        </Box>
+      )}
+    </>
+  );
+};
+
 const TrustBadges = () => {
   const theme = useTheme();
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const [touched, setTouched] = useState(false);
+
+  // Two copies of the list, and the track translates exactly -50% of its
+  // own width — one copy's worth — so the loop is seamless. Under reduced
+  // motion there is no loop, so only one copy is rendered.
+  const copies = reduceMotion ? 1 : 2;
 
   return (
     <Box
       component="section"
       aria-label="Our promises"
       sx={{
-        backgroundColor: theme.palette.background.default,
+        // Cream, so the strip reads as a distinct band against the plum
+        // announcement bar directly above it.
+        backgroundColor: '#F4EFE7',
         borderTop: `1px solid ${theme.palette.primary.main}20`,
         borderBottom: `1px solid ${theme.palette.primary.main}20`,
       }}
     >
-      {/* Mobile: one swipeable row, scroll-snapped, every label in full.
-          The old two-column grid truncated the labels with an ellipsis
-          ("Ethical Beeswa…") and stacked six rows above the hero. Desktop
-          keeps the single spread-out row. */}
+      {/* Mobile: the marquee */}
       <Box
         role="group"
         aria-label="Our promises"
         tabIndex={0}
         sx={{
-          display: 'flex',
-          flexWrap: { xs: 'nowrap', md: 'nowrap' },
-          justifyContent: { xs: 'flex-start', md: 'space-between' },
-          alignItems: 'center',
-          py: { xs: 1, md: 1 },
-          gap: { xs: 2.5, md: 0 },
-          maxWidth: { xs: '100%', md: 1200 },
-          mx: 'auto',
-          px: { xs: 2, md: 4 },
-          overflowX: { xs: 'auto', md: 'visible' },
-          scrollSnapType: { xs: 'x proximity', md: 'none' },
+          display: { xs: 'block', md: 'none' },
+          overflowX: reduceMotion ? 'auto' : 'hidden',
+          overflowY: 'hidden',
+          scrollSnapType: reduceMotion ? 'x proximity' : 'none',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
+          // The items run off the edge as they pass; a short fixed fade
+          // makes the entry and exit read as intentional.
+          maskImage:
+            'linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
         }}
       >
-        {trustBadges.map((badge) => {
-          const IconComponent = badge.icon;
-          return (
+        <Box
+          sx={{
+            display: 'flex',
+            width: 'max-content',
+            alignItems: 'center',
+            py: 1,
+            pl: 2,
+            pr: 2,
+            // The gap lives at the END of each copy, not between the two
+            // copies, so the -50% translation lands exactly on the start
+            // of the next copy and the loop has no seam.
+            gap: 0,
+            animation: reduceMotion ? 'none' : 'wwr-trust-marquee 34s linear infinite',
+            animationPlayState: touched ? 'paused' : 'running',
+            '@keyframes wwr-trust-marquee': {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+              transform: 'none',
+            },
+            '&:hover': {
+              animationPlayState: reduceMotion ? 'running' : 'paused',
+            },
+          }}
+          onPointerDown={() => setTouched(true)}
+          onPointerUp={() => setTouched(false)}
+          onPointerCancel={() => setTouched(false)}
+          onPointerLeave={() => setTouched(false)}
+        >
+          {Array.from({ length: copies }).map((_, copyIndex) => (
             <Box
-              key={badge.id}
-              title={badge.detail}
+              key={copyIndex}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 0.75,
-                flex: { xs: '0 0 auto', md: '0 1 auto' },
-                scrollSnapAlign: { xs: 'start', md: 'none' },
-                minWidth: 0,
+                paddingRight: 2.5,
+                scrollSnapAlign: reduceMotion ? 'start' : 'none',
               }}
             >
-              <IconComponent
-                sx={{ fontSize: 17, color: theme.palette.primary.main, flexShrink: 0 }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: { xs: '0.8125rem', md: '0.75rem' },
-                  letterSpacing: '0.04em',
-                  color: theme.palette.text.primary,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {badge.title}
-              </Typography>
+              {trustBadges.map((badge, index) => (
+                <Badge
+                  key={`${copyIndex}-${badge.id}`}
+                  badge={badge}
+                  theme={theme}
+                  separator={index < trustBadges.length - 1}
+                />
+              ))}
             </Box>
-          );
-        })}
+          ))}
+        </Box>
+      </Box>
+
+      {/* Desktop: the static row */}
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flexWrap: 'nowrap',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          py: 1,
+          gap: 2,
+          maxWidth: 1200,
+          mx: 'auto',
+          px: 4,
+        }}
+      >
+        {trustBadges.map((badge) => (
+          <Badge key={badge.id} badge={badge} theme={theme} separator={false} />
+        ))}
       </Box>
     </Box>
   );
