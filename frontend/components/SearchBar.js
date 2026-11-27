@@ -351,6 +351,7 @@ const SearchBar = ({
                 <IconButton
                   size="small"
                   onClick={handleClear}
+                  aria-label="Clear search"
                   sx={{ mr: 0.5 }}
                 >
                   <ClearIcon />
@@ -361,6 +362,7 @@ const SearchBar = ({
                 onClick={() => handleSearch()}
                 disabled={!query.trim()}
                 color="primary"
+                aria-label="Search"
               >
                 <SearchIcon />
               </IconButton>

@@ -44,7 +44,7 @@ const HomeHero = ({
       >
         {/* Copy */}
         <Box sx={{ order: { xs: 2, md: 1 }, maxWidth: 560, pb: { xs: 2, md: 0 } }}>
-          <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 2 }}>
+          <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 2 }}>
             {eyebrow}
           </Typography>
 
@@ -77,7 +77,7 @@ const HomeHero = ({
           <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
             {assurances.map((item) => (
               <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <CheckIcon sx={{ fontSize: 15, color: 'tertiary.main' }} />
+                <CheckIcon sx={{ fontSize: 15, color: 'tertiary.ink' }} />
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.8125rem' }}>
                   {item}
                 </Typography>

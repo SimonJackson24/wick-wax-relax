@@ -23,6 +23,10 @@ const CinematicBand = ({
         width: '100%',
         height: { xs: '72vh', md: '86vh' },
         minHeight: { xs: 460, md: 620 },
+        // Designed fallback: if the photograph is missing the band still
+        // reads as a warm plum-to-sand panel instead of alt text on white.
+        background:
+          'linear-gradient(140deg, #4A3550 0%, #3D2B3D 42%, #6B4A46 78%, #C9846B 100%)',
       }}
     >
       <Box
@@ -30,7 +34,27 @@ const CinematicBand = ({
         src={image}
         alt="The Wick Wax & Relax studio"
         loading="lazy"
-        sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        sx={{
+          width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+          // The stock placeholder is a violet-blue gradient; the brand
+          // grade knocks it into the plum/amber world so the band belongs
+          // to the same campaign as every other photograph.
+          filter: 'grayscale(1) sepia(0.85) saturate(2.4) hue-rotate(-12deg) brightness(0.98) contrast(1.04)',
+        }}
+      />
+      {/* Plum wash (multiply) — pulls whatever image sits here into the
+          brand's plum/amber world so the band belongs to the same
+          campaign as every other photograph on the page. */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(120deg, #3D2B3D 0%, #2A1D2A 45%, #6B4A46 100%)',
+          mixBlendMode: 'multiply',
+          pointerEvents: 'none',
+        }}
       />
       <Box
         sx={{

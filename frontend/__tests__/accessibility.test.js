@@ -1,17 +1,26 @@
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
+import appTheme from '../src/theme';
 import Navigation from '../components/Navigation';
-import Hero from '../components/Hero';
+import PremiumHero from '../components/home/PremiumHero';
 import ProductCard from '../components/ProductCard';
+import { CartProvider } from '../components/CartContext';
+import { WishlistProvider } from '../components/WishlistContext';
+import { SubscriptionProvider } from '../components/SubscriptionContext';
+import { PWAProvider } from '../components/PWAContext';
 import { axe as axeConfig } from '../jest.accessibility';
 
 // Extend Jest matchers
 expect.extend(toHaveNoViolations);
 
-// Create a theme for testing
-const theme = createTheme();
+// The app's own theme — the accessibility rules only mean anything if the
+// components are rendered with the tokens they ship with.
+const theme = appTheme;
 
 // Mock Next.js router
 jest.mock('next/router', () => ({
@@ -67,10 +76,18 @@ const mockProduct = {
 };
 
 // Helper function to render components with theme
+// The nav and the hero both read the cart / wishlist / subscription
+// contexts, so every render has to sit inside those providers.
 const renderWithTheme = (component) => {
   return render(
     <ThemeProvider theme={theme}>
-      {component}
+      <PWAProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <SubscriptionProvider>{component}</SubscriptionProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </PWAProvider>
     </ThemeProvider>
   );
 };
@@ -111,57 +128,43 @@ describe('Accessibility Tests', () => {
     });
   });
 
-  describe('Hero Component', () => {
+  describe('PremiumHero Component', () => {
+    const heroProduct = {
+      id: 'hero-1',
+      name: 'Showcase: Lavender Dream',
+      slug: 'lavender-dream',
+      description: 'Calming lavender with a soft vetiver base.',
+      scent_profile: { mood: 'calming', top: 'Lavender' },
+      base_price: 12,
+      variants: [{ id: 'hero-1-v1', price: 12, inventory_quantity: 5 }],
+    };
+
     it('should not have any accessibility violations', async () => {
-      const { container } = renderWithTheme(<Hero />);
+      const { container } = renderWithTheme(<PremiumHero products={[heroProduct]} />);
       const results = await axe(container, axeConfig);
       expect(results).toHaveNoViolations();
     });
 
-    it('should have proper ARIA attributes for carousel', () => {
-      renderWithTheme(<Hero />);
-      
-      // Check for carousel region
-      const carouselRegion = screen.getByRole('region');
-      expect(carouselRegion).toBeInTheDocument();
-      expect(carouselRegion).toHaveAttribute('aria-roledescription', 'carousel');
-      expect(carouselRegion).toHaveAttribute('aria-label', 'Product category showcase');
-      
-      // Check for carousel controls
-      const prevButton = screen.getByLabelText('Previous slide');
-      const nextButton = screen.getByLabelText('Next slide');
-      const playButton = screen.getByLabelText(/pause auto-play|resume auto-play/i);
-      
-      expect(prevButton).toBeInTheDocument();
-      expect(nextButton).toBeInTheDocument();
-      expect(playButton).toBeInTheDocument();
-      
-      // Check for slide indicators
-      const slideIndicators = screen.getAllByRole('tab');
-      expect(slideIndicators.length).toBeGreaterThan(0);
-    });
-
-    it('should have keyboard accessible controls', () => {
-      renderWithTheme(<Hero />);
-      
-      // Check for keyboard accessible controls
-      const prevButton = screen.getByLabelText('Previous slide');
-      const nextButton = screen.getByLabelText('Next slide');
-      const playButton = screen.getByLabelText(/pause auto-play|resume auto-play/i);
-      
-      expect(prevButton).toHaveAttribute('tabIndex', '0');
-      expect(nextButton).toHaveAttribute('tabIndex', '0');
-      expect(playButton).toHaveAttribute('tabIndex', '0');
-    });
-
-    it('should have live region for screen reader announcements', () => {
-      renderWithTheme(<Hero />);
-      
-      // Check for live region
+    it('should expose the scent as a live region for screen readers', () => {
+      renderWithTheme(<PremiumHero products={[heroProduct]} />);
       const liveRegion = screen.getByRole('status');
       expect(liveRegion).toBeInTheDocument();
       expect(liveRegion).toHaveAttribute('aria-live', 'polite');
       expect(liveRegion).toHaveAttribute('aria-atomic', 'true');
+      expect(liveRegion.textContent).toContain('Lavender Dream');
+    });
+
+    it('should expose the slide indicators as buttons', () => {
+      renderWithTheme(<PremiumHero products={[heroProduct, { ...heroProduct, id: 'hero-2', name: 'Showcase: Fireside Vanilla' }]} />);
+      const indicator = screen.getByLabelText('Show Lavender Dream');
+      expect(indicator).toBeInTheDocument();
+      expect(indicator).toHaveAttribute('aria-current', 'true');
+    });
+
+    it('should have a single primary call to action', () => {
+      renderWithTheme(<PremiumHero products={[heroProduct]} />);
+      const cta = screen.getByRole('link', { name: /shop this scent/i });
+      expect(cta).toBeInTheDocument();
     });
   });
 
@@ -203,36 +206,33 @@ describe('Accessibility Tests', () => {
       expect(favoriteButton).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('should have proper ARIA attributes for favorite button when toggled', () => {
-      const { rerender } = renderWithTheme(
-        <ProductCard product={mockProduct} />
-      );
-      
+    it('should have proper ARIA attributes for favorite button when toggled', async () => {
+      renderWithTheme(<ProductCard product={mockProduct} />);
+
       // Initially not favorited
-      let favoriteButton = screen.getByLabelText(/add test product to favorites/i);
+      const favoriteButton = screen.getByLabelText(/add test product to favorites/i);
       expect(favoriteButton).toHaveAttribute('aria-pressed', 'false');
-      
-      // Toggle favorite state
-      rerender(
-        <ThemeProvider theme={theme}>
-          <ProductCard product={mockProduct} />
-        </ThemeProvider>
-      );
-      
+
+      // Toggle it
+      await userEvent.click(favoriteButton);
+
       // After clicking, should be favorited
-      favoriteButton = screen.getByLabelText(/remove test product from favorites/i);
-      expect(favoriteButton).toHaveAttribute('aria-pressed', 'true');
+      const toggled = screen.getByLabelText(/remove test product from favorites/i);
+      expect(toggled).toHaveAttribute('aria-pressed', 'true');
     });
   });
 
   describe('Global Accessibility Features', () => {
     it('should have proper focus styles', () => {
-      const { container } = renderWithTheme(<Navigation />);
-      
-      // Check for focus visible styles
-      const styleElement = container.querySelector('style');
-      expect(styleElement).toBeInTheDocument();
-      expect(styleElement.textContent).toContain(':focus-visible');
+      // The focus ring is a global rule (styles/globals.css) — the page
+      // stylesheet is not part of a component's rendered tree in jsdom, so
+      // read the source of truth.
+      const css = fs.readFileSync(
+        path.join(__dirname, '../styles/globals.css'),
+        'utf8'
+      );
+      expect(css).toContain(':focus-visible');
+      expect(css).toContain('outline');
     });
 
     it('should have skip link', () => {

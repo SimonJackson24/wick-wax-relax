@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Rating } from '@mui/material';
+import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
 
 /**
  * Reviews proof band — the one dark moment on the page. Social proof is
@@ -20,24 +21,33 @@ const ReviewsBand = ({
       ];
 
   return (
-    <Box sx={{ py: { xs: 7, md: 11 }, backgroundColor: '#3D2B3D', color: '#F4EFE7' }}>
-      <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
+    <Box
+      className="wwr-dark-surface"
+      sx={{ py: SECTION_PY, backgroundColor: '#3D2B3D', color: '#F4EFE7' }}
+    >
+      <Box sx={{ maxWidth: 1440, mx: 'auto', px: GUTTER }}>
         <Box
           sx={{
             display: 'flex', alignItems: 'center', gap: { xs: 2, md: 3 },
             flexWrap: 'wrap', mb: { xs: 4, md: 6 },
           }}
         >
-          <Typography variant="overline" sx={{ color: 'rgba(244,239,231,0.7)' }}>
+          <Typography variant="overline" sx={{ color: '#E6C88A' }}>
             Customer love
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontFamily: '"Playfair Display", serif', fontSize: '2.25rem', fontWeight: 500, lineHeight: 1 }}>
+            <Typography
+              component="p"
+              sx={{
+                fontFamily: '"Playfair Display", serif', fontSize: '2.25rem', fontWeight: 500,
+                lineHeight: 1, color: '#F4EFE7', m: 0,
+              }}
+            >
               {average}
             </Typography>
             <Rating value={average} size="small" readOnly sx={{ color: '#E6C88A' }} />
           </Box>
-          <Typography variant="body2" sx={{ color: 'rgba(244,239,231,0.7)' }}>
+          <Typography variant="body2" sx={{ color: 'rgba(244,239,231,0.82)' }}>
             {count > 0 ? `from ${count} verified reviews` : 'from our earliest batch'}
           </Typography>
         </Box>
@@ -62,9 +72,11 @@ const ReviewsBand = ({
               <Rating value={5} size="small" readOnly sx={{ color: '#E6C88A', mb: 1.5 }} />
               {review.title && (
                 <Typography
+                  component="h3"
                   sx={{
                     fontFamily: '"Playfair Display", serif',
                     fontSize: '1.125rem', fontWeight: 500, mb: 1,
+                    color: '#F4EFE7', mt: 0,
                   }}
                 >
                   {review.title}
@@ -73,7 +85,7 @@ const ReviewsBand = ({
               <Typography variant="body2" sx={{ color: 'rgba(244,239,231,0.82)', lineHeight: 1.75, mb: 2 }}>
                 {review.body}
               </Typography>
-              <Typography variant="overline" sx={{ color: 'rgba(244,239,231,0.6)', fontSize: '0.625rem' }}>
+              <Typography variant="overline" sx={{ color: 'rgba(244,239,231,0.78)', fontSize: '0.6875rem' }}>
                 {review.author}
               </Typography>
             </Box>

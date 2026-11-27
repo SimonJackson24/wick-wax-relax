@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Box, Typography, Button } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
 
 /**
  * Editorial split — the "why pay more" story. Premium prices need a
@@ -15,12 +16,12 @@ const EditorialSplit = ({
   image = '/images/bath-scene.svg',
   reversed = false,
 }) => (
-  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
+  <Box sx={{ py: SECTION_PY, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
     <Box
       sx={{
         maxWidth: 1440,
         mx: 'auto',
-        px: { xs: 2, md: 4 },
+        px: GUTTER,
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
         gap: { xs: 4, md: 8 },
@@ -30,10 +31,16 @@ const EditorialSplit = ({
       <Box sx={{ order: { xs: 1, md: reversed ? 2 : 1 } }}>
         <Box
           sx={{
+            // The plum wash below is absolutely positioned inside this
+            // frame — without a positioned ancestor it would cover the
+            // whole page.
+            position: 'relative',
             borderRadius: 2,
             overflow: 'hidden',
             aspectRatio: { xs: '4 / 3', md: '5 / 4.2' },
-            bgcolor: '#F1EBE1',
+            // Designed fallback behind the photograph.
+            background:
+              'linear-gradient(140deg, #4A3550 0%, #3D2B3D 45%, #6B4A46 78%, #C9846B 100%)',
             border: '1px solid rgba(28,26,31,0.07)',
             boxShadow: '0 20px 48px rgba(28,26,31,0.12)',
           }}
@@ -43,13 +50,27 @@ const EditorialSplit = ({
             src={image}
             alt="Pouring wax by hand in the studio"
             loading="lazy"
-            sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            sx={{
+              width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+              filter: 'grayscale(1) sepia(0.85) saturate(2.4) hue-rotate(-12deg) brightness(0.98) contrast(1.04)',
+            }}
+          />
+          {/* Plum wash — same brand treatment as the cinematic band. */}
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(120deg, #6B4A46 0%, #3D2B3D 55%, #2A1D2A 100%)',
+              mixBlendMode: 'multiply',
+              pointerEvents: 'none',
+            }}
           />
         </Box>
       </Box>
 
       <Box sx={{ order: { xs: 2, md: reversed ? 1 : 2 }, maxWidth: 540 }}>
-        <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
+        <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 1.5 }}>
           {eyebrow}
         </Typography>
         <Typography variant="h2" sx={{ mb: 2.5 }}>

@@ -25,9 +25,14 @@ const theme = createTheme({
       contrastText: '#2A1D2A',
     },
     tertiary: {
-      main: '#C9846B', // CLAY — warmth, urgency chips
+      main: '#C9846B', // CLAY — warmth, urgency chips (fills, icons)
       light: '#DCA08B',
       dark: '#A86853',
+      // CLAY INK — the same hue, deep enough to pass WCAG AA as small
+      // text on paper (#FDFCFA 5.5:1) and sand (#F4EFE7 4.9:1). The clay
+      // above is 2.9:1 on paper — fine for a rule or an icon, unreadable
+      // as an 11px eyebrow label.
+      ink: '#8F5543',
       contrastText: '#FFFFFF',
     },
     // `accent` is referenced 14 times across the app (auth pages, admin
@@ -41,7 +46,7 @@ const theme = createTheme({
       contrastText: '#FFFFFF',
     },
     success: { main: '#4A7C59' },
-    warning: { main: '#C9846B' },
+    warning: { main: '#C9846B', contrastText: '#2A1D2A' },
     error: { main: '#B3261E' },
     info: { main: '#3D6B8E' },
     background: {
@@ -52,6 +57,16 @@ const theme = createTheme({
     text: {
       primary: '#1C1A1F', // INK
       secondary: '#6B6570',
+      // ON-DARK ink set. The plum surfaces (#3D2B3D) used to inherit the
+      // light-surface body colour (#3A3740) and rendered their own headings
+      // and ratings at ~1.05:1 — effectively invisible. These are the
+      // tokens every plum surface now uses (see .wwr-dark-surface in
+      // styles/globals.css, which flips the whole type system via
+      // --wwr-type-ink* variables).
+      onDark: '#F4EFE7', // 9.6:1 on plum
+      onDarkSoft: 'rgba(244,239,231,0.82)', // 8.2:1
+      onDarkMuted: 'rgba(244,239,231,0.78)', // 7.5:1
+      onDarkAccent: '#E6C88A', // gold — 6.5:1
     },
     divider: '#E8E2D9',
   },
@@ -117,7 +132,7 @@ const theme = createTheme({
     body2: {
       fontFamily: '"Montserrat", sans-serif',
       fontWeight: 400,
-      fontSize: '0.875rem',
+      fontSize: '1rem',
       lineHeight: 1.7,
       color: '#6B6570',
     },
@@ -145,9 +160,11 @@ const theme = createTheme({
     caption: {
       fontFamily: '"Montserrat", sans-serif',
       fontWeight: 400,
-      fontSize: '0.75rem',
+      fontSize: '0.8125rem',
       lineHeight: 1.5,
-      color: '#8A8494',
+      // #8A8494 was 3.6:1 on white — below AA for 13px text. The
+      // secondary ink is 5.6:1 on white and 4.9:1 on sand.
+      color: '#6B6570',
     },
     // The "expensive" signal — small tracked-out uppercase labels.
     overline: {
@@ -157,7 +174,7 @@ const theme = createTheme({
       lineHeight: 1.6,
       letterSpacing: '0.18em',
       textTransform: 'uppercase',
-      color: '#8A8494',
+      color: '#6B6570',
     },
   },
 
@@ -202,6 +219,43 @@ const theme = createTheme({
   },
 
   components: {
+    // Type colour now resolves through CSS variables. On a light surface
+    // they hold the light-surface inks; inside a `.wwr-dark-surface`
+    // (any plum band) they hold the cream on-dark inks — so a heading,
+    // caption or rating on plum is legible without every component
+    // remembering to hard-code a colour.
+    //
+    // `sx` still wins (MUI applies styleOverrides before the sx prop), so
+    // any deliberate colour set on a component is untouched.
+    MuiTypography: {
+      // MUI's default variantMapping renders subtitle1/subtitle2 as <h6>,
+      // so every price and every small title in the app was a heading
+      // (and broke the document outline). Only the h1-h6 variants are
+      // headings here.
+      defaultProps: {
+        variantMapping: {
+          h1: 'h1', h2: 'h2', h3: 'h3', h4: 'h4', h5: 'h5', h6: 'h6',
+          subtitle1: 'p', subtitle2: 'p',
+          body1: 'p', body2: 'p', button: 'p',
+          caption: 'span', overline: 'span',
+        },
+      },
+      styleOverrides: {
+        root: { color: 'var(--wwr-type-ink, #3A3740)' },
+        h1: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        h2: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        h3: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        h4: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        h5: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        h6: { color: 'var(--wwr-type-ink-strong, #1C1A1F)' },
+        subtitle1: { color: 'var(--wwr-type-ink, #3A3740)' },
+        subtitle2: { color: 'var(--wwr-type-ink, #3A3740)' },
+        body1: { color: 'var(--wwr-type-ink, #3A3740)' },
+        body2: { color: 'var(--wwr-type-ink-soft, #6B6570)' },
+        caption: { color: 'var(--wwr-type-ink-muted, #6B6570)' },
+        overline: { color: 'var(--wwr-type-ink-muted, #6B6570)' },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -296,8 +350,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           color: '#3D2B3D',
-          textDecoration: 'none',
-          '&:hover': { color: '#C9846B' },
+          // No forced `text-decoration: none` here: it was cancelling the
+          // underline on links that sit inside a sentence, leaving colour
+          // as the only distinction (WCAG 1.4.1).
+          '&:hover': { color: '#C9846B', textDecoration: 'underline' },
         },
       },
     },

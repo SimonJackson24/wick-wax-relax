@@ -22,6 +22,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useCart } from './CartContext';
 import { useSubscription } from './SubscriptionContext';
 import CartDrawer from './CartDrawer';
@@ -118,6 +119,14 @@ const Navigation = () => {
   const userLinks = [
     { name: 'Account', href: '/account', icon: PersonIcon },
     { name: 'Orders', href: '/account/orders', icon: null },
+  ];
+
+  // Mobile-only drawer entries. The subscription basket and the wishlist
+  // are one tap away on a phone (inside the drawer) instead of competing
+  // for space in a 375px header bar.
+  const drawerOnlyLinks = [
+    { name: 'Wishlist', href: '/wishlist', icon: FavoriteBorderIcon },
+    { name: 'Subscription basket', href: '/subscriptions', icon: LoyaltyIcon },
   ];
 
   useEffect(() => {
@@ -264,6 +273,7 @@ const Navigation = () => {
         <AppBar
           ref={navRef}
           component="nav"
+          aria-label="Main navigation"
           position="sticky"
           elevation={0}
           sx={{
@@ -362,7 +372,11 @@ const Navigation = () => {
                   alignItems: 'center'
                 }}
               >
-                <nav role="navigation" aria-label="Main navigation">
+                {/* A plain div: the AppBar above is already the page's
+                    single <nav> landmark. Two nested navigation
+                    landmarks give a screen reader two ways into the
+                    same list. */}
+                <div>
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }} as="ul">
                     {navLinks.map((link, index) => (
                       <Box key={link.name} as="li">
@@ -410,7 +424,7 @@ const Navigation = () => {
                       </Box>
                     ))}
                   </Box>
-                </nav>
+                </div>
               </Box>
 
               <Box
@@ -461,9 +475,14 @@ const Navigation = () => {
                       ? 'rgba(200, 182, 219, 0.18)'
                       : 'rgba(230, 200, 138, 0.2)',
                     p: { xs: 1.5, md: 2 },
+                    minWidth: { xs: 44, md: 'auto' },
+                    minHeight: { xs: 44, md: 'auto' },
                     borderRadius: '16px',
                     transition: 'all 0.3s ease',
                     mr: 1,
+                    // Desktop only — on a phone the subscription basket
+                    // lives in the drawer so the bar stays compact.
+                    display: { xs: 'none', md: 'inline-flex' },
                     '&:hover': {
                       backgroundColor: trigger
                         ? 'rgba(200, 182, 219, 0.28)'
@@ -497,6 +516,8 @@ const Navigation = () => {
                       ? 'rgba(200, 182, 219, 0.18)'
                       : 'rgba(230, 200, 138, 0.2)',
                     p: { xs: 1.5, md: 2 },
+                    minWidth: { xs: 44, md: 'auto' },
+                    minHeight: { xs: 44, md: 'auto' },
                     borderRadius: '16px',
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -533,6 +554,8 @@ const Navigation = () => {
                     color: theme.palette.text.primary,
                     ml: 1,
                     p: 1.5,
+                    minWidth: 44,
+                    minHeight: 44,
                     borderRadius: '12px',
                     '&:hover': {
                       backgroundColor: trigger
@@ -575,7 +598,7 @@ const Navigation = () => {
             flexDirection: 'column',
             height: '100%',
           }}
-          role="navigation"
+          role="dialog"
           aria-label="Mobile navigation menu"
         >
           <Box
@@ -589,6 +612,7 @@ const Navigation = () => {
           >
             <Typography
               variant="h6"
+              component="h2"
               sx={{
                 fontFamily: '"Playfair Display", serif',
                 fontWeight: 700,
@@ -602,6 +626,8 @@ const Navigation = () => {
               onClick={handleDrawerToggle}
               sx={{
                 color: theme.palette.common.white,
+                minWidth: 44,
+                minHeight: 44,
                 '&:hover': {
                   backgroundColor: 'rgba(230, 200, 138, 0.1)',
                 }
@@ -675,6 +701,37 @@ const Navigation = () => {
                       textAlign: 'left',
                       textTransform: 'none',
                       borderRadius: '12px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(230, 200, 138, 0.1)',
+                        color: '#E6C88A',
+                      },
+                    }}
+                  >
+                    {link.name}
+                  </Button>
+                </ListItem>
+              ))}
+
+              {/* Wishlist and the subscription basket live here on a
+                  phone: one tap away, out of the compact header bar. */}
+              {drawerOnlyLinks.map((link) => (
+                <ListItem key={link.name} disablePadding sx={{ mb: 1 }} component="li">
+                  <Button
+                    component={Link}
+                    href={link.href}
+                    startIcon={link.icon ? React.createElement(link.icon, { fontSize: 'small' }) : null}
+                    fullWidth
+                    sx={{
+                      justifyContent: 'flex-start',
+                      color: theme.palette.common.white,
+                      fontSize: '1rem',
+                      py: 1.5,
+                      px: 3,
+                      minHeight: 44,
+                      textAlign: 'left',
+                      textTransform: 'none',
+                      borderRadius: '12px',
+                      transition: 'all 0.3s ease',
                       '&:hover': {
                         backgroundColor: 'rgba(230, 200, 138, 0.1)',
                         color: '#E6C88A',

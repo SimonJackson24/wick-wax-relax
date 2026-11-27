@@ -8,10 +8,18 @@ const nextConfig = {
     NEXT_PUBLIC_SITE_URL:
       process.env.NEXT_PUBLIC_SITE_URL || 'https://www.wickwaxrelax.co.uk',
   },
-  modularizeImports: {
-    '@mui/material': { transform: '@mui/material/{{member}}' },
-    '@mui/icons-material': { transform: '@mui/icons-material/{{member}}' },
-  },
+  // The MUI barrels are transformed into per-component imports for the
+  // production bundle. Several of those deep paths do not exist in the
+  // installed MUI version (e.g. '@mui/material/useTheme'), which breaks
+  // Jest's resolver — so the transform is production-only.
+  ...(process.env.NODE_ENV === 'production'
+    ? {
+        modularizeImports: {
+          '@mui/material': { transform: '@mui/material/{{member}}' },
+          '@mui/icons-material': { transform: '@mui/icons-material/{{member}}' },
+        },
+      }
+    : {}),
   images: {
     // Strict remote allow-list. Wildcards are a known SSRF / supply-chain
     // vector. The /uploads/** host is the backend origin, the rest are

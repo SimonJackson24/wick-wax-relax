@@ -158,7 +158,7 @@ const PWAInstallPrompt = ({ open: controlledOpen, onClose, autoShow = true }) =>
           </Typography>
         </Box>
 
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+        <Typography variant="h6" component="h2" gutterBottom sx={{ mb: 2 }}>
           What you get
         </Typography>
 

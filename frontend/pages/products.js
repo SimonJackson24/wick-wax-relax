@@ -18,6 +18,7 @@ import {
   ViewList as ListIcon,
   ViewModule as GridIcon,
   Clear as ClearIcon,
+  Sort as SortIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -50,6 +51,7 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
   const [viewMode, setViewMode] = useState('grid');
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   // Does NOT call loadProducts — avoids router.query → loadProducts → router.replace → router.query loop
@@ -230,11 +232,17 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
     { value: 'created_at', label: 'Oldest First', sortOrder: 'ASC' }
   ];
 
+  // The label the mobile Sort button shows.
+  const currentSortLabel =
+    (sortOptions.find(
+      (o) => o.value === sortBy && o.sortOrder === sortOrder
+    ) || sortOptions[0]).label;
+
   const renderProductGrid = () => {
     if (products.length === 0 && !loading) {
       return (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+          <Typography variant="h6" component="p" color="text.secondary" gutterBottom>
             No products found
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -269,6 +277,7 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
         url={`${SITE_URL}/products`}
         type="website"
       />
+      <main id="main-content">
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>Products</Typography>
@@ -308,12 +317,41 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
           gap: 2,
           mb: 3
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Mobile: two equal buttons that always fit the viewport —
+              the old inline row of six sort chips ran 311px past the
+              right edge of a 375px screen. Sort opens a sheet. */}
+          <Box sx={{ display: { xs: 'flex', sm: 'none' }, gap: 1, width: '100%' }}>
             <Button
               variant={activeFiltersCount > 0 ? "contained" : "outlined"}
               startIcon={<FilterIcon />}
               onClick={() => setFiltersOpen(!filtersOpen)}
               color={activeFiltersCount > 0 ? "primary" : "inherit"}
+              fullWidth
+              sx={{ minHeight: 44, flex: 1, whiteSpace: 'nowrap' }}
+            >
+              Filters
+              {activeFiltersCount > 0 && (
+                <Chip label={activeFiltersCount} size="small" sx={{ ml: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+              )}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<SortIcon />}
+              onClick={() => setSortOpen(true)}
+              fullWidth
+              sx={{ minHeight: 44, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}
+            >
+              {currentSortLabel}
+            </Button>
+          </Box>
+
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2 }}>
+            <Button
+              variant={activeFiltersCount > 0 ? "contained" : "outlined"}
+              startIcon={<FilterIcon />}
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              color={activeFiltersCount > 0 ? "primary" : "inherit"}
+              sx={{ minHeight: 44 }}
             >
               Filters
               {activeFiltersCount > 0 && (
@@ -329,7 +367,7 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
                   size="small"
                   variant={sortBy === option.value && sortOrder === option.sortOrder ? "contained" : "outlined"}
                   onClick={() => handleSortChange(option.value, option.sortOrder)}
-                  sx={{ mr: 1 }}
+                  sx={{ mr: 1, minHeight: 40 }}
                 >
                   {option.label}
                 </Button>
@@ -337,10 +375,10 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
             <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>View:</Typography>
-            <IconButton onClick={() => setViewMode('grid')} color={viewMode === 'grid' ? 'primary' : 'default'}><GridIcon /></IconButton>
-            <IconButton onClick={() => setViewMode('list')} color={viewMode === 'list' ? 'primary' : 'default'}><ListIcon /></IconButton>
+            <IconButton onClick={() => setViewMode('grid')} color={viewMode === 'grid' ? 'primary' : 'default'} aria-label="Grid view"><GridIcon /></IconButton>
+            <IconButton onClick={() => setViewMode('list')} color={viewMode === 'list' ? 'primary' : 'default'} aria-label="List view"><ListIcon /></IconButton>
           </Box>
         </Box>
       </Box>
@@ -396,8 +434,8 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
           }}
         >
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Filters</Typography>
-            <Button onClick={() => setFiltersOpen(false)}>Close</Button>
+            <Typography variant="h6" component="h2">Filters</Typography>
+            <Button onClick={() => setFiltersOpen(false)} sx={{ minHeight: 44 }}>Close</Button>
           </Box>
           <HierarchicalSearchFilters
             filters={filters}
@@ -407,7 +445,53 @@ const ProductsPage = ({ initialProducts, initialPagination }) => {
           />
         </Box>
       )}
-    </Container>
+
+      {/* Mobile sort sheet — the same bottom-sheet pattern as the filters,
+          so the six sort orders never have to fit in a row. */}
+      {isMobile && (
+        <Box
+          sx={{
+            position: 'fixed', bottom: 0, left: 0, right: 0,
+            transform: sortOpen ? 'translateY(0)' : 'translateY(100%)',
+            transition: 'transform 0.3s ease', zIndex: 1000,
+            backgroundColor: 'background.paper', boxShadow: 3,
+            borderTopLeftRadius: 12, borderTopRightRadius: 12,
+          }}
+          role="dialog"
+          aria-label="Sort products"
+        >
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" component="h2">Sort by</Typography>
+            <Button onClick={() => setSortOpen(false)} sx={{ minHeight: 44 }}>Close</Button>
+          </Box>
+          <Box sx={{ px: 2, pb: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {sortOptions.map((option) => {
+              const active = sortBy === option.value && sortOrder === option.sortOrder;
+              return (
+                <Button
+                  key={`${option.value}-${option.sortOrder}`}
+                  onClick={() => {
+                    handleSortChange(option.value, option.sortOrder);
+                    setSortOpen(false);
+                  }}
+                  variant={active ? 'contained' : 'outlined'}
+                  fullWidth
+                  sx={{
+                    justifyContent: 'space-between',
+                    minHeight: 48,
+                    textTransform: 'none',
+                    fontWeight: active ? 700 : 500,
+                  }}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
+      </Container>
+      </main>
     </>
   );
 };

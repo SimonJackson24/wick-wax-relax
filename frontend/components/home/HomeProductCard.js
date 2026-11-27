@@ -118,15 +118,24 @@ const HomeProductCard = ({ product }) => {
 
       <Box sx={{ p: { xs: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
         <Typography
-          variant="subtitle2"
+          component="h3"
           sx={{
             fontFamily: '"Playfair Display", serif',
             fontSize: { xs: '0.9375rem', md: '1.0625rem' },
             fontWeight: 500,
             color: 'text.primary',
             mb: 0.25,
+            mt: 0,
+            // Two lines instead of a one-line ellipsis — "Showcase: Amber
+            // & Oak" used to read as "Showcase: Amb…".
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            // Fixed height so the price row and the button line up across
+            // a row of cards whatever the name length.
+            minHeight: { xs: '2.5em', md: 'auto' },
           }}
-          noWrap
         >
           {product.name}
         </Typography>
@@ -140,27 +149,20 @@ const HomeProductCard = ({ product }) => {
         {product.rating && product.rating.count > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
             <Rating value={product.rating.average} size="small" readOnly sx={{ fontSize: '0.875rem' }} />
-            <Typography variant="caption" sx={{ fontSize: '0.6875rem' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
               {product.rating.count}
             </Typography>
           </Box>
         )}
 
         <Box sx={{ mt: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
+          {/* The price row wraps instead of clipping: "£15.00" was cut to
+              "£15.0…" in the old two-column grid. */}
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1, flexWrap: 'wrap' }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {gbp(price)}
             </Typography>
-            {/* Brand grade + grain so product photography matches the hero */}
-          <Box
-            sx={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(200deg, rgba(61,43,61,0.12) 0%, rgba(230,200,138,0.06) 100%)',
-              mixBlendMode: 'soft-light',
-              pointerEvents: 'none',
-            }}
-          />
-          {product.rrp && Number(product.rrp) > Number(price) && (
+            {product.rrp && Number(product.rrp) > Number(price) && (
               <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
                 {gbp(product.rrp)}
               </Typography>
@@ -168,7 +170,7 @@ const HomeProductCard = ({ product }) => {
           </Box>
 
           {lowStock && (
-            <Typography variant="caption" sx={{ color: 'tertiary.main', fontWeight: 600, display: 'block', mb: 1 }}>
+            <Typography variant="caption" sx={{ color: 'tertiary.ink', fontWeight: 600, display: 'block', mb: 1 }}>
               Only {stock} left
             </Typography>
           )}
@@ -185,9 +187,13 @@ const HomeProductCard = ({ product }) => {
               opacity: { xs: 1, md: 0 },
               transform: { md: 'translateY(4px)' },
               transition: 'opacity 220ms ease-out, transform 220ms ease-out',
+              // Full-width, one line, thumb-sized.
+              minHeight: { xs: 44, md: 36 },
+              whiteSpace: 'nowrap',
+              px: 1,
             }}
           >
-            {outOfStock ? 'Sold out' : 'Quick add'}
+            {outOfStock ? 'Sold out' : 'Add'}
           </Button>
         </Box>
       </Box>

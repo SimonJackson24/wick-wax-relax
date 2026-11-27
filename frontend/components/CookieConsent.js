@@ -79,7 +79,7 @@ export default function CookieConsent() {
         borderColor: 'divider',
       }}
     >
-      <Typography variant="h6" gutterBottom>Cookies on Wick Wax &amp; Relax</Typography>
+      <Typography variant="h6" component="h2" gutterBottom>Cookies on Wick Wax &amp; Relax</Typography>
       <Typography variant="body2" sx={{ mb: 2 }}>
         We use essential cookies to make the site work. With your consent we also use analytics and
         marketing cookies. You can change your choice at any time. See our{' '}

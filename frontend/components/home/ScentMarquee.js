@@ -15,6 +15,7 @@ const ScentMarquee = ({ items = [], speed = 42 }) => {
 
   return (
     <Box
+      className="wwr-dark-surface"
       sx={{
         py: 2,
         bgcolor: '#3D2B3D',

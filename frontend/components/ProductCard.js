@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -34,6 +34,14 @@ const ProductCard = ({
   const theme = useTheme();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // The image can finish loading BEFORE React attaches the onLoad handler
+  // (cached image, fast connection) — the event is then never delivered and
+  // the card is stuck on its "Loading..." placeholder for good. Checking
+  // `complete` after mount covers that race.
+  const imageRef = useRef(null);
+  useEffect(() => {
+    if (imageRef.current && imageRef.current.complete) setImageLoaded(true);
+  }, []);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -114,6 +122,7 @@ const ProductCard = ({
         <Box sx={{ width: 200, height: 150, position: 'relative', overflow: 'hidden' }}>
           <CardMedia
             component="img"
+            ref={imageRef}
             sx={{
               width: '100%',
               height: '100%',
@@ -281,7 +290,7 @@ const ProductCard = ({
           <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" color="primary">
+                <Typography variant="h6" component="p" color="primary">
                   {formatPrice(price)}
                 </Typography>
                 {isOnSale && (
@@ -384,6 +393,7 @@ const ProductCard = ({
       <Box sx={{ position: 'relative', pt: variant === 'featured' ? '75%' : '100%', overflow: 'hidden' }}>
         <CardMedia
           component="img"
+          ref={imageRef}
           sx={{
             position: 'absolute',
             top: 0,
@@ -458,8 +468,10 @@ const ProductCard = ({
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
             },
             zIndex: 1,
+            // 44px tap target on a phone (the small size was 30x30).
+            width: { xs: 44, md: 32 },
+            height: { xs: 44, md: 32 },
           }}
-          size="small"
           aria-label={isFavorite ? `Remove ${product.name} from favorites` : `Add ${product.name} to favorites`}
           aria-pressed={isFavorite}
         >
@@ -606,6 +618,7 @@ const ProductCard = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Typography 
             variant="h6" 
+            component="p"
             color="primary"
             sx={{
               fontFamily: theme.typography.h6.fontFamily,
@@ -665,8 +678,11 @@ const ProductCard = ({
             size="small"
             startIcon={<VisibilityIcon />}
             onClick={handleProductClick}
+            aria-label={`View details for ${product.name}`}
             sx={{
               flex: 1,
+              minHeight: { xs: 44, md: 36 },
+              whiteSpace: 'nowrap',
               borderColor: theme.palette.primary.main,
               color: theme.palette.primary.main,
               '&:hover': {
@@ -683,10 +699,14 @@ const ProductCard = ({
               size="small"
               startIcon={<CartIcon />}
               onClick={handleAddToCart}
+              aria-label={`Add ${product.name} to cart`}
               sx={{
                 flex: 1,
                 backgroundColor: theme.palette.tertiary.main,
                 color: 'white',
+                // Thumb-sized on a phone, compact on a desktop grid.
+                minHeight: { xs: 44, md: 36 },
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   backgroundColor: theme.palette.tertiary.dark,
                 }

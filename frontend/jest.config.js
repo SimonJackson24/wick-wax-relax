@@ -7,7 +7,11 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.accessibility.js'],
+  // jest.setup.js carries the jsdom polyfills (matchMedia, observers,
+  // next/* mocks) and jest.accessibility.js the shared axe config. Both
+  // are needed; the config listed only the second, so the polyfills
+  // never loaded.
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/jest.accessibility.js'],
   moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/$1',
   },
@@ -31,6 +35,10 @@ const customJestConfig = {
     '**/__tests__/**/*.(js|jsx)',
     '**/*.(test|spec).(js|jsx)',
   ],
+  // tests/e2e holds Playwright specs — they need @playwright/test and a
+  // running server, not Jest. They were being collected by Jest and
+  // failing the whole run.
+  testPathIgnorePatterns: ['/node_modules/', '/tests/e2e/'],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

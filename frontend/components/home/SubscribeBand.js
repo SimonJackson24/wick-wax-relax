@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Box, Typography, Button } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
 
 /**
  * Subscribe & save band — the recurring-revenue pitch, in the skin of a
@@ -13,8 +14,8 @@ const SubscribeBand = ({
   body = 'Subscribe to any scent and save 15% on every delivery. Change or cancel whenever you like — no minimum, no phone calls, no guilt.',
   cta = { label: 'Start a subscription', href: '/subscriptions' },
 }) => (
-  <Box sx={{ py: { xs: 7, md: 10 }, backgroundColor: 'background.default' }}>
-    <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
+  <Box sx={{ py: SECTION_PY, backgroundColor: 'background.default' }}>
+    <Box sx={{ maxWidth: 1440, mx: 'auto', px: GUTTER }}>
       <Box
         sx={{
           border: '1px solid',
@@ -29,7 +30,7 @@ const SubscribeBand = ({
         }}
       >
         <Box>
-          <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
+          <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 1.5 }}>
             {eyebrow}
           </Typography>
           <Typography variant="h3" sx={{ mb: 2 }}>

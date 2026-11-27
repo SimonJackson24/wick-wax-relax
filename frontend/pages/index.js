@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import { Typography } from '@mui/material';
 import SEOHead from '../components/SEOHead';
 import { SITE_URL } from '../utils/siteConfig';
 import Navigation from '../components/Navigation';
@@ -43,30 +44,56 @@ const HomePage = ({ featuredInitial }) => {
         type="website"
       />
 
-      <AnnouncementBar />
+      {/* One header landmark for the announcement bar and the nav. */}
+      <header>
+        <AnnouncementBar />
+        <Navigation />
+      </header>
 
-      <Navigation />
+      <main id="main-content">
+        {/* The page's one h1. The hero's scent name changes with every
+            slide, so it cannot be the document title; this states what
+            the page is, for people and for search engines. Visually
+            hidden, never display:none, so it stays in the accessibility
+            tree. */}
+        <Typography
+          component="h1"
+          sx={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            p: 0,
+            m: -1,
+            overflow: 'hidden',
+            clip: 'rect(0 0 0 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          Hand-poured soy candles, wax melts and bath bombs — Wick Wax &amp; Relax
+        </Typography>
 
-      {/* Original trust banner — Simon's preferred design and wording. Sits
-          above the hero so trust signals land before the fold and fill the
-          gap between nav and the full-bleed photograph. */}
-      <TrustBadges />
+        {/* Original trust banner — Simon's preferred design and wording. Sits
+            above the hero so trust signals land before the fold and fill the
+            gap between nav and the full-bleed photograph. */}
+        <TrustBadges />
 
-      <PremiumHero products={products} />
+        <PremiumHero products={products} />
 
-      <ScentMarquee items={products.map((p) => p.name.replace(/^Showcase:\s*/, ''))} />
+        <ScentMarquee items={products.map((p) => p.name.replace(/^Showcase:\s*/, ''))} />
 
-      <MoodTiles />
+        <MoodTiles />
 
-      <BestSellers products={products} />
+        <BestSellers products={products} />
 
-      <CinematicBand />
+        <CinematicBand />
 
-      <EditorialSplit />
+        <EditorialSplit />
 
-      <ReviewsBand />
+        <ReviewsBand />
 
-      <SubscribeBand />
+        <SubscribeBand />
+      </main>
 
       <Footer />
     </>

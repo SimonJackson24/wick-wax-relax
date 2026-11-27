@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Box, Typography, Button, Chip } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Box, Typography, Button, Chip, useMediaQuery, useTheme } from '@mui/material';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
@@ -32,6 +32,9 @@ const GRAIN =
  */
 const PremiumHero = ({ products = [], interval = 6500 }) => {
   const { addToCart } = useCart();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const reduceMotion = useReducedMotion();
   const slides = products.slice(0, 5);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -44,11 +47,18 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
     setIndex(((next % count) + count) % count);
   }, [count]);
 
+  // Auto-rotation is a desktop luxury and a mobile liability: on a phone it
+  // moves the scent (and therefore the price and the CTA target) under the
+  // visitor's thumb while they are reading. Below 768px the hero is static
+  // and the slide indicators drive it by hand. Reduced motion stops it
+  // everywhere.
+  const rotationAllowed = !isMobile && !reduceMotion;
+
   useEffect(() => {
-    if (count <= 1 || paused) return undefined;
+    if (count <= 1 || paused || !rotationAllowed) return undefined;
     const t = setInterval(() => go(index + 1), interval);
     return () => clearInterval(t);
-  }, [count, index, paused, interval, go]);
+  }, [count, index, paused, interval, go, rotationAllowed]);
 
   if (count === 0) {
     // No products (first launch, or the API was unreachable) — still show a
@@ -277,13 +287,18 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
 
       {/* The dark editorial panel spans the WHOLE hero (not just the image
           side) so the display type sits on plum rather than on the pale
-          page background — legible and premium. */}
+          page background — legible and premium.
+          On mobile the panel becomes a vertical wash (photograph clear at
+          the top, plum deep at the bottom) because the copy is stacked
+          under the image instead of beside it. */}
       <Box
         sx={{
           position: 'absolute',
           inset: 0,
-          background:
-            'linear-gradient(95deg, #2A1D2A 0%, #2A1D2A 26%, rgba(42,29,42,0.86) 44%, rgba(42,29,42,0.18) 63%, rgba(42,29,42,0) 76%)',
+          background: {
+            xs: 'linear-gradient(180deg, rgba(42,29,42,0.28) 0%, rgba(42,29,42,0.62) 26%, rgba(42,29,42,0.90) 56%, #2A1D2A 100%)',
+            md: 'linear-gradient(95deg, #2A1D2A 0%, #2A1D2A 26%, rgba(42,29,42,0.86) 44%, rgba(42,29,42,0.18) 63%, rgba(42,29,42,0) 76%)',
+          },
           pointerEvents: 'none',
         }}
       />
@@ -296,33 +311,60 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
           maxWidth: 1440,
           mx: 'auto',
           px: { xs: 2.5, md: 5 },
-          pt: { xs: 6, md: 7 },
-          pb: { xs: 8, md: 7 },
+          pt: { xs: 5, md: 7 },
+          pb: { xs: 4, md: 7 },
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 42%) minmax(0, 1fr)' },
-          alignItems: 'center',
-          minHeight: { md: '78vh' },
+          alignItems: { xs: 'flex-end', md: 'center' },
+          // Mobile: the hero is capped so the primary CTA clears the fold
+          // on a 390×844 screen (the announcement bar, header and trust
+          // scroller take ~144px above it).
+          minHeight: { xs: '78vh', md: '78vh' },
+          maxHeight: { xs: '86vh' },
         }}
       >
-        <Box sx={{ maxWidth: 520, order: { xs: 2, md: 1 } }}>
+        <Box sx={{ maxWidth: 520, order: { xs: 1, md: 1 }, width: '100%' }}>
+          {/* Screen-reader announcement for the slide that is on screen.
+              The hero rotates on desktop, so a blind visitor needs to be
+              told that the scent (and the price) has changed. */}
+          <Box
+            component="p"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            sx={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              p: 0,
+              m: -1,
+              overflow: 'hidden',
+              clip: 'rect(0 0 0 0)',
+              whiteSpace: 'nowrap',
+              border: 0,
+            }}
+          >
+            {slide.name.replace(/^Showcase:\s*/, '')} — {gbp(price)}
+          </Box>
           {/* NO entrance animation here. The headline is the LCP element:
               framer-motion starts it at opacity 0 and only reveals it after
               hydration + animation, which pushed mobile LCP to 8.5s. The
               copy renders immediately; slide changes swap content in place
               with a light CSS fade. */}
           <Box key={slide.id} sx={{ '@media (prefers-reduced-motion: no-preference)': { animation: 'wwr-copy-in 0.4s ease both' } }}>
-              <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: 2.5 }}>
+              <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: { xs: 1.5, md: 2.5 } }}>
                 {slide.scent_profile?.mood || 'Hand-poured in small batches'}
               </Typography>
 
               <Typography
+                component="h2"
                 sx={{
                   fontFamily: '"Playfair Display", serif',
                   fontWeight: 500,
-                  fontSize: 'clamp(3rem, 6.2vw, 5.25rem)',
-                  lineHeight: 0.98,
+                  fontSize: { xs: 'clamp(2.25rem, 9.2vw, 2.9rem)', md: 'clamp(3rem, 6.2vw, 5.25rem)' },
+                  lineHeight: { xs: 1.02, md: 0.98 },
                   letterSpacing: '-0.03em',
-                  mb: 2.5, color: '#FFFFFF',
+                  mb: { xs: 1.5, md: 2.5 }, color: '#FFFFFF', mt: 0,
                 }}
               >
                 {slide.name.replace(/^Showcase:\s*/, '')}
@@ -331,7 +373,11 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
               {notes && (
                 <Typography
                   variant="body1"
-                  sx={{ color: 'rgba(244,239,231,0.88)', mb: 1.5, fontSize: '1.0625rem', letterSpacing: '0.01em' }}
+                  sx={{
+                    color: 'rgba(244,239,231,0.88)', mb: { xs: 1, md: 1.5 },
+                    fontSize: { xs: '0.9375rem', md: '1.0625rem' },
+                    letterSpacing: '0.01em',
+                  }}
                 >
                   {notes}
                 </Typography>
@@ -339,20 +385,33 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
 
               <Typography
                 variant="body2"
-                sx={{ color: 'rgba(244,239,231,0.76)', maxWidth: 440, mb: 3.5, lineHeight: 1.85 }}
+                sx={{
+                  color: 'rgba(244,239,231,0.82)', maxWidth: 440, mb: { xs: 2, md: 3.5 },
+                  lineHeight: 1.7,
+                  // Two lines on mobile — the description must never push
+                  // the CTA below the fold.
+                  display: { xs: '-webkit-box', md: 'block' },
+                  WebkitLineClamp: { xs: 2, md: 'none' },
+                  WebkitBoxOrient: 'vertical',
+                  overflow: { xs: 'hidden', md: 'visible' },
+                }}
               >
                 {slide.description}
               </Typography>
 
-              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 3.5, flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: { xs: 2.5, md: 3.5 }, flexWrap: 'wrap' }}>
                 <Typography
-                  sx={{ fontFamily: '"Playfair Display", serif', fontSize: '2rem', fontWeight: 500, color: '#FFFFFF' }}
+                  sx={{
+                    fontFamily: '"Playfair Display", serif',
+                    fontSize: { xs: '1.75rem', md: '2rem' },
+                    fontWeight: 500, color: '#FFFFFF',
+                  }}
                 >
                   {gbp(price)}
                 </Typography>
                 {rrp && Number(rrp) > Number(price) && (
                   <>
-                    <Typography sx={{ textDecoration: 'line-through', color: 'rgba(244,239,231,0.6)' }}>
+                    <Typography sx={{ textDecoration: 'line-through', color: 'rgba(244,239,231,0.7)' }}>
                       {gbp(rrp)}
                     </Typography>
                     <Chip
@@ -369,14 +428,22 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                 )}
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 4.5 }}>
+              {/* One primary action on mobile: "Shop this scent" takes the
+                  row and quick-add becomes a compact secondary beside it,
+                  so both are reachable without scrolling. */}
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'stretch', flexWrap: 'wrap' }}>
                 <Button
                   component={Link}
                   href={`/product/${slide.slug || slide.id}`}
                   variant="contained"
                   size="large"
                   endIcon={<ArrowForwardIcon sx={{ fontSize: '1.1rem !important' }} />}
-                  sx={{ bgcolor: '#F4EFE7', color: '#2A1D2A', '&:hover': { bgcolor: '#FFFFFF' } }}
+                  sx={{
+                    bgcolor: '#F4EFE7', color: '#2A1D2A',
+                    flex: { xs: '1 1 auto', md: '0 0 auto' },
+                    minHeight: 48, whiteSpace: 'nowrap',
+                    '&:hover': { bgcolor: '#FFFFFF' },
+                  }}
                 >
                   Shop this scent
                 </Button>
@@ -386,6 +453,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                     onClick={handleQuickAdd}
                     disabled={adding}
                     startIcon={<AddIcon sx={{ fontSize: '1.1rem !important' }} />}
+                    aria-label={`Add ${slide.name.replace(/^Showcase:\s*/, '')} to basket`}
                     sx={{
                       // Same gold language as the glass card's Shop button:
                       // one accent, one primary, no third dialect.
@@ -394,20 +462,35 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                       color: '#E6C88A',
                       fontWeight: 600,
                       textTransform: 'none',
+                      minHeight: 48,
+                      // On a phone the quick-add is an icon button so it sits
+                      // on the same row as the primary action instead of
+                      // wrapping onto a second line.
+                      minWidth: { xs: 0, md: 'auto' },
+                      px: { xs: 1.25, md: 3 },
+                      '& .MuiButton-startIcon': { mr: { xs: 0.75, md: 1 } },
                       '&:hover': { bgcolor: 'rgba(230,200,138,0.10)', borderColor: '#E6C88A' },
                     }}
                   >
-                    {adding ? 'Adding…' : 'Quick add'}
+                    <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>
+                      {adding ? 'Adding…' : 'Add'}
+                    </Box>
+                    <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                      {adding ? 'Adding…' : 'Quick add'}
+                    </Box>
                   </Button>
                 )}
               </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
+          {/* The trust ticks are desktop furniture — on mobile the
+              announcement bar and the trust scroller above the hero already
+              say all of this, and the CTA needs the room. */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 3 }, flexWrap: 'wrap', mt: { md: 4.5 } }}>
             {['Free 30-day returns', 'Plastic-free packaging', 'Made in the UK'].map((item) => (
               <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <CheckIcon sx={{ fontSize: 15, color: 'tertiary.main' }} />
-                <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.78)' }}>
+                <CheckIcon sx={{ fontSize: 15, color: '#E6C88A' }} />
+                <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.82)' }}>
                   {item}
                 </Typography>
               </Box>
@@ -415,17 +498,21 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
           </Box>
         </Box>
 
-        {/* Right column — the card floats over the full-bleed photograph.
+        {/* Right column — the glass card floats over the full-bleed
+            photograph on desktop. On mobile it is removed: it repeated the
+            scent name, notes and price that the copy above already
+            carries, and because the column has no height on a phone it was
+            clipped by the hero's top edge.
             Positioning lives on a wrapper Box (sx) because framer-motion's
             style prop does not understand responsive breakpoint objects. */}
-        <Box sx={{ order: { xs: 1, md: 2 }, position: 'relative', height: { md: '100%' } }}>
+        <Box sx={{ order: { xs: 2, md: 2 }, position: 'relative', height: { md: '100%' }, display: { xs: 'none', md: 'block' } }}>
           <Box
             sx={{
               position: 'absolute',
-              left: { xs: 16, md: -20 },
-              bottom: { xs: 16, md: 40 },
+              left: { md: -20 },
+              bottom: { md: 40 },
               zIndex: 3,
-              width: { xs: 'calc(100% - 32px)', md: 268 },
+              width: { md: 268 },
             }}
           >
             <Box key={slide.id} sx={{ '@media (prefers-reduced-motion: no-preference)': { animation: 'wwr-copy-in 0.4s ease both' } }}>
@@ -445,10 +532,11 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                       '0 2px 6px rgba(12, 8, 14, 0.22), 0 18px 40px rgba(12, 8, 14, 0.30)',
                   }}
                 >
-                  <Typography variant="overline" sx={{ color: '#E6C88A', fontSize: '0.625rem', letterSpacing: '0.14em' }}>
+                  <Typography variant="overline" sx={{ color: '#E6C88A', fontSize: '0.6875rem', letterSpacing: '0.14em' }}>
                     {slide.scent_profile?.mood ? 'Now pouring' : 'Bestseller'}
                   </Typography>
                   <Typography
+                    component="p"
                     sx={{
                       fontFamily: '"Playfair Display", serif',
                       fontSize: '1.2rem',
@@ -456,12 +544,13 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                       mb: 0.25,
                       lineHeight: 1.25,
                       color: '#F7F1E8',
+                      mt: 0,
                     }}
                   >
                     {slide.name.replace(/^Showcase:\s*/, '')}
                   </Typography>
                   {notes && (
-                    <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontSize: '0.6875rem', color: 'rgba(247, 241, 232, 0.72)' }}>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 1.5, fontSize: '0.75rem', color: 'rgba(247, 241, 232, 0.78)' }}>
                       {notes}
                     </Typography>
                   )}
@@ -470,7 +559,7 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                       {gbp(price)}
                     </Typography>
                     {rrp && Number(rrp) > Number(price) && (
-                      <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'rgba(247, 241, 232, 0.55)' }}>
+                      <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'rgba(247, 241, 232, 0.62)' }}>
                         {gbp(rrp)}
                       </Typography>
                     )}
@@ -492,43 +581,61 @@ const PremiumHero = ({ products = [], interval = 6500 }) => {
                     </Button>
                   </Box>
                 </Box>
+              </Box>
             </Box>
           </Box>
+        </Box>
 
-          {/* Slide indicators — editorial thin lines */}
-          {count > 1 && (
+      {/* Slide indicators — editorial thin lines in gold on the dark
+          photograph. They live on the hero root (not inside the media
+          column) so they keep their position on every breakpoint and are
+          never clipped by a zero-height column. Each is a 44px-tall tap
+          target with a hairline drawn inside it. */}
+      {count > 1 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            right: { xs: 12, md: 28 },
+            top: { xs: 12, md: 32 },
+            display: 'flex',
+            alignItems: 'center',
+            zIndex: 4,
+          }}
+        >
+          {slides.map((s, i) => (
             <Box
+              key={s.id}
+              component="button"
+              type="button"
+              aria-label={`Show ${s.name.replace(/^Showcase:\s*/, '')}`}
+              aria-current={i === index ? 'true' : undefined}
+              onClick={() => go(i)}
               sx={{
-                position: 'absolute',
-                right: { xs: 16, md: 28 },
-                top: { xs: 20, md: 32 },
                 display: 'flex',
-                gap: 1,
-                zIndex: 3,
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                p: 0,
+                border: 0,
+                background: 'none',
+                cursor: 'pointer',
+                '&:focus-visible': { outline: '2px solid #E6C88A', outlineOffset: -2 },
               }}
             >
-              {slides.map((s, i) => (
-                <Box
-                  key={s.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Show ${s.name}`}
-                  onClick={() => go(i)}
-                  onKeyDown={(e) => e.key === 'Enter' && go(i)}
-                  sx={{
-                    width: i === index ? 30 : 14,
-                    height: 2,
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    backgroundColor: i === index ? '#3D2B3D' : 'rgba(28,26,31,0.22)',
-                    transition: 'width 400ms cubic-bezier(0.4,0,0.2,1), background-color 300ms ease-out',
-                  }}
-                />
-              ))}
+              <Box
+                sx={{
+                  width: i === index ? 28 : 14,
+                  height: 2,
+                  borderRadius: 1,
+                  backgroundColor: i === index ? '#E6C88A' : 'rgba(244,239,231,0.45)',
+                  transition: 'width 400ms cubic-bezier(0.4,0,0.2,1), background-color 300ms ease-out',
+                }}
+              />
             </Box>
-          )}
+          ))}
         </Box>
-      </Box>
+      )}
     </Box>
   );
 };

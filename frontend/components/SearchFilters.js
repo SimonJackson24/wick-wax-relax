@@ -258,7 +258,7 @@ const SearchFilters = ({
     <Paper sx={{ p: 2, ...sx }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <FilterIcon sx={{ mr: 1 }} />
-        <Typography variant="h6">Filters</Typography>
+        <Typography variant="h6" component="h2">Filters</Typography>
         {hasActiveFilters() && (
           <Chip
             label={getActiveFilterCount()}

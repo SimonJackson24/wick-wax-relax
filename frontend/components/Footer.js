@@ -48,7 +48,7 @@ const Column = ({ title, links }) => (
   <Box>
     <Typography
       variant="overline"
-      sx={{ color: 'rgba(244,239,231,0.55)', display: 'block', mb: 2.5 }}
+      sx={{ color: 'rgba(244,239,231,0.72)', display: 'block', mb: 2.5 }}
     >
       {title}
     </Typography>
@@ -60,7 +60,7 @@ const Column = ({ title, links }) => (
           href={link.href}
           underline="none"
           sx={{
-            color: 'rgba(244,239,231,0.82)',
+            color: 'rgba(244,239,231,0.85)',
             fontSize: '0.9375rem',
             fontWeight: 500,
             width: 'fit-content',
@@ -76,13 +76,21 @@ const Column = ({ title, links }) => (
 );
 
 const Footer = () => (
-  <Box component="footer" sx={{ backgroundColor: '#3D2B3D', color: '#F4EFE7', pt: { xs: 7, md: 10 }, pb: 4 }}>
+  <Box
+    component="footer"
+    className="wwr-dark-surface"
+    sx={{ backgroundColor: '#3D2B3D', color: '#F4EFE7', pt: { xs: 7, md: 10 }, pb: 4 }}
+  >
     <Container maxWidth={false} sx={{ maxWidth: 1440, px: { xs: 2, md: 4 } }}>
       <Grid container spacing={{ xs: 5, md: 8 }}>
         {/* Brand + newsletter */}
         <Grid item xs={12} md={5}>
           <Typography
-            sx={{ fontFamily: '"Playfair Display", serif', fontSize: '1.75rem', fontWeight: 500, mb: 1.5 }}
+            component="p"
+            sx={{
+              fontFamily: '"Playfair Display", serif', fontSize: '1.75rem', fontWeight: 500,
+              mb: 1.5, color: '#F4EFE7', mt: 0,
+            }}
           >
             Wick Wax &amp; Relax
           </Typography>
@@ -145,7 +153,8 @@ const Footer = () => (
                   border: '1px solid rgba(244,239,231,0.25)',
                   color: 'rgba(244,239,231,0.85)',
                   borderRadius: '50%',
-                  width: 36, height: 36,
+                  // 44px tap target on mobile (was 36px).
+                  width: 44, height: 44,
                   '&:hover': { borderColor: '#E6C88A', color: '#E6C88A', backgroundColor: 'transparent' },
                 }}
               >
@@ -163,7 +172,7 @@ const Footer = () => (
         </Grid>
         <Grid item xs={12} sm={4} md={3}>
           <Column title="Legal" links={POLICY_LINKS} />
-          <Typography variant="caption" sx={{ display: 'block', mt: 3, color: 'rgba(244,239,231,0.55)' }}>
+          <Typography variant="caption" sx={{ display: 'block', mt: 3, color: 'rgba(244,239,231,0.72)' }}>
             Wick Wax &amp; Relax, [registered address], [company number]
             <br />
             VAT [GB000000000] · Made in the UK
@@ -182,10 +191,10 @@ const Footer = () => (
           flexWrap: 'wrap',
         }}
       >
-        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.55)' }}>
+        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.72)' }}>
           © {new Date().getFullYear()} Wick Wax &amp; Relax. All rights reserved.
         </Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.55)' }}>
+        <Typography variant="caption" sx={{ color: 'rgba(244,239,231,0.72)' }}>
           Free UK delivery over £25 · 30-day returns
         </Typography>
       </Box>

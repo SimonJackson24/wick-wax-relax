@@ -15,6 +15,7 @@ const AnnouncementBar = ({ messages }) => {
 
   return (
     <Box
+      className="wwr-dark-surface"
       sx={{
         backgroundColor: '#3D2B3D',
         color: '#F4EFE7',
@@ -23,6 +24,9 @@ const AnnouncementBar = ({ messages }) => {
       }}
     >
       <Box
+        role="group"
+        aria-label="Store announcements"
+        tabIndex={0}
         sx={{
           maxWidth: 1440,
           mx: 'auto',

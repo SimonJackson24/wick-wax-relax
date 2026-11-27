@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Box, Typography } from '@mui/material';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
+import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
 
 /**
  * Shop by mood — the positioning move. Amazon sells by product type;
@@ -43,13 +44,13 @@ const MOODS = [
 ];
 
 const MoodTiles = ({ moods = MOODS }) => (
-  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.subtle', borderTop: '1px solid', borderColor: 'divider' }}>
-    <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
+  <Box sx={{ py: SECTION_PY, backgroundColor: 'background.subtle', borderTop: '1px solid', borderColor: 'divider' }}>
+    <Box sx={{ maxWidth: 1440, mx: 'auto', px: GUTTER }}>
       <Box sx={{ mb: { xs: 4, md: 5 }, maxWidth: 620 }}>
-        <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
+        <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 1.5 }}>
           01 &nbsp;—&nbsp; Shop by mood
         </Typography>
-        <Typography variant="h2">
+        <Typography variant="h2" component="h2">
           What does the room need tonight?
         </Typography>
       </Box>
@@ -68,19 +69,23 @@ const MoodTiles = ({ moods = MOODS }) => (
                 position: 'relative',
                 borderRadius: 1,
                 overflow: 'hidden',
-                aspectRatio: { xs: '3 / 4', md: '4 / 5' },
+                // One ratio across every breakpoint — the tiles read as a
+                // set of prints, not as four differently-shaped boxes.
+                aspectRatio: '4 / 5',
                 backgroundColor: mood.tint,
                 border: '1px solid',
                 borderColor: 'divider',
                 transition: 'transform 320ms ease-out',
                 '&:hover img': { transform: 'scale(1.04)' },
                 '&:hover .mood-arrow': { opacity: 1, transform: 'translate(0, 0)' },
+                '&:focus-visible': { outline: '2px solid #C9846B', outlineOffset: 2 },
               }}
             >
               <Box
                 component="img"
                 src={mood.image}
                 alt={mood.label}
+                loading="lazy"
                 sx={{
                   width: '100%', height: '100%', objectFit: 'cover', display: 'block',
                   transition: 'transform 600ms cubic-bezier(0.2,0,0,1)',
@@ -103,33 +108,45 @@ const MoodTiles = ({ moods = MOODS }) => (
                   mixBlendMode: 'overlay',
                 }}
               />
+              {/* Bottom gradient: the label sits on a designed dark base,
+                  not on whatever the photograph happens to be doing. */}
               <Box
                 sx={{
                   position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to top, rgba(28,26,31,0.62) 0%, rgba(28,26,31,0.14) 48%, transparent 72%)',
+                  background:
+                    'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.38) 26%, rgba(0,0,0,0.10) 52%, transparent 72%)',
                 }}
               />
               <Box
                 sx={{
                   position: 'absolute', left: 0, right: 0, bottom: 0,
-                  p: { xs: 1.5, md: 2.5 },
+                  p: { xs: 1.75, md: 2.5 },
                   color: '#FFFFFF',
                 }}
               >
                 <Typography
+                  component="h3"
                   sx={{
                     fontFamily: '"Playfair Display", serif',
-                    fontSize: { xs: '1.125rem', md: '1.5rem' },
+                    fontSize: { xs: '1.25rem', md: '1.5rem' },
                     fontWeight: 500,
                     lineHeight: 1.2,
-                    mb: 0.25,
+                    mb: 0.35,
+                    color: '#FFFFFF',
+                    mt: 0,
+                    textShadow: '0 1px 12px rgba(0,0,0,0.45)',
                   }}
                 >
                   {mood.label}
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ color: 'rgba(255,255,255,0.85)', fontSize: { xs: '0.6875rem', md: '0.75rem' } }}
+                  sx={{
+                    color: 'rgba(255,255,255,0.88)',
+                    fontSize: { xs: '0.8125rem', md: '0.75rem' },
+                    display: 'block',
+                    textShadow: '0 1px 10px rgba(0,0,0,0.45)',
+                  }}
                 >
                   {mood.caption}
                 </Typography>

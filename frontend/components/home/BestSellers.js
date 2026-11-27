@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Box, Typography, Button, Rating, Chip } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HomeProductCard from './HomeProductCard';
+import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
 
 /**
  * Best sellers — Amazon's trust engine wearing boutique clothes.
@@ -12,8 +13,8 @@ import HomeProductCard from './HomeProductCard';
  * lever the old design was missing.
  */
 const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sellers' }) => (
-  <Box sx={{ py: { xs: 7, md: 12 }, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
-    <Box sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 } }}>
+  <Box sx={{ py: SECTION_PY, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider' }}>
+    <Box sx={{ maxWidth: 1440, mx: 'auto', px: GUTTER }}>
       <Box
         sx={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
@@ -21,16 +22,17 @@ const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sell
         }}
       >
         <Box>
-          <Typography variant="overline" sx={{ color: 'tertiary.main', display: 'block', mb: 1.5 }}>
+          <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 1.5 }}>
             02 &nbsp;—&nbsp; {eyebrow}
           </Typography>
-          <Typography variant="h2">{title}</Typography>
+          <Typography variant="h2" component="h2">{title}</Typography>
         </Box>
         <Button
           component={Link}
           href="/products"
           variant="outlined"
           endIcon={<ArrowForwardIcon sx={{ fontSize: '1.05rem !important' }} />}
+          sx={{ minHeight: 44 }}
         >
           Shop all
         </Button>
@@ -59,15 +61,40 @@ const BestSellers = ({ products = [], title = 'Most loved', eyebrow = 'Best sell
           </Button>
         </Box>
       ) : (
+        /* Mobile: a scroll-snapped rail showing ~1.3 cards. Two columns on
+           a 375px screen left 165px per card, which truncated the scent
+           names and clipped the price. Desktop keeps the four-up grid. */
         <Box
+          role="group"
+          aria-label="Best sellers — scroll for more"
+          tabIndex={0}
           sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+            display: { xs: 'flex', md: 'grid' },
+            gridTemplateColumns: { md: 'repeat(4, 1fr)' },
             gap: { xs: 1.5, md: 2.5 },
+            overflowX: { xs: 'auto', md: 'visible' },
+            scrollSnapType: { xs: 'x mandatory', md: 'none' },
+            scrollPaddingLeft: { xs: 0, md: 'auto' },
+            scrollbarWidth: 'none',
+            // Bleed to the screen edge so the next card peeks in.
+            mx: { xs: -2, md: 0 },
+            px: { xs: 2, md: 0 },
+            '&::-webkit-scrollbar': { display: 'none' },
           }}
         >
           {products.slice(0, 8).map((product) => (
-            <HomeProductCard key={product.id} product={product} />
+            <Box
+              key={product.id}
+              sx={{
+                flex: { xs: '0 0 78%', md: 'initial' },
+                scrollSnapAlign: { xs: 'start', md: 'none' },
+                display: 'flex',
+              }}
+            >
+              <Box sx={{ flex: 1, display: 'flex' }}>
+                <HomeProductCard product={product} />
+              </Box>
+            </Box>
           ))}
         </Box>
       )}
