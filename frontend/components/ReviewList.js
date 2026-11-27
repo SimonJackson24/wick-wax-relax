@@ -31,7 +31,7 @@ const ReviewCard = ({ review }) => {
       {review.helpful_count > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
           <ThumbUpOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-          <Typography variant="caption" color="text.disabled">{review.helpful_count} {review.helpful_count === 1 ? 'person' : 'people'} found this helpful</Typography>
+          <Typography variant="caption" color="text.secondary">{review.helpful_count} {review.helpful_count === 1 ? 'person' : 'people'} found this helpful</Typography>
         </Box>
       )}
     </Box>
@@ -58,7 +58,7 @@ const ReviewList = ({ reviews = [], loading = false }) => {
     return (
       <Box sx={{ textAlign: 'center', py: 5, px: 3, border: `1px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
         <Typography variant="body1" color="text.secondary" gutterBottom>No reviews yet</Typography>
-        <Typography variant="body2" color="text.disabled">Be the first to review this product!</Typography>
+        <Typography variant="body2" color="text.secondary">Be the first to review this product!</Typography>
       </Box>
     );
   }

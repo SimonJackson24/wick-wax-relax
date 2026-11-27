@@ -262,7 +262,7 @@ const ProductCard = ({
                       </Typography>
                     </>
                   ) : (
-                    <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       New — awaiting first review
                     </Typography>
                   )}
@@ -609,7 +609,7 @@ const ProductCard = ({
               </Typography>
             </>
           ) : (
-            <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
               New — awaiting first review
             </Typography>
           )}

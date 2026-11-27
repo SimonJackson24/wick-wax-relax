@@ -43,7 +43,7 @@ const ProductGallery = ({ images = [], productName = '' }) => {
       }}>
         <Typography variant="h6" color="text.secondary" textAlign="center">
           {productName}<br />
-          <Typography variant="body2" color="text.disabled">No images available</Typography>
+          <Typography variant="body2" color="text.secondary">No images available</Typography>
         </Typography>
       </Box>
     );
