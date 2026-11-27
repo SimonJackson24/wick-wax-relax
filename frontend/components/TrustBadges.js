@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Box,
+  SvgIcon,
   Typography,
   useMediaQuery,
   useTheme
@@ -28,8 +29,42 @@ import {
 // Desktop (>=900px): the static, evenly spaced row — all six fit there
 // without truncation, so no motion is needed.
 
+// The honeybee, drawn for this strip on the Material 24-grid so it sits with
+// the Material icons beside it (MUI has no bee). One silhouette — head, thorax
+// and abdomen — with the two stripes left as gaps, two whole wings held out
+// and two antennae: "queen bees kept with intact wings" is this badge's own
+// promise, so the wings are the point. Plum only, like its neighbours, and
+// everything is currentColor, so the strip's sx still sizes and colours it.
+const HoneybeeIcon = (props) => (
+  <SvgIcon viewBox="0 0 24 24" {...props}>
+    <path
+      d="M12 3.2C13.077 3.2 13.95 4.073 13.95 5.15C13.95 5.75 13.64 6.35 13.64 6.95
+        C13.64 7.6 14.7 8.25 14.7 8.9C14.7 9.567 14.45 10.233 14.45 10.9C14.45 11.9 15.8 12.9 15.8 13.9
+        C15.8 14.046 15.796 14.188 15.788 14.325C13.591 14.725 10.409 14.725 8.212 14.325
+        C8.204 14.188 8.2 14.046 8.2 13.9C8.2 12.9 9.55 11.9 9.55 10.9C9.55 10.233 9.3 9.567 9.3 8.9
+        C9.3 8.25 10.36 7.6 10.36 6.95C10.36 6.35 10.05 5.75 10.05 5.15C10.05 4.073 10.923 3.2 12 3.2Z
+        M15.618 15.475C15.397 16.366 15.003 17.029 14.598 17.611
+        C13.091 17.425 10.909 17.425 9.402 17.611C8.997 17.029 8.603 16.366 8.382 15.475
+        C10.48 15.875 13.52 15.875 15.618 15.475ZM14.194 18.175C13.684 18.88 13.25 19.531 13.25 20.45
+        C13.25 21.14 12.69 21.7 12 21.7C11.31 21.7 10.75 21.14 10.75 20.45
+        C10.75 19.531 10.316 18.88 9.806 18.175C11.079 18.575 12.921 18.575 14.194 18.175ZM9.248 7.043
+        C8.73 7.941 8.13 8.535 7.329 8.072C4.856 6.687 3.798 5.369 2.798 3.32
+        C5.073 3.161 6.743 3.418 9.179 4.868C9.98 5.33 9.766 6.146 9.248 7.043ZM14.752 7.043
+        C14.234 6.146 14.02 5.33 14.821 4.868C17.257 3.418 18.927 3.161 21.202 3.32
+        C20.202 5.369 19.144 6.687 16.671 8.072C15.87 8.535 15.27 7.941 14.752 7.043Z"
+    />
+    <path
+      d="M11.22 4.05Q10.625 2.39 9.25 1.4M12.78 4.05Q13.375 2.39 14.75 1.4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      strokeLinecap="round"
+    />
+  </SvgIcon>
+);
+
 const trustBadges = [
-  { id: 'ethical-beeswax', icon: EcoIcon, title: 'Ethical Beeswax', detail: 'Queen bees kept with intact wings' },
+  { id: 'ethical-beeswax', icon: HoneybeeIcon, title: 'Ethical Beeswax', detail: 'Queen bees kept with intact wings' },
   { id: 'sustainable', icon: EcoIcon, title: 'Sustainable Wax', detail: 'Premium plant-based blend' },
   { id: 'handmade-uk', icon: UkIcon, title: 'Handmade in UK', detail: 'Handcrafted with care' },
   { id: 'vegan', icon: PetsIcon, title: '100% Vegan', detail: 'Cruelty-free products' },
