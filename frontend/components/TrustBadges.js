@@ -153,6 +153,11 @@ const TrustBadges = () => {
           overflowX: reduceMotion ? 'auto' : 'hidden',
           overflowY: 'hidden',
           scrollSnapType: reduceMotion ? 'x proximity' : 'none',
+          // Snapping lines each copy up with the edge of the row, which would
+          // scroll straight past the track's 20px inset — and that first 20px
+          // is the fade. The first badge ended up flush against the screen,
+          // clipped and half transparent. The inset is the snap line instead.
+          scrollPaddingLeft: reduceMotion ? theme.spacing(2.5) : 0,
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
           // The items run off the edge as they pass; a short fixed fade
