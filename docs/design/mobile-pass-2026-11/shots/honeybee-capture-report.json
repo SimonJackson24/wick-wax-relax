@@ -1,0 +1,366 @@
+{
+  "what": "Honeybee icon for the Ethical Beeswax badge — measured before (live site) and after (production build HrPyym8tfffgQngplZ87B of d137945e4 + the change)",
+  "date": "2026-11-27",
+  "viewports": {
+    "390": "390x844, 2x, mobile",
+    "1440": "1440x900, 1x"
+  },
+  "note": "bee.box is the visible copy of the badge. x is its left edge: under reduced motion it was 0 on the homepage (flush to the screen) before the fix and 20 after; on the product page the strip sits in an inset container, 16 before and 36 after.",
+  "productSlug": "lavender-dream",
+  "before": {
+    "390": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": -122.1,
+          "y": 109.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6343,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "1440": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 152,
+          "y": 125.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6071,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "1440Reduced": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 152,
+          "y": 125.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 5963,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "product1440": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 176,
+          "y": 1440.6
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 3780,
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 5,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "heading-order",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "landmark-one-main",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "region",
+            "impact": "moderate",
+            "nodes": 25,
+            "inTrustStrip": 0
+          }
+        ],
+        "passes": 37
+      }
+    },
+    "390Reduced": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 0,
+          "y": 109.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6343,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "product390": {
+      "bee": {
+        "paths": 1,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 16,
+          "y": 2049.5
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 5391,
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 6,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "heading-order",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "landmark-one-main",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "region",
+            "impact": "moderate",
+            "nodes": 26,
+            "inTrustStrip": 0
+          }
+        ],
+        "passes": 38
+      }
+    }
+  },
+  "after": {
+    "390": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": -122.1,
+          "y": 109.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6343,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "1440": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 152,
+          "y": 125.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6071,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "1440Reduced": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 152,
+          "y": 125.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6071,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "product1440": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 176,
+          "y": 1440.6
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 3780,
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 5,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "heading-order",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "landmark-one-main",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "region",
+            "impact": "moderate",
+            "nodes": 25,
+            "inTrustStrip": 0
+          }
+        ],
+        "passes": 37
+      }
+    },
+    "390Reduced": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 20,
+          "y": 109.8
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 6343,
+      "axe": {
+        "violations": [],
+        "passes": 44
+      }
+    },
+    "product390": {
+      "bee": {
+        "paths": 2,
+        "box": {
+          "w": 17,
+          "h": 17,
+          "x": 36,
+          "y": 2049.5
+        },
+        "fill": "rgb(61, 43, 61)",
+        "ariaHidden": "true",
+        "label": "Ethical Beeswax"
+      },
+      "stripHeight": 37.5,
+      "horizontalOverflow": 0,
+      "pageHeight": 5391,
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 6,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "heading-order",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "landmark-one-main",
+            "impact": "moderate",
+            "nodes": 1,
+            "inTrustStrip": 0
+          },
+          {
+            "id": "region",
+            "impact": "moderate",
+            "nodes": 26,
+            "inTrustStrip": 0
+          }
+        ],
+        "passes": 38
+      }
+    }
+  }
+}
