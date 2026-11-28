@@ -12,6 +12,9 @@ export async function getServerSideProps({ res }) {
     { loc: `${SITE}/`, changefreq: 'daily', priority: '1.0' },
     { loc: `${SITE}/products`, changefreq: 'daily', priority: '0.9' },
     { loc: `${SITE}/subscriptions`, changefreq: 'weekly', priority: '0.6' },
+    { loc: `${SITE}/about`, changefreq: 'monthly', priority: '0.6' },
+    { loc: `${SITE}/contact`, changefreq: 'monthly', priority: '0.5' },
+    { loc: `${SITE}/faq`, changefreq: 'monthly', priority: '0.5' },
   ];
 
   try {

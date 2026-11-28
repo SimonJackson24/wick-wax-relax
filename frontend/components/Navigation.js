@@ -112,8 +112,8 @@ const Navigation = () => {
     { name: 'Home', href: '/', icon: null },
     { name: 'Products', href: '/products', icon: null },
     { name: 'Categories', href: '/category/wax-melts', icon: null },
-    { name: 'About', href: '/#about', icon: null },
-    { name: 'Contact', href: '/#contact', icon: null },
+    { name: 'About', href: '/about', icon: null },
+    { name: 'Contact', href: '/contact', icon: null },
   ];
 
   const userLinks = [

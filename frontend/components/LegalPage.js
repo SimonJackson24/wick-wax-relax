@@ -4,6 +4,7 @@ import { Box, Typography, Container, Divider, useTheme } from '@mui/material';
 import Navigation from './Navigation';
 import Footer from './Footer';
 import SEOHead from './SEOHead';
+import { EmailLink, EmailText } from './EmailLink';
 
 // Shared layout for legal/policy pages. Content sections arrive as
 // { heading, body[] } — body entries are paragraphs. LLM-reviewed
@@ -25,7 +26,7 @@ const LegalPage = ({ title, description, updated, sections }) => (
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>{section.heading}</Typography>
           {section.body.map((para, j) => (
             <Typography key={j} variant="body1" color="text.secondary" sx={{ lineHeight: 1.9, mb: 1.5 }}>
-              {para}
+              <EmailText value={para} />
             </Typography>
           ))}
         </Box>
@@ -33,7 +34,7 @@ const LegalPage = ({ title, description, updated, sections }) => (
 
       <Divider sx={{ my: 4 }} />
       <Typography variant="body2" color="text.secondary">
-        Questions about this policy? Email <Link href="mailto:info@wickwaxrelax.co.uk">info@wickwaxrelax.co.uk</Link>.
+        Questions about this policy? Reach us <EmailLink label="by email" />.
         See also our{' '}
         <Link href="/terms">Terms</Link>, <Link href="/privacy">Privacy</Link>,{' '}
         <Link href="/returns">Returns</Link>, <Link href="/shipping">Shipping</Link> and{' '}

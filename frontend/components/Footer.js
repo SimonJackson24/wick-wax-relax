@@ -20,7 +20,6 @@ const SHOP_LINKS = [
   { name: 'Bath bombs', href: '/category/bath-bombs' },
   { name: 'Diffusers', href: '/category/diffusers' },
   { name: 'Subscribe & save', href: '/subscriptions' },
-  { name: 'Gift cards', href: '/products' },
 ];
 
 const HELP_LINKS = [
@@ -29,6 +28,7 @@ const HELP_LINKS = [
   { name: 'Delivery & shipping', href: '/shipping' },
   { name: 'Returns & refunds', href: '/returns' },
   { name: 'Frequently asked', href: '/faq' },
+  { name: 'Our story', href: '/about' },
   { name: 'Accessibility', href: '/accessibility' },
 ];
 
@@ -36,7 +36,6 @@ const POLICY_LINKS = [
   { name: 'Terms & Conditions', href: '/terms' },
   { name: 'Privacy Policy', href: '/privacy' },
   { name: 'Cookie Policy', href: '/cookies' },
-  { name: 'Modern slavery statement', href: '/terms' },
 ];
 
 const SOCIALS = [

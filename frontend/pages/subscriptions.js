@@ -17,7 +17,10 @@ import axios from 'axios';
 import { useSubscription } from '../components/SubscriptionContext';
 import { useAuth } from '../components/AuthContext';
 import SEOHead from '../components/SEOHead';
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 import { SITE_URL } from '../utils/siteConfig';
+import { GUTTER } from '../src/layoutTokens';
 
 const FREQUENCY_LABELS = {
   WEEKLY: 'Every week',
@@ -47,13 +50,12 @@ export default function SubscriptionsPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Plans are public (GET /plans needs no auth) — everyone sees how the
+  // subscription works and what it costs. Signing in is only required to
+  // CONFIRM, and happens at that step, not here.
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login?redirect=' + encodeURIComponent('/subscriptions'));
-      return;
-    }
     loadPlans();
-  }, [isAuthenticated]);
+  }, []);
 
   const loadPlans = async () => {
     try {
@@ -105,15 +107,6 @@ export default function SubscriptionsPage() {
     }
   };
 
-  if (plansLoading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-        <CircularProgress sx={{ color: theme.palette.primary.main }} />
-        <Typography sx={{ mt: 2 }}>Loading subscription plans...</Typography>
-      </Container>
-    );
-  }
-
   return (
     <>
       <SEOHead
@@ -121,8 +114,65 @@ export default function SubscriptionsPage() {
         description="Build your subscription basket and save on regular deliveries of your favourite wax melts and candles."
         url={`${SITE_URL}/subscriptions`}
       />
+      <Navigation />
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box className="wwr-dark-surface" sx={{ bgcolor: '#3D2B3D', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 }, px: GUTTER }}>
+          <Typography variant="overline" sx={{ color: '#E6C88A', display: 'block', mb: 2 }}>
+            Subscribe &amp; save
+          </Typography>
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: '"Playfair Display", serif', fontWeight: 500,
+              fontSize: { xs: '2.25rem', md: '3.25rem' }, lineHeight: 1.05,
+              letterSpacing: '-0.02em', color: '#FFFFFF', mt: 0, mb: 2,
+            }}
+          >
+            Never run out of the one you love
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(244,239,231,0.86)', maxWidth: 620, lineHeight: 1.9 }}>
+            Subscribe to any scent, choose how often it arrives and save on
+            every delivery. Change, pause or cancel whenever you like — no
+            minimum term, no phone calls.
+          </Typography>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ py: 6, px: { xs: 2.5, md: 4 } }}>
+        {/* How it works — visible to everyone, no account needed */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="overline" sx={{ color: 'tertiary.ink', display: 'block', mb: 1.5 }}>
+            How it works
+          </Typography>
+          <Grid container spacing={3}>
+            {[
+              { step: '1', title: 'Choose your scents', body: 'Add candles or wax melts to your subscription basket as you shop.' },
+              { step: '2', title: 'Pick a frequency', body: 'Weekly, every 2 weeks or monthly — with a discount on every delivery.' },
+              { step: '3', title: 'We pour and deliver', body: 'Each delivery is poured fresh. Change, pause or cancel whenever you like.' },
+            ].map((item) => (
+              <Grid item xs={12} sm={4} key={item.step}>
+                <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3, height: '100%', backgroundColor: 'background.subtle' }}>
+                  <Typography sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 500, fontSize: '1.75rem', color: 'primary.main', mb: 1 }}>
+                    {item.step}
+                  </Typography>
+                  <Typography fontWeight={700} gutterBottom>{item.title}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>{item.body}</Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h3" component="h2" gutterBottom
+            sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400 }}>
+            Your subscription basket
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Add products as you shop, then choose your frequency and confirm — it is that simple.
+          </Typography>
+        </Box>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" component="h1" gutterBottom
             sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 400 }}>
@@ -266,11 +316,21 @@ export default function SubscriptionsPage() {
 
             {/* RIGHT: plan + summary */}
             <Grid item xs={12} md={5}>
-              {subscriptionItems.length > 0 ? (
-                <>
+              <>
                   <Paper sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" gutterBottom>Choose Your Plan</Typography>
-                    {plans.map(plan => {
+                    {plansLoading ? (
+                      <Box sx={{ py: 3, textAlign: 'center' }}>
+                        <CircularProgress size={28} sx={{ color: theme.palette.primary.main }} />
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                          Loading subscription plans...
+                        </Typography>
+                      </Box>
+                    ) : plans.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {error || 'Plans are being prepared — check back shortly.'}
+                      </Typography>
+                    ) : plans.map(plan => {
                       const isSelected = selectedPlan?.id === plan.id;
                       return (
                         <Card key={plan.id} variant="outlined"
@@ -335,33 +395,45 @@ export default function SubscriptionsPage() {
 
                   {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-                  <Button fullWidth variant="contained" size="large" onClick={handleSubmit}
+                  <Button fullWidth variant="contained" size="large"
+                    onClick={() => {
+                      // Only confirming needs an account (POST /api/subscriptions
+                      // is authenticated). The real login honours ?returnUrl=.
+                      if (!isAuthenticated) {
+                        router.push('/account/login?returnUrl=' + encodeURIComponent('/subscriptions'));
+                        return;
+                      }
+                      handleSubmit();
+                    }}
                     disabled={submitting || !selectedPlan || subscriptionItems.length === 0}
                     startIcon={<CheckIcon />}
                     sx={{ py: 1.5, fontWeight: 700, fontSize: '1.05rem', borderRadius: 3 }}>
-                    {submitting ? 'Setting up...' : `Confirm Subscription — £${total.toFixed(2)}`}
+                    {!isAuthenticated
+                      ? 'Sign in to confirm your subscription'
+                      : submitting ? 'Setting up...' : `Confirm Subscription — £${total.toFixed(2)}`}
                   </Button>
 
                   <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-                    Cancel or pause anytime. No lock-in.
+                    {!isAuthenticated
+                      ? 'You will be asked to sign in at this step — your basket is saved meanwhile.'
+                      : 'Cancel or pause anytime. No lock-in.'}
                   </Typography>
                 </>
-              ) : (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                  <LoyaltyIcon sx={{ fontSize: 64, color: 'grey.300', mb: 2 }} />
-                  <Typography variant="h6" gutterBottom>Nothing here yet</Typography>
-                  <Typography color="text.secondary" sx={{ mb: 3 }}>
-                    Add products to your subscription from the product pages, then come back to choose your plan.
-                  </Typography>
-                  <Button component={Link} href="/products" variant="contained">
-                    Shop Products
-                  </Button>
-                </Paper>
-              )}
             </Grid>
           </Grid>
         )}
-      </Container>
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 6, '& a': { textDecoration: 'underline', textUnderlineOffset: '2px', fontWeight: 600 } }}
+          >
+            Questions about subscriptions? The answer is probably on our{' '}
+            <Link href="/faq">FAQ</Link> page — or <Link href="/contact">email us</Link>.
+          </Typography>
+        </Container>
+      <Footer />
     </>
   );
 }

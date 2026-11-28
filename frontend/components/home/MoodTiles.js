@@ -8,6 +8,8 @@ import { SECTION_PY, GUTTER } from '../../src/layoutTokens';
  * Shop by mood — the positioning move. Amazon sells by product type;
  * premium home-fragrance brands sell by occasion ("To Unwind", "To Wake").
  * This is the section a competitor's grid cannot copy.
+ * Tiles link to /category/<slug> — the category pages already filter
+ * correctly (/products ignores the category query).
  */
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E\")";
@@ -17,28 +19,28 @@ const MOODS = [
     label: 'To Unwind',
     caption: 'Slow evenings, soft light',
     image: '/images/hero2-opt.jpg',
-    href: '/products?category=wax-melts',
+    href: '/category/wax-melts',
     tint: '#EDE6F2',
   },
   {
     label: 'To Wake',
     caption: 'Bright, citrus, morning',
     image: '/images/hero1-opt.jpg',
-    href: '/products?category=candles',
+    href: '/category/candles',
     tint: '#F6EADB',
   },
   {
     label: 'To Celebrate',
     caption: 'Warm, spiced, golden',
     image: '/images/mood-citrus.jpg',
-    href: '/products?category=bath-bombs',
+    href: '/category/bath-bombs',
     tint: '#F3E7E1',
   },
   {
     label: 'To Reset',
     caption: 'Clean, green, uncluttered',
     image: '/images/wax-melts-opt.jpg',
-    href: '/products?category=diffusers',
+    href: '/category/diffusers',
     tint: '#E7EDE8',
   },
 ];

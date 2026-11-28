@@ -1,4 +1,5 @@
 import React from 'react';
+import { EmailLink } from '../components/EmailLink';
 import {
   Container,
   Typography,
@@ -96,7 +97,7 @@ const AccessibilityStatement = () => {
           </Typography>
           
           <Typography variant="body1" paragraph>
-            <strong>Email:</strong> accessibility@wickwaxrelax.co.uk
+            <strong>Email:</strong> <EmailLink label="by email" />
           </Typography>
           
           <Typography variant="body1" paragraph>
